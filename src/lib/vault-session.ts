@@ -68,7 +68,7 @@ export function useActivityKeepAlive() {
     const bump = () => {
       if (dek) scheduleAutoLock();
     };
-    const events: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "visibilitychange"];
+    const events = ["pointerdown", "keydown", "visibilitychange"] as const;
     for (const e of events) window.addEventListener(e, bump, { passive: true });
     return () => {
       for (const e of events) window.removeEventListener(e, bump);
