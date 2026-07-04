@@ -649,7 +649,26 @@ function StepFeatures({ next }: { next: () => void }) {
   );
 }
 
+const IMPORT_INTENT_KEY = "aegis.onboarding.intent";
+
+function setImportIntent(v: "scan" | "manual" | "backup" | null) {
+  try {
+    if (v === null) window.localStorage.removeItem(IMPORT_INTENT_KEY);
+    else window.localStorage.setItem(IMPORT_INTENT_KEY, v);
+  } catch {
+    /* ignore */
+  }
+}
+
 function StepImport({ next }: { next: () => void }) {
+  const [selected, setSelected] = useState<"scan" | "manual" | "backup" | null>(null);
+
+  const pick = (v: "scan" | "manual" | "backup") => {
+    setSelected(v);
+    setImportIntent(v);
+    setTimeout(next, 280);
+  };
+
   return (
     <Screen>
       <div className="flex flex-1 flex-col justify-center gap-6">
@@ -663,31 +682,42 @@ function StepImport({ next }: { next: () => void }) {
             icon={<QrCode className="h-4 w-4" strokeWidth={1.8} />}
             title="Scan a QR code"
             body="From Google, Authy, 1Password and more."
-            onClick={next}
+            onClick={() => pick("scan")}
             delay={0.05}
+            active={selected === "scan"}
           />
           <ImportOption
             icon={<Upload className="h-4 w-4" strokeWidth={1.8} />}
             title="Import a backup file"
-            body="Encrypted .aegis or JSON exports."
-            onClick={next}
+            body="Coming soon — we'll notify you."
+            onClick={() => pick("backup")}
             delay={0.12}
+            active={selected === "backup"}
           />
           <ImportOption
             icon={<KeyRound className="h-4 w-4" strokeWidth={1.8} />}
             title="Enter a setup key"
             body="Add manually with a Base32 secret."
-            onClick={next}
+            onClick={() => pick("manual")}
             delay={0.19}
+            active={selected === "manual"}
           />
         </div>
       </div>
       <div className="shrink-0 pb-[max(20px,env(safe-area-inset-bottom))] pt-2 text-center">
-        <TextLink onClick={next}>I'll do this later</TextLink>
+        <TextLink
+          onClick={() => {
+            setImportIntent(null);
+            next();
+          }}
+        >
+          I'll do this later
+        </TextLink>
       </div>
     </Screen>
   );
 }
+
 
 function StepBackup({ next }: { next: () => void }) {
   const [on, setOn] = useState(true);
