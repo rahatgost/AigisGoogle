@@ -204,6 +204,7 @@ function ProfilePage() {
           Sign out
         </GhostButton>
       </div>
+      <BottomTabs />
     </AegisScreen>
   );
 }
