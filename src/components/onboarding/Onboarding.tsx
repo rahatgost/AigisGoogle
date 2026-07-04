@@ -85,16 +85,20 @@ function TopBar({
   onBack,
   onSkip,
   canSkip,
+  hapticsOn,
+  onToggleHaptics,
 }: {
   step: number;
   total: number;
   onBack?: () => void;
   onSkip?: () => void;
   canSkip: boolean;
+  hapticsOn: boolean;
+  onToggleHaptics: () => void;
 }) {
   return (
     <header className="relative z-10 flex h-12 shrink-0 items-center justify-between px-5">
-      <div className="flex w-16 justify-start">
+      <div className="flex w-24 items-center justify-start gap-1">
         <AnimatePresence initial={false}>
           {step > 0 && (
             <motion.button
@@ -105,7 +109,7 @@ function TopBar({
               transition={spring}
               whileTap={{ scale: 0.94 }}
               onClick={onBack}
-              aria-label="Back"
+              aria-label="Go back"
               className="flex h-8 w-8 items-center justify-center rounded-full"
               style={{ color: CHARCOAL, background: "rgba(28,28,28,0.03)" }}
             >
@@ -116,7 +120,7 @@ function TopBar({
       </div>
 
       {/* Segmented progress dots with morphing active pill */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" aria-hidden>
         {Array.from({ length: total }).map((_, i) => {
           const active = i === step;
           const passed = i < step;
@@ -144,8 +148,28 @@ function TopBar({
         })}
       </div>
 
+      <div className="flex w-24 items-center justify-end gap-1">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={onToggleHaptics}
+          role="switch"
+          aria-checked={hapticsOn}
+          aria-label={hapticsOn ? "Turn off vibration feedback" : "Turn on vibration feedback"}
+          title={hapticsOn ? "Vibration on" : "Vibration off"}
+          className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(28,28,28,0.4)]"
+          style={{
+            color: hapticsOn ? CHARCOAL : MUTED,
+            background: hapticsOn ? "rgba(28,28,28,0.06)" : "transparent",
+            border: `1px solid ${hapticsOn ? "transparent" : BORDER}`,
+          }}
+        >
+          {hapticsOn ? (
+            <Vibrate className="h-[15px] w-[15px]" strokeWidth={1.8} />
+          ) : (
+            <VibrateOff className="h-[15px] w-[15px]" strokeWidth={1.8} />
+          )}
+        </motion.button>
 
-      <div className="flex w-16 justify-end">
         {canSkip && (
           <motion.button
             whileTap={{ scale: 0.95 }}
