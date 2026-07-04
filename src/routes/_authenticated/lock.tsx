@@ -76,6 +76,7 @@ function LockPage() {
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioEnrolled, setBioEnrolled] = useState(false);
   const [bioBusy, setBioBusy] = useState(false);
+  const [bioAutoTried, setBioAutoTried] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
