@@ -1,10 +1,38 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Onboarding from "@/components/onboarding/Onboarding";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+const CREAM = "#f7f4ed";
+const CHARCOAL = "#1c1c1a";
 
 export const Route = createFileRoute("/")({
-  component: HomePage,
+  ssr: false,
+  beforeLoad: async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      throw redirect({ to: "/auth" });
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarded_at")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+
+    if (!profile?.onboarded_at) {
+      throw redirect({ to: "/onboarding" });
+    }
+    throw redirect({ to: "/vault" });
+  },
+  component: LandingSpinner,
 });
 
-function HomePage() {
-  return <Onboarding />;
+function LandingSpinner() {
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ background: CREAM, color: CHARCOAL }}
+    >
+      <Loader2 className="h-5 w-5 animate-spin" />
+    </div>
+  );
 }

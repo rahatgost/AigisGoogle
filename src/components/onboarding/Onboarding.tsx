@@ -812,7 +812,7 @@ function getInitialHapticsPref(reduceMotion: boolean | null): boolean {
   return !reduceMotion;
 }
 
-export default function Onboarding() {
+export default function Onboarding({ onComplete }: { onComplete?: () => void } = {}) {
   const [[step, dir], setState] = useState<[number, number]>([0, 1]);
   const thresholdArmedRef = useRef<null | "next" | "back">(null);
   const reduceMotion = useReducedMotion();
@@ -940,7 +940,7 @@ export default function Onboarding() {
               {step === 3 && <StepBackup next={goNext} />}
               {step === 4 && <StepNotifications next={goNext} />}
               {step === 5 && <StepBiometrics next={goNext} />}
-              {step === 6 && <StepDone next={restart} />}
+              {step === 6 && <StepDone next={onComplete ?? restart} />}
             </motion.div>
           </AnimatePresence>
         </div>
