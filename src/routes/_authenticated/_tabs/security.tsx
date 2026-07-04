@@ -81,7 +81,7 @@ function SecurityPage() {
         subtitle="Everything protecting your codes lives here."
       />
 
-      <div className="flex flex-1 flex-col gap-1 overflow-y-auto pt-1 pb-[calc(96px+env(safe-area-inset-bottom))]">
+      <div className="flex flex-col gap-1 pt-1">
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}

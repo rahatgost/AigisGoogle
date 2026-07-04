@@ -96,7 +96,7 @@ function VaultPage() {
         <SearchField value={query} onChange={setQuery} />
       )}
 
-      <div className="flex-1 overflow-y-auto pt-2 pb-[calc(96px+env(safe-area-inset-bottom))]">
+      <div className="pt-2">
         {error && <Notice kind="error">{error}</Notice>}
 
         {accounts === null && !error && (
