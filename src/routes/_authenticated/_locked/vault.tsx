@@ -1,9 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { getVaultKey, lockVault, useActivityKeepAlive, useVaultUnlocked } from "@/lib/vault-session";
+import { getVaultKey, useActivityKeepAlive, useVaultUnlocked } from "@/lib/vault-session";
 import { listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { Shield, Plus, Loader2 } from "lucide-react";
