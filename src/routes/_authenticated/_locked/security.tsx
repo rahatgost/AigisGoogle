@@ -88,7 +88,7 @@ function SecurityPage() {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-6">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-28">
         <InfoRow
           icon={<KeyRound className="h-4 w-4" strokeWidth={1.8} />}
           title="Passphrase hint"
