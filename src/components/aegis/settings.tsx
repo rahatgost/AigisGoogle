@@ -56,12 +56,7 @@ export function AppBarButton({
 
 export function LargeTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={soft}
-      className="flex flex-col gap-1 pt-1 pb-3"
-    >
+    <div className="scroll-fade-out flex flex-col gap-1 pt-1 pb-3">
       <h1
         className="text-[28px] leading-[1.08]"
         style={{
@@ -78,14 +73,14 @@ export function LargeTitle({ title, subtitle }: { title: string; subtitle?: stri
           {subtitle}
         </p>
       )}
-    </motion.div>
+    </div>
   );
 }
 
 export function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div
-      className="px-1 pt-4 pb-1.5 text-[11px] uppercase"
+      className="scroll-fade-in px-1 pt-4 pb-1.5 text-[11px] uppercase"
       style={{ color: MUTED, letterSpacing: "0.14em", fontWeight: 600 }}
     >
       {children}
@@ -96,7 +91,7 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 export function SettingsGroup({ children }: { children: ReactNode }) {
   return (
     <div
-      className="shrink-0 overflow-hidden rounded-[16px]"
+      className="scroll-fade-in shrink-0 overflow-hidden rounded-[16px]"
       style={{
         background: CREAM_SOFT,
         border: `1px solid ${BORDER}`,
