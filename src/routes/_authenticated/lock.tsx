@@ -103,10 +103,10 @@ function LockPage() {
 
       const { error } = await supabase.from("vault_meta").insert({
         user_id: user.id,
-        kdf_salt: salt as unknown as string,
+        kdf_salt: toByteaHex(salt),
         kdf_algorithm: kdfAlgorithm,
-        recovery_wrapped_key: wrappedKey as unknown as string,
-        recovery_wrapped_key_iv: wrappedKeyIv as unknown as string,
+        recovery_wrapped_key: toByteaHex(wrappedKey),
+        recovery_wrapped_key_iv: toByteaHex(wrappedKeyIv),
         passphrase_hint: hint.trim() ? hint.trim() : null,
       });
       if (error) throw error;
