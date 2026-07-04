@@ -60,7 +60,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --font-display: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
 }
 
 :root {
@@ -141,8 +142,32 @@
     border-color: var(--color-border);
   }
 
-  body {
+  html, body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01", "ss03";
     background-color: var(--color-background);
     color: var(--color-foreground);
+    overscroll-behavior: none;
   }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.035em;
+}
+
+@utility grain {
+  position: relative;
+}
+@utility grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(rgba(15,23,42,0.06) 1px, transparent 1px);
+  background-size: 3px 3px;
 }
