@@ -117,7 +117,7 @@ function NewAccountPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-2">
+      <div className="flex-1 overflow-y-auto pb-28">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={tab}
