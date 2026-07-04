@@ -4,7 +4,7 @@
 
 import * as OTPAuth from "otpauth";
 import { supabase } from "@/integrations/supabase/client";
-import { decryptSecret, encryptSecret, toBytes } from "@/lib/vault-crypto";
+import { decryptSecret, encryptSecret, toBytes, toByteaHex } from "@/lib/vault-crypto";
 
 export type Algorithm = "SHA1" | "SHA256" | "SHA512";
 
@@ -106,8 +106,8 @@ export async function addAccount(
     algorithm: input.algorithm ?? "SHA1",
     digits: input.digits ?? 6,
     period: input.period ?? 30,
-    secret_ciphertext: ciphertext as unknown as string,
-    secret_iv: iv as unknown as string,
+    secret_ciphertext: toByteaHex(ciphertext),
+    secret_iv: toByteaHex(iv),
   });
   if (error) throw error;
 }

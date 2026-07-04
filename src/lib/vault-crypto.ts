@@ -137,16 +137,23 @@ export async function decryptSecret(
 }
 
 // Supabase `bytea` round-trips as either a Uint8Array (already binary) or a
-// hex-prefixed string like "\\x0102..". Normalize both.
+// hex-prefixed string like "\\x0102..", or a base64 string. Normalize all.
 export function toBytes(input: unknown): Uint8Array {
   if (input instanceof Uint8Array) return input;
   if (input instanceof ArrayBuffer) return new Uint8Array(input);
   if (typeof input === "string") {
-    const hex = input.startsWith("\\x") ? input.slice(2) : input;
-    const out = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < out.length; i++) {
-      out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (input.startsWith("\\x") || /^[0-9a-fA-F]+$/.test(input)) {
+      const hex = input.startsWith("\\x") ? input.slice(2) : input;
+      const out = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < out.length; i++) {
+        out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+      }
+      return out;
     }
+    // Fallback: base64
+    const bin = atob(input);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
   }
   if (input && typeof input === "object" && "type" in (input as object) && (input as { type?: string }).type === "Buffer") {
@@ -154,3 +161,15 @@ export function toBytes(input: unknown): Uint8Array {
   }
   throw new Error("Unsupported bytea payload");
 }
+
+// Encode Uint8Array as Postgres bytea hex literal ("\x0102..") — the format
+// PostgREST accepts on insert. Passing a Uint8Array directly to supabase-js
+// gets JSON-stringified into {"0":1,...} which silently corrupts the row.
+export function toByteaHex(bytes: Uint8Array): string {
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return "\\x" + hex;
+}
+

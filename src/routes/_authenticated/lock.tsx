@@ -6,6 +6,7 @@ import {
   createNewVaultKey,
   unwrapVaultKey,
   toBytes,
+  toByteaHex,
   KDF_ALGORITHM,
 } from "@/lib/vault-crypto";
 import { setVaultKey } from "@/lib/vault-session";
@@ -102,10 +103,10 @@ function LockPage() {
 
       const { error } = await supabase.from("vault_meta").insert({
         user_id: user.id,
-        kdf_salt: salt as unknown as string,
+        kdf_salt: toByteaHex(salt),
         kdf_algorithm: kdfAlgorithm,
-        recovery_wrapped_key: wrappedKey as unknown as string,
-        recovery_wrapped_key_iv: wrappedKeyIv as unknown as string,
+        recovery_wrapped_key: toByteaHex(wrappedKey),
+        recovery_wrapped_key_iv: toByteaHex(wrappedKeyIv),
         passphrase_hint: hint.trim() ? hint.trim() : null,
       });
       if (error) throw error;
@@ -281,12 +282,44 @@ function LockPage() {
             </button>
           </form>
 
-          {isCreate && (
+          {isCreate ? (
             <p className="text-center text-[11.5px] leading-snug" style={{ color: MUTED }}>
               If you forget this passphrase, your codes cannot be recovered.
               <br />
               A printable recovery sheet is coming in a later step.
             </p>
+          ) : (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = window.confirm(
+                    "Reset your vault?\n\nThis erases your saved passphrase and every stored code. Only do this if you've lost access.",
+                  );
+                  if (!ok) return;
+                  setLoading(true);
+                  setNotice(null);
+                  try {
+                    await supabase.from("vault_accounts").delete().eq("user_id", user.id);
+                    await supabase.from("vault_meta").delete().eq("user_id", user.id);
+                    setPassphrase("");
+                    setPassphraseHint(null);
+                    setMode("create");
+                  } catch (err) {
+                    setNotice({
+                      kind: "error",
+                      text: err instanceof Error ? err.message : "Reset failed.",
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="text-[12px] underline underline-offset-[3px]"
+                style={{ color: MUTED }}
+              >
+                Forgot passphrase? Reset vault
+              </button>
+            </div>
           )}
         </div>
       </div>
