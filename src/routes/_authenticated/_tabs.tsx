@@ -15,7 +15,10 @@ export const Route = createFileRoute("/_authenticated/_tabs")({
 function TabsLayout() {
   return (
     <AegisScreen>
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div
+        className="-mx-6 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-6 pb-[calc(112px+env(safe-area-inset-bottom))]"
+        style={{ WebkitOverflowScrolling: "touch" as never }}
+      >
         <Outlet />
       </div>
       <BottomTabs />
