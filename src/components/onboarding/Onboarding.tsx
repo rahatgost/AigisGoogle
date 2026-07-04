@@ -113,21 +113,35 @@ function TopBar({
         </AnimatePresence>
       </div>
 
-      {/* Segmented progress dots */}
+      {/* Segmented progress dots with morphing active pill */}
       <div className="flex items-center gap-1.5">
-        {Array.from({ length: total }).map((_, i) => (
-          <motion.span
-            key={i}
-            initial={false}
-            animate={{
-              width: i === step ? 20 : 6,
-              backgroundColor: i <= step ? CHARCOAL : "rgba(28,28,28,0.15)",
-            }}
-            transition={soft}
-            className="h-[6px] rounded-full"
-          />
-        ))}
+        {Array.from({ length: total }).map((_, i) => {
+          const active = i === step;
+          const passed = i < step;
+          return (
+            <span
+              key={i}
+              className="relative h-[6px] rounded-full"
+              style={{
+                width: active ? 20 : 6,
+                transition: "width 320ms cubic-bezier(0.22,0.9,0.3,1)",
+                background: passed ? CHARCOAL : "rgba(28,28,28,0.15)",
+                willChange: "width",
+              }}
+            >
+              {active && (
+                <motion.span
+                  layoutId="progress-pill"
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: CHARCOAL, willChange: "transform" }}
+                  transition={{ type: "spring", stiffness: 420, damping: 36, mass: 0.7 }}
+                />
+              )}
+            </span>
+          );
+        })}
       </div>
+
 
       <div className="flex w-16 justify-end">
         {canSkip && (
