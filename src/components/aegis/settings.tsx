@@ -56,7 +56,7 @@ export function AppBarButton({
 
 export function LargeTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="sticky top-0 z-10 -mx-6 flex flex-col gap-1 px-6 pt-2 pb-3">
+    <div className="sticky top-0 z-10 -mx-6 flex flex-col gap-1 px-6 pt-3 pb-4">
       <h1
         className="text-[28px] leading-[1.08]"
         style={{
