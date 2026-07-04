@@ -229,20 +229,31 @@ function LockPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Biometric unlock failed.";
       // If the stored blob is broken (e.g. cleared), drop it so user isn't stuck.
-      if (/isn't set up|NotAllowed|InvalidState/i.test(msg)) {
+      if (/isn't set up|InvalidState/i.test(msg)) {
         disableBiometric(user.id);
         setBioEnrolled(false);
       }
-      setNotice({
-        kind: "error",
-        text: /NotAllowed/i.test(msg)
-          ? "Biometric check was cancelled."
-          : msg,
-      });
+      // Silently swallow user-cancelled prompts — they can retry or use passphrase.
+      if (!/NotAllowed|cancell?ed|aborted/i.test(msg)) {
+        setNotice({ kind: "error", text: msg });
+      }
     } finally {
       setBioBusy(false);
     }
   };
+
+  // Auto-prompt biometric on entering unlock mode if enrolled.
+  useEffect(() => {
+    if (mode !== "unlock" || !bioAvailable || !bioEnrolled || bioAutoTried) return;
+    setBioAutoTried(true);
+    // Small delay so the page paints before the OS prompt appears.
+    const t = window.setTimeout(() => {
+      void handleBiometricUnlock();
+    }, 250);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, bioAvailable, bioEnrolled, bioAutoTried]);
+
 
 
   if (mode === "loading") {
