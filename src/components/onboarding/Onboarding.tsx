@@ -427,12 +427,14 @@ function ImportOption({
   body,
   onClick,
   delay = 0,
+  active = false,
 }: {
   icon: ReactNode;
   title: string;
   body: string;
   onClick?: () => void;
   delay?: number;
+  active?: boolean;
 }) {
   return (
     <motion.button
@@ -441,8 +443,11 @@ function ImportOption({
       transition={{ ...soft, delay }}
       whileTap={{ scale: 0.99, opacity: 0.9 }}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[12px] p-3 text-left"
-      style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}` }}
+      className="flex w-full items-center gap-3 rounded-[12px] p-3 text-left transition-colors"
+      style={{
+        background: active ? "rgba(28,28,28,0.05)" : CREAM_SOFT,
+        border: `1px solid ${active ? "rgba(28,28,28,0.25)" : BORDER}`,
+      }}
     >
       <IconChip size={38}>{icon}</IconChip>
       <div className="min-w-0 flex-1">
@@ -453,10 +458,15 @@ function ImportOption({
           {body}
         </div>
       </div>
-      <ArrowRight className="h-4 w-4" style={{ color: "rgba(28,28,28,0.35)" }} strokeWidth={1.8} />
+      {active ? (
+        <Check className="h-4 w-4" style={{ color: CHARCOAL }} strokeWidth={2} />
+      ) : (
+        <ArrowRight className="h-4 w-4" style={{ color: "rgba(28,28,28,0.35)" }} strokeWidth={1.8} />
+      )}
     </motion.button>
   );
 }
+
 
 function NativeSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
