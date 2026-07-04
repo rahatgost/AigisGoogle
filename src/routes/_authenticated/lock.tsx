@@ -273,9 +273,9 @@ function LockPage() {
     <AegisScreen>
       <BrandBar />
       <div className="flex flex-1 flex-col justify-center gap-6 pt-2">
-        <div className="flex flex-col items-start gap-4">
+        <div className="flex flex-col items-center gap-5 text-center">
           <HeroIcon Icon={isCreate ? Sparkles : Lock} />
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col items-center gap-3">
             <Eyebrow>{isCreate ? "One-time setup" : "Locked vault"}</Eyebrow>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -284,7 +284,7 @@ function LockPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={soft}
-                className="flex flex-col gap-2"
+                className="flex flex-col items-center gap-2"
               >
                 <Display>{isCreate ? "Set your master passphrase." : "Welcome back."}</Display>
                 <Lede>
@@ -307,6 +307,7 @@ function LockPage() {
             )}
           </div>
         </div>
+
 
         {/* Biometric FIRST when enrolled — that's the fast path. */}
         {!isCreate && bioEnrolled && bioAvailable && (
