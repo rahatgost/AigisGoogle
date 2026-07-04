@@ -1,12 +1,16 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { getVaultKey, useActivityKeepAlive, useVaultUnlocked } from "@/lib/vault-session";
+import {
+  getVaultKey,
+  isVaultUnlocked,
+  useActivityKeepAlive,
+  useVaultUnlocked,
+} from "@/lib/vault-session";
 import { listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { Shield, Plus, Loader2 } from "lucide-react";
 import {
-  AegisScreen,
   BrandBar,
   Display,
   Eyebrow,
@@ -17,9 +21,13 @@ import {
   PrimaryButton,
   soft,
 } from "@/components/aegis/chrome";
-import { BottomTabs } from "@/components/aegis/BottomTabs";
 
-export const Route = createFileRoute("/_authenticated/_locked/vault")({
+export const Route = createFileRoute("/_authenticated/_tabs/vault")({
+  beforeLoad: ({ location }) => {
+    if (!isVaultUnlocked()) {
+      throw redirect({ to: "/lock", search: { redirect: location.href } });
+    }
+  },
   component: VaultPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
@@ -29,7 +37,6 @@ export const Route = createFileRoute("/_authenticated/_locked/vault")({
 
 function VaultPage() {
   const navigate = useNavigate();
-  
   const { user } = Route.useRouteContext();
   const unlocked = useVaultUnlocked();
 
@@ -62,10 +69,8 @@ function VaultPage() {
   }, [unlocked]);
 
   return (
-    <AegisScreen>
+    <>
       <BrandBar />
-
-
 
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -84,7 +89,7 @@ function VaultPage() {
         </div>
       </motion.div>
 
-      <div className="flex-1 overflow-y-auto pb-28 pr-1">
+      <div className="flex-1 overflow-y-auto pr-1 pb-[calc(96px+env(safe-area-inset-bottom))]">
         {error && <Notice kind="error">{error}</Notice>}
 
         {accounts === null && !error && (
@@ -113,13 +118,9 @@ function VaultPage() {
           </AnimatePresence>
         )}
       </div>
-
-      <BottomTabs />
-    </AegisScreen>
+    </>
   );
 }
-
-
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (

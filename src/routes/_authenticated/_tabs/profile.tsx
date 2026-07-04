@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { lockVault } from "@/lib/vault-session";
 import { User, Mail, Loader2, LogOut } from "lucide-react";
 import {
-  AegisScreen,
   BORDER,
   BrandBar,
   CHARCOAL,
@@ -16,7 +15,6 @@ import {
   Field,
   GhostButton,
   HeroIcon,
-  IconChip,
   Lede,
   MUTED,
   Notice,
@@ -25,9 +23,8 @@ import {
   inputStyle,
   soft,
 } from "@/components/aegis/chrome";
-import { BottomTabs } from "@/components/aegis/BottomTabs";
 
-export const Route = createFileRoute("/_authenticated/profile")({
+export const Route = createFileRoute("/_authenticated/_tabs/profile")({
   component: ProfilePage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
@@ -103,7 +100,7 @@ function ProfilePage() {
   const seed = displayName || user.email || "?";
 
   return (
-    <AegisScreen>
+    <>
       <BrandBar />
 
       <motion.div
@@ -120,7 +117,7 @@ function ProfilePage() {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-28">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-[calc(96px+env(safe-area-inset-bottom))]">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -204,10 +201,6 @@ function ProfilePage() {
           Sign out
         </GhostButton>
       </div>
-      <BottomTabs />
-    </AegisScreen>
+    </>
   );
 }
-
-// eslint keeps IconChip usage in scope for future avatar upload iteration
-void IconChip;

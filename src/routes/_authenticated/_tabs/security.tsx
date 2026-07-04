@@ -1,9 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShieldCheck, KeyRound, RotateCcw, Timer, Sparkles } from "lucide-react";
 import {
-  AegisScreen,
   BORDER,
   BrandBar,
   CHARCOAL,
@@ -17,11 +16,15 @@ import {
   Notice,
   soft,
 } from "@/components/aegis/chrome";
-import { BottomTabs } from "@/components/aegis/BottomTabs";
 import { motion } from "framer-motion";
-import { lockVault } from "@/lib/vault-session";
+import { isVaultUnlocked, lockVault } from "@/lib/vault-session";
 
-export const Route = createFileRoute("/_authenticated/_locked/security")({
+export const Route = createFileRoute("/_authenticated/_tabs/security")({
+  beforeLoad: ({ location }) => {
+    if (!isVaultUnlocked()) {
+      throw redirect({ to: "/lock", search: { redirect: location.href } });
+    }
+  },
   component: SecurityPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
@@ -71,7 +74,7 @@ function SecurityPage() {
   };
 
   return (
-    <AegisScreen>
+    <>
       <BrandBar />
 
       <motion.div
@@ -88,7 +91,7 @@ function SecurityPage() {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-28">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-[calc(96px+env(safe-area-inset-bottom))]">
         <InfoRow
           icon={<KeyRound className="h-4 w-4" strokeWidth={1.8} />}
           title="Passphrase hint"
@@ -116,8 +119,7 @@ function SecurityPage() {
         />
         {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
       </div>
-      <BottomTabs />
-    </AegisScreen>
+    </>
   );
 }
 

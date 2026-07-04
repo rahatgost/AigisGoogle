@@ -33,7 +33,7 @@ export function BottomTabs() {
 
   return (
     <motion.nav
-      initial={{ opacity: 0, y: 20 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...soft, delay: 0.08 }}
       aria-label="Primary"
