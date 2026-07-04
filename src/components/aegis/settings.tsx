@@ -90,7 +90,7 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 export function SettingsGroup({ children }: { children: ReactNode }) {
   return (
     <div
-      className="overflow-hidden rounded-[16px]"
+      className="shrink-0 overflow-hidden rounded-[16px]"
       style={{
         background: CREAM_SOFT,
         border: `1px solid ${BORDER}`,
