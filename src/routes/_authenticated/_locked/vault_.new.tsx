@@ -74,17 +74,21 @@ function NewAccountPage() {
     <AegisScreen>
       <BrandBar
         right={
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => navigate({ to: "/vault" })}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px]"
-            style={{ color: CHARCOAL, background: "rgba(28,28,28,0.04)", border: `1px solid ${BORDER}` }}
-          >
-            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
-            Back
-          </motion.button>
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => navigate({ to: "/vault" })}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px]"
+              style={{ color: CHARCOAL, background: "rgba(28,28,28,0.04)", border: `1px solid ${BORDER}` }}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+              Back
+            </motion.button>
+            <AegisMenu userEmail={user.email} />
+          </div>
         }
       />
+
 
       <div className="flex flex-col gap-4 pt-2 pb-4">
         <div className="flex items-center gap-3">
