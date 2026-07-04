@@ -171,13 +171,15 @@ function LockPage() {
       });
       if (error) throw error;
       setVaultKey(dek);
-      navigate({ to: safeRedirect(search.redirect), replace: true });
+      await maybeEnrollBiometric(dek);
+      routeAfterUnlock();
     } catch (err) {
       setNotice({ kind: "error", text: err instanceof Error ? err.message : "Could not create vault." });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
