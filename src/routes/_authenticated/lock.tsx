@@ -72,6 +72,22 @@ function LockPage() {
   const [passphraseHint, setPassphraseHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioEnrolled, setBioEnrolled] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supported = await isBiometricSupported();
+      if (cancelled) return;
+      setBioAvailable(supported);
+      setBioEnrolled(isBiometricEnabled(user.id));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +114,38 @@ function LockPage() {
       cancelled = true;
     };
   }, [user.id]);
+
+  const maybeEnrollBiometric = async (dek: CryptoKey) => {
+    if (!isBiometricPending()) return;
+    if (!(await isBiometricSupported())) return;
+    try {
+      await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dek });
+      setBioEnrolled(true);
+    } catch {
+      // Silent: they can enable it later from Security settings.
+    }
+  };
+
+  const consumeImportIntent = () => {
+    try {
+      const intent = window.localStorage.getItem("aegis.onboarding.intent");
+      if (!intent) return null;
+      window.localStorage.removeItem("aegis.onboarding.intent");
+      return intent;
+    } catch {
+      return null;
+    }
+  };
+
+  const routeAfterUnlock = () => {
+    const intent = consumeImportIntent();
+    if (intent === "scan" || intent === "manual") {
+      navigate({ to: "/vault/new", replace: true });
+    } else {
+      navigate({ to: safeRedirect(search.redirect), replace: true });
+    }
+  };
+
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
