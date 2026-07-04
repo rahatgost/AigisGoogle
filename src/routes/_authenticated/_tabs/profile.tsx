@@ -117,7 +117,7 @@ function ProfilePage() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={soft}
-          className="flex shrink-0 items-center gap-3.5 rounded-[16px] px-4 py-4"
+          className="scroll-fade-out flex shrink-0 items-center gap-3.5 rounded-[16px] px-4 py-4"
           style={{
             background: CREAM_SOFT,
             border: `1px solid ${BORDER}`,
