@@ -722,6 +722,57 @@ function StepBackup({ next }: { next: () => void }) {
 }
 
 function StepNotifications({ next }: { next: () => void }) {
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) {
+      setPermission("unsupported");
+      return;
+    }
+    setPermission(Notification.permission);
+  }, []);
+
+  const request = async () => {
+    if (permission === "unsupported") {
+      next();
+      return;
+    }
+    if (permission === "granted") {
+      next();
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      // Quick success ping so the user knows it took.
+      if (result === "granted") {
+        try {
+          new Notification("Aegis is watching", {
+            body: "You'll only hear from us for sign-in requests and alerts.",
+            silent: true,
+          });
+        } catch {
+          /* ignore */
+        }
+      }
+      setTimeout(next, 380);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const label =
+    permission === "granted"
+      ? "Notifications enabled"
+      : permission === "denied"
+        ? "Blocked in browser"
+        : permission === "unsupported"
+          ? "Not available here"
+          : "Allow notifications";
+
   return (
     <Screen>
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
@@ -732,17 +783,29 @@ function StepNotifications({ next }: { next: () => void }) {
           <Eyebrow>Notifications</Eyebrow>
           <Display>Only when it matters.</Display>
           <Lede>Get a quiet nudge for sign-in requests and security alerts. Nothing else.</Lede>
+          {permission === "denied" && (
+            <p className="pt-1 text-[12px]" style={{ color: MUTED, maxWidth: "32ch" }}>
+              Enable notifications from your browser's site settings if you change your mind.
+            </p>
+          )}
         </div>
       </div>
       <div className="shrink-0 space-y-3 pb-[max(20px,env(safe-area-inset-bottom))] pt-2">
-        <PrimaryButton onClick={next}>Allow notifications</PrimaryButton>
+        <PrimaryButton
+          onClick={request}
+          loading={busy}
+          disabled={permission === "denied"}
+        >
+          {label}
+        </PrimaryButton>
         <div className="text-center">
-          <TextLink onClick={next}>Not now</TextLink>
+          <TextLink onClick={next}>{permission === "granted" ? "Continue" : "Not now"}</TextLink>
         </div>
       </div>
     </Screen>
   );
 }
+
 
 function StepBiometrics({ next }: { next: () => void }) {
   const [supported, setSupported] = useState<boolean | null>(null);
