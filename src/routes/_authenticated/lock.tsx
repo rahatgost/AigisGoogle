@@ -21,7 +21,6 @@ import {
   Field,
   HeroIcon,
   Lede,
-  Loader,
   MUTED,
   Notice,
   PrimaryButton,
