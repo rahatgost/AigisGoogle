@@ -85,12 +85,26 @@ function AuthPage() {
         if (error) throw error;
         setNotice({ kind: "info", text: "Check your inbox for a reset link." });
       }
+      try {
+        window.localStorage.setItem(LAST_EMAIL_KEY, email);
+      } catch {
+        /* ignore */
+      }
     } catch (err) {
-      setNotice({ kind: "error", text: err instanceof Error ? err.message : "Something went wrong." });
+      const raw = err instanceof Error ? err.message : "Something went wrong.";
+      const friendly = /invalid.*credent|invalid.*login/i.test(raw)
+        ? "Email or password is incorrect."
+        : /rate limit|too many/i.test(raw)
+          ? "Too many attempts — please wait a moment and try again."
+          : /already.*registered/i.test(raw)
+            ? "An account with that email already exists."
+            : raw;
+      setNotice({ kind: "error", text: friendly });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGoogle = async () => {
     setNotice(null);
