@@ -120,7 +120,7 @@ function ProfilePage() {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-6">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-28">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
