@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check } from "lucide-react";
 import { generateCode, type DecryptedAccount } from "@/lib/vault-accounts";
+import { BORDER, CHARCOAL, CREAM_SOFT, MUTED } from "@/components/aegis/chrome";
 
-const CHARCOAL = "#1c1c1a";
-const MUTED = "#8a8a86";
-const BORDER = "rgba(28,28,26,0.10)";
+const DANGER = "#b23a2a";
 
 interface Props {
   account: DecryptedAccount;
@@ -13,7 +12,6 @@ interface Props {
 }
 
 function formatCode(code: string): string {
-  // 6 → "123 456", 8 → "1234 5678"
   const mid = Math.ceil(code.length / 2);
   return `${code.slice(0, mid)} ${code.slice(mid)}`;
 }
@@ -24,6 +22,13 @@ function initials(source: string): string {
   const parts = s.split(/[\s._-]+/).filter(Boolean);
   const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : s.slice(0, 2);
   return chars.toUpperCase();
+}
+
+/* Deterministic warm hue per issuer for the initials chip */
+function hueFor(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return h % 360;
 }
 
 export function AccountCard({ account, now }: Props) {
@@ -59,24 +64,33 @@ export function AccountCard({ account, now }: Props) {
   };
 
   const warn = remaining <= 5;
+  const seed = account.issuer || account.label || "?";
+  const hue = hueFor(seed);
+  const chipBg = `hsl(${hue}, 42%, 92%)`;
+  const chipFg = `hsl(${hue}, 40%, 28%)`;
 
   return (
-    <button
+    <motion.button
       onClick={copy}
-      className="group flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-colors active:scale-[0.997]"
-      style={{ borderColor: BORDER, background: "rgba(255,255,255,0.55)" }}
+      whileTap={{ scale: 0.985 }}
+      className="group relative flex w-full items-center gap-3 rounded-[14px] px-3.5 py-3 text-left"
+      style={{
+        background: CREAM_SOFT,
+        border: `1px solid ${BORDER}`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(28,28,28,0.04)",
+      }}
     >
       <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[13px] font-medium tracking-wide"
-        style={{ background: "rgba(28,28,26,0.06)", color: CHARCOAL }}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] text-[13px] font-semibold tracking-wide"
+        style={{ background: chipBg, color: chipFg, border: `1px solid ${BORDER}` }}
       >
-        {initials(account.issuer || account.label)}
+        {initials(seed)}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-medium" style={{ color: CHARCOAL }}>
+            <div className="truncate text-[13.5px] font-medium" style={{ color: CHARCOAL }}>
               {account.issuer || "Untitled"}
             </div>
             {account.label && (
@@ -89,14 +103,14 @@ export function AccountCard({ account, now }: Props) {
             {copied ? (
               <motion.div
                 key="ok"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1 text-[11px]"
-                style={{ color: CHARCOAL }}
+                initial={{ opacity: 0, scale: 0.85, y: -2 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.85, y: -2 }}
+                transition={{ type: "spring", stiffness: 500, damping: 26 }}
+                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px]"
+                style={{ color: CHARCOAL, background: "rgba(28,28,28,0.06)" }}
               >
-                <Check className="h-3.5 w-3.5" strokeWidth={2} />
+                <Check className="h-3 w-3" strokeWidth={2.2} />
                 Copied
               </motion.div>
             ) : (
@@ -106,7 +120,7 @@ export function AccountCard({ account, now }: Props) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="opacity-60"
+                className="opacity-50"
                 style={{ color: MUTED }}
               >
                 <Copy className="h-3.5 w-3.5" strokeWidth={1.6} />
@@ -116,29 +130,33 @@ export function AccountCard({ account, now }: Props) {
         </div>
 
         <div className="mt-1 flex items-baseline justify-between gap-3">
-          <div
-            className="font-mono text-[22px] leading-none tracking-[0.14em] tabular-nums"
-            style={{
-              color: warn ? "#b23a2a" : CHARCOAL,
-              fontFeatureSettings: "'tnum'",
-            }}
-          >
-            {formatCode(code)}
-          </div>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={code}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+              className="font-mono text-[22px] leading-none tracking-[0.14em] tabular-nums"
+              style={{ color: warn ? DANGER : CHARCOAL, fontFeatureSettings: "'tnum'" }}
+            >
+              {formatCode(code)}
+            </motion.div>
+          </AnimatePresence>
           <RingTimer progress={progress} remaining={remaining} warn={warn} />
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 }
 
 function RingTimer({ progress, remaining, warn }: { progress: number; remaining: number; warn: boolean }) {
-  const size = 22;
+  const size = 24;
   const stroke = 2;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * (1 - progress);
-  const color = warn ? "#b23a2a" : CHARCOAL;
+  const color = warn ? DANGER : CHARCOAL;
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -154,13 +172,10 @@ function RingTimer({ progress, remaining, warn }: { progress: number; remaining:
           fill="none"
           strokeDasharray={c}
           strokeDashoffset={dash}
-          style={{ transition: "stroke-dashoffset 0.2s linear, stroke 0.2s ease" }}
+          style={{ transition: "stroke-dashoffset 0.24s linear, stroke 0.2s ease" }}
         />
       </svg>
-      <span
-        className="absolute text-[9.5px] font-medium tabular-nums"
-        style={{ color, fontFeatureSettings: "'tnum'" }}
-      >
+      <span className="absolute text-[9.5px] font-medium tabular-nums" style={{ color, fontFeatureSettings: "'tnum'" }}>
         {remaining}
       </span>
     </div>

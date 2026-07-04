@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { getVaultKey } from "@/lib/vault-session";
 import {
@@ -8,19 +9,29 @@ import {
   parseOtpauthUri,
   type Algorithm,
 } from "@/lib/vault-accounts";
-import { ArrowLeft, ScanLine, PenLine, Loader2, Camera } from "lucide-react";
-
-const CREAM = "#f7f4ed";
-const CHARCOAL = "#1c1c1a";
-const MUTED = "#8a8a86";
-const BORDER = "rgba(28,28,26,0.12)";
+import { ArrowLeft, ScanLine, PenLine, Loader2, Camera, QrCode } from "lucide-react";
+import {
+  AegisScreen,
+  BORDER,
+  BrandBar,
+  CHARCOAL,
+  CREAM_SOFT,
+  Display,
+  Eyebrow,
+  HeroIcon,
+  Lede,
+  MUTED,
+  Notice,
+  PrimaryButton,
+  inputClass,
+  inputStyle,
+  soft,
+} from "@/components/aegis/chrome";
 
 export const Route = createFileRoute("/_authenticated/_locked/vault_/new")({
   component: NewAccountPage,
   errorComponent: ({ error }) => (
-    <div className="flex min-h-screen items-center justify-center p-6 text-sm">
-      {error.message}
-    </div>
+    <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
   ),
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
@@ -60,76 +71,82 @@ function NewAccountPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden" style={{ background: CREAM, color: CHARCOAL }}>
-      <div className="mx-auto flex h-full w-full max-w-[440px] flex-col px-6 pt-[max(20px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))]">
-        <header className="flex items-center justify-between pb-5">
-          <button
+    <AegisScreen>
+      <BrandBar
+        right={
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             onClick={() => navigate({ to: "/vault" })}
-            className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-[13px]"
-            style={{ color: CHARCOAL }}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px]"
+            style={{ color: CHARCOAL, background: "rgba(28,28,28,0.04)", border: `1px solid ${BORDER}` }}
           >
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
             Back
-          </button>
-          <span className="text-[12px]" style={{ color: MUTED }}>
-            New account
-          </span>
-        </header>
+          </motion.button>
+        }
+      />
 
-        <h1
-          className="pb-4 text-[28px] leading-none tracking-tight"
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-        >
-          Add a code.
-        </h1>
-
-        <div
-          className="mb-5 flex rounded-full p-1"
-          style={{ background: "rgba(28,28,26,0.06)" }}
-        >
-          <TabButton active={tab === "scan"} onClick={() => setTab("scan")} icon={<ScanLine className="h-3.5 w-3.5" strokeWidth={1.8} />}>
-            Scan QR
-          </TabButton>
-          <TabButton active={tab === "manual"} onClick={() => setTab("manual")} icon={<PenLine className="h-3.5 w-3.5" strokeWidth={1.8} />}>
-            Enter manually
-          </TabButton>
-        </div>
-
-        {notice && (
-          <div
-            className="mb-3 rounded-xl px-3 py-2 text-[12.5px] leading-snug"
-            style={{
-              background: notice.kind === "error" ? "rgba(180,40,40,0.08)" : "rgba(28,28,26,0.05)",
-              color: notice.kind === "error" ? "#8a2020" : CHARCOAL,
-            }}
-          >
-            {notice.text}
+      <div className="flex flex-col gap-4 pt-2 pb-4">
+        <div className="flex items-center gap-3">
+          <HeroIcon Icon={QrCode} />
+          <div className="flex flex-col gap-1.5">
+            <Eyebrow>New account</Eyebrow>
+            <Display>Add a code.</Display>
           </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto">
-          {tab === "scan" ? (
-            <ScanTab
-              onDetected={(uri) => {
-                try {
-                  const parsed = parseOtpauthUri(uri);
-                  save(parsed);
-                } catch (err) {
-                  setNotice({
-                    kind: "error",
-                    text: err instanceof Error ? err.message : "That QR isn't a valid otpauth code.",
-                  });
-                }
-              }}
-              onError={(msg) => setNotice({ kind: "error", text: msg })}
-              saving={saving}
-            />
-          ) : (
-            <ManualTab onSubmit={save} saving={saving} />
-          )}
         </div>
+        <Lede>Scan a QR from any service, or type the secret in by hand.</Lede>
       </div>
-    </div>
+
+      <div
+        className="relative mb-4 flex rounded-full p-1"
+        style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}` }}
+      >
+        <TabButton active={tab === "scan"} onClick={() => setTab("scan")} icon={<ScanLine className="h-3.5 w-3.5" strokeWidth={1.8} />}>
+          Scan QR
+        </TabButton>
+        <TabButton active={tab === "manual"} onClick={() => setTab("manual")} icon={<PenLine className="h-3.5 w-3.5" strokeWidth={1.8} />}>
+          Enter manually
+        </TabButton>
+      </div>
+
+      {notice && (
+        <div className="mb-3">
+          <Notice kind={notice.kind}>{notice.text}</Notice>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto pb-2">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={soft}
+          >
+            {tab === "scan" ? (
+              <ScanTab
+                onDetected={(uri) => {
+                  try {
+                    const parsed = parseOtpauthUri(uri);
+                    save(parsed);
+                  } catch (err) {
+                    setNotice({
+                      kind: "error",
+                      text: err instanceof Error ? err.message : "That QR isn't a valid otpauth code.",
+                    });
+                  }
+                }}
+                onError={(msg) => setNotice({ kind: "error", text: msg })}
+                saving={saving}
+              />
+            ) : (
+              <ManualTab onSubmit={save} saving={saving} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </AegisScreen>
   );
 }
 
@@ -147,15 +164,21 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-[12.5px] font-medium transition-colors"
-      style={{
-        background: active ? CREAM : "transparent",
-        color: active ? CHARCOAL : MUTED,
-        boxShadow: active ? "0 1px 2px rgba(28,28,26,0.08)" : "none",
-      }}
+      className="relative flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-[12.5px] font-medium"
+      style={{ color: active ? CHARCOAL : MUTED }}
     >
-      {icon}
-      {children}
+      {active && (
+        <motion.span
+          layoutId="tab-pill"
+          className="absolute inset-0 rounded-full"
+          style={{ background: "rgba(28,28,28,0.06)", border: `1px solid ${BORDER}` }}
+          transition={{ type: "spring", stiffness: 400, damping: 34 }}
+        />
+      )}
+      <span className="relative flex items-center gap-1.5">
+        {icon}
+        {children}
+      </span>
     </button>
   );
 }
@@ -180,29 +203,22 @@ function ScanTab({
     (async () => {
       const reader = new BrowserQRCodeReader();
       try {
-        controls = await reader.decodeFromVideoDevice(
-          undefined,
-          videoRef.current!,
-          (result) => {
-            if (result && !cancelled) {
-              const text = result.getText();
-              if (text.startsWith("otpauth://")) {
-                controls?.stop();
-                onDetected(text);
-              }
+        controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
+          if (result && !cancelled) {
+            const text = result.getText();
+            if (text.startsWith("otpauth://")) {
+              controls?.stop();
+              onDetected(text);
             }
-          },
-        );
+          }
+        });
         if (!cancelled) setStarting(false);
       } catch (err) {
         if (cancelled) return;
         setStarting(false);
         const name = (err as { name?: string })?.name ?? "";
-        if (name === "NotAllowedError" || name === "SecurityError") {
-          setPermissionDenied(true);
-        } else {
-          onError(err instanceof Error ? err.message : "Could not start camera.");
-        }
+        if (name === "NotAllowedError" || name === "SecurityError") setPermissionDenied(true);
+        else onError(err instanceof Error ? err.message : "Could not start camera.");
       }
     })();
 
@@ -215,23 +231,45 @@ function ScanTab({
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="relative aspect-square w-full overflow-hidden rounded-3xl border"
-        style={{ borderColor: BORDER, background: "rgba(28,28,26,0.04)" }}
+        className="relative aspect-square w-full overflow-hidden rounded-[20px]"
+        style={{ border: `1px solid ${BORDER}`, background: "rgba(28,28,28,0.04)" }}
       >
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
+
+        {/* animated framing brackets */}
+        <div className="pointer-events-none absolute inset-6">
+          {[
+            "top-0 left-0 border-t-2 border-l-2 rounded-tl-xl",
+            "top-0 right-0 border-t-2 border-r-2 rounded-tr-xl",
+            "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-xl",
+            "bottom-0 right-0 border-b-2 border-r-2 rounded-br-xl",
+          ].map((c, i) => (
+            <span
+              key={i}
+              className={`absolute h-8 w-8 ${c}`}
+              style={{ borderColor: "rgba(247,244,237,0.85)" }}
+            />
+          ))}
+          {/* scan line */}
+          <motion.div
+            className="absolute inset-x-0 h-[2px] rounded-full"
+            style={{ background: "linear-gradient(90deg, transparent, rgba(247,244,237,0.9), transparent)" }}
+            animate={{ y: [0, 200, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
         {(starting || saving) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-            <Loader2 className="h-5 w-5 animate-spin" style={{ color: CREAM }} />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <Loader2 className="h-5 w-5 animate-spin" style={{ color: CREAM_SOFT }} />
           </div>
         )}
         {permissionDenied && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 p-6 text-center" style={{ color: CREAM }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 p-6 text-center" style={{ color: CREAM_SOFT }}>
             <Camera className="h-6 w-6" strokeWidth={1.6} />
             <p className="text-[13px]">Camera access was blocked. Enable it in your browser settings, or add the code manually.</p>
           </div>
         )}
-        {/* Framing guides */}
-        <div className="pointer-events-none absolute inset-6 rounded-2xl border-2" style={{ borderColor: "rgba(247,244,237,0.7)" }} />
       </div>
       <p className="text-center text-[12px]" style={{ color: MUTED }}>
         Point your camera at the QR code shown by any service.
@@ -265,50 +303,29 @@ function ManualTab({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <TextField label="Issuer" value={issuer} onChange={setIssuer} placeholder="GitHub" autoFocus />
-      <TextField label="Account (optional)" value={label} onChange={setLabel} placeholder="you@example.com" />
+      <TextField label="Issuer" value={issuer} onChange={setIssuer} placeholder="GitHub" autoFocus delay={0.02} />
+      <TextField label="Account (optional)" value={label} onChange={setLabel} placeholder="you@example.com" delay={0.06} />
       <TextField
         label="Secret key"
         value={secret}
         onChange={(v) => setSecret(v.toUpperCase())}
         placeholder="JBSWY3DPEHPK3PXP"
         mono
+        delay={0.1}
       />
       <div className="grid grid-cols-3 gap-2">
-        <SelectField
-          label="Algorithm"
-          value={algorithm}
-          onChange={(v) => setAlgorithm(v as Algorithm)}
-          options={["SHA1", "SHA256", "SHA512"]}
-        />
-        <SelectField
-          label="Digits"
-          value={String(digits)}
-          onChange={(v) => setDigits(Number(v))}
-          options={["6", "7", "8"]}
-        />
-        <SelectField
-          label="Period"
-          value={String(period)}
-          onChange={(v) => setPeriod(Number(v))}
-          options={["30", "60"]}
-        />
+        <SelectField label="Algorithm" value={algorithm} onChange={(v) => setAlgorithm(v as Algorithm)} options={["SHA1", "SHA256", "SHA512"]} />
+        <SelectField label="Digits" value={String(digits)} onChange={(v) => setDigits(Number(v))} options={["6", "7", "8"]} />
+        <SelectField label="Period" value={String(period)} onChange={(v) => setPeriod(Number(v))} options={["30", "60"]} />
       </div>
 
-      {localErr && (
-        <div className="rounded-xl px-3 py-2 text-[12.5px]" style={{ background: "rgba(180,40,40,0.08)", color: "#8a2020" }}>
-          {localErr}
-        </div>
-      )}
+      {localErr && <Notice kind="error">{localErr}</Notice>}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="mt-1 flex h-[46px] items-center justify-center gap-2 rounded-full text-[14px] font-medium disabled:opacity-60"
-        style={{ background: CHARCOAL, color: CREAM }}
-      >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save account"}
-      </button>
+      <div className="pt-1">
+        <PrimaryButton type="submit" loading={saving}>
+          Save account
+        </PrimaryButton>
+      </div>
     </form>
   );
 }
@@ -320,6 +337,7 @@ function TextField({
   placeholder,
   mono,
   autoFocus,
+  delay = 0,
 }: {
   label: string;
   value: string;
@@ -327,9 +345,15 @@ function TextField({
   placeholder?: string;
   mono?: boolean;
   autoFocus?: boolean;
+  delay?: number;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <motion.label
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...soft, delay }}
+      className="flex flex-col gap-1.5"
+    >
       <span className="text-[11px] uppercase tracking-[0.14em]" style={{ color: MUTED }}>
         {label}
       </span>
@@ -342,15 +366,17 @@ function TextField({
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        className="h-[44px] rounded-2xl border bg-[rgba(255,255,255,0.55)] px-3.5 text-[15px] outline-none"
+        className={`h-[46px] rounded-[12px] px-3.5 text-[15px] outline-none ${inputClass}`}
         style={{
-          borderColor: BORDER,
-          color: CHARCOAL,
+          ...inputStyle,
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
           fontFamily: mono ? "ui-monospace, SFMono-Regular, Menlo, monospace" : undefined,
           letterSpacing: mono ? "0.08em" : undefined,
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
         }}
       />
-    </label>
+    </motion.label>
   );
 }
 
@@ -373,8 +399,8 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-[44px] rounded-2xl border bg-[rgba(255,255,255,0.55)] px-3 text-[14px] outline-none"
-        style={{ borderColor: BORDER, color: CHARCOAL }}
+        className="h-[46px] rounded-[12px] px-3 text-[14px] outline-none"
+        style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}`, color: CHARCOAL }}
       >
         {options.map((o) => (
           <option key={o} value={o}>
