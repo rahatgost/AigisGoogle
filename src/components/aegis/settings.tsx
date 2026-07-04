@@ -56,7 +56,14 @@ export function AppBarButton({
 
 export function LargeTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="scroll-fade-out flex flex-col gap-1 pt-1 pb-3">
+    <div
+      className="sticky top-0 z-10 -mx-6 flex flex-col gap-1 px-6 pt-2 pb-3"
+      style={{
+        background: "color-mix(in oklab, #f7f4ed 82%, transparent)",
+        backdropFilter: "blur(14px) saturate(1.1)",
+        WebkitBackdropFilter: "blur(14px) saturate(1.1)",
+      }}
+    >
       <h1
         className="text-[28px] leading-[1.08]"
         style={{
