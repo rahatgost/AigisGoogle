@@ -30,6 +30,25 @@ const LAST_EMAIL_KEY = "aegis.auth.lastEmail";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Sign in to Aegis — Secure TOTP authenticator" },
+      {
+        name: "description",
+        content:
+          "Sign in or create your Aegis account to sync end-to-end encrypted TOTP codes across your devices.",
+      },
+      { property: "og:title", content: "Sign in to Aegis" },
+      {
+        property: "og:description",
+        content:
+          "Access your zero-knowledge, end-to-end encrypted authenticator vault.",
+      },
+      { property: "og:url", content: "https://hug-machine-maker.lovable.app/auth" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://hug-machine-maker.lovable.app/auth" }],
+  }),
   component: AuthPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
