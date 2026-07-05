@@ -937,9 +937,13 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
         </motion.div>
       )}
     </AnimatePresence>
+      </>,
+      document.body,
+    )}
     </>
   );
 }
+
 
 function RingTimer({ progress, remaining, warn }: { progress: number; remaining: number; warn: boolean }) {
   const size = 28;
