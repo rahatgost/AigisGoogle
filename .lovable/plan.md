@@ -183,13 +183,36 @@ the Vault screen, not a tab.
 **Exit criterion met:** favorites persist server-side, export/restore-your-own-backup
 loop is possible end-to-end without trusting Lovable Cloud. Phase 3 is closed.
 
+## Phase 5 — `.avf` restore in the importer ✅ CLOSED (this session)
+
+- `src/lib/vault-import.ts` grew a new `"avf"` source: `isAvfJson()`
+  detects the `format: "aegis-vault-file"` envelope, and
+  `importFromAvf(file, passphrase)` calls `decryptExportedFile()` from
+  `vault-export.ts` and maps the decrypted accounts into the same
+  `ParsedOtpauth` shape the preview stage already consumes. Wrong
+  passphrases surface the friendly "Wrong export passphrase…" error
+  from Phase 3.2.
+- `vault_.import.tsx` gained a third stage `"avf"`: picking an `.avf`
+  file from the File tab (accept list now includes `.avf`) opens a
+  passphrase card with an autofocused password input, Enter-to-submit,
+  and a Decrypting… spinner. On success the flow drops into the normal
+  per-row preview + commit path — no other code changed.
+- File-tab hint copy now advertises "Aegis, 2FAS, or .avf backup" so
+  users can find the flow without reading docs.
+- Verified with `bunx tsgo --noEmit` (0 errors) and the Phase 3.2
+  round-trip suite (`node --import tsx --test
+  tests/crypto/vault-export.roundtrip.spec.mjs` → 4/4 green).
+
+**Exit criterion met:** a user can export from Security → Encrypted
+export and re-import the same `.avf` on a fresh device with only the
+export passphrase. Phase 5 is closed.
+
 ## Next feature candidates
 
-1. **`.avf` restore in the importer** — the export exists; teach
-   `vault-import.ts` to accept `format: "aegis-vault-file"` + passphrase
-   prompt.
-2. **RLS CI test** — extend `tests/rls/` to walk every route in
+1. **RLS CI test** — extend `tests/rls/` to walk every route in
    `docs/routing.md`.
-3. **`VAULT_CRYPTO_VERSION = 2`** — Argon2id KDF + AAD binding
+2. **`VAULT_CRYPTO_VERSION = 2`** — Argon2id KDF + AAD binding
    (`user_id || account_id`) with a background re-encrypt migrator.
-4. **CSP + security headers middleware** — landed in Phase 1.3.
+3. **Code-splitting Phase 6** — split `@zxing/browser`, `jspdf`, and
+   the recovery route out of the main bundle per `perf/baseline.json`.
+
