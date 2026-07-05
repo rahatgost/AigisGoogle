@@ -149,32 +149,14 @@ function VaultPage() {
         )}
 
         {filtered && filtered.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {favoriteList.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <SectionLabel>Favorites</SectionLabel>
-                <AccountGroup
-                  items={favoriteList}
-                  now={now}
-                  favorites={favorites}
-                  onToggleFavorite={toggleFavorite}
-                  onDelete={handleDelete}
-                />
-              </div>
-            )}
-            {otherList.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                {favoriteList.length > 0 && <SectionLabel>All accounts</SectionLabel>}
-                <AccountGroup
-                  items={otherList}
-                  now={now}
-                  favorites={favorites}
-                  onToggleFavorite={toggleFavorite}
-                  onDelete={handleDelete}
-                />
-              </div>
-            )}
-          </div>
+          <UnifiedAccountList
+            favoriteList={favoriteList}
+            otherList={otherList}
+            now={now}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            onDelete={handleDelete}
+          />
         )}
 
         {accounts && accounts.length > 0 && filtered && filtered.length === 0 && (
