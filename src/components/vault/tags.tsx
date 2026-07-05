@@ -200,19 +200,23 @@ export function TagInput({ value, onChange, extras }: TagInputProps) {
     }
   };
 
+  // Reorder so selected chips lead the strip — the user always sees their
+  // current selection first when the row is scrolled to the start.
+  const ordered = [...options].sort((a, b) => {
+    const aSel = selected.has(a) ? 0 : 1;
+    const bSel = selected.has(b) ? 0 : 1;
+    return aSel - bSel;
+  });
+
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
+      {/* Horizontal scroll strip of preset chips. Selected chips lead. */}
       <div
-        className="flex flex-wrap gap-1.5 rounded-[12px] px-2.5 py-2.5"
-        style={{
-          background: "#fff",
-          border: `1px solid ${BORDER}`,
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
-        }}
+        className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="group"
         aria-label="Select tags"
       >
-        {options.map((tag) => {
+        {ordered.map((tag) => {
           const isSelected = selected.has(tag);
           const isExtra = !(PRESET_TAGS as readonly string[]).includes(tag);
           const disabled = !isSelected && atLimit;
@@ -224,14 +228,17 @@ export function TagInput({ value, onChange, extras }: TagInputProps) {
               disabled={disabled}
               onClick={() => toggle(tag)}
               onKeyDown={(e) => handleKey(e, tag)}
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] transition-all disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex shrink-0 snap-start items-center gap-1 rounded-full px-3 py-1.5 text-[12px] transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
               style={{
-                background: isSelected ? CHARCOAL : "rgba(28,28,28,0.04)",
-                color: isSelected ? "#fff" : MUTED,
+                background: isSelected ? CHARCOAL : "#fff",
+                color: isSelected ? "#fff" : CHARCOAL,
                 border: `1px ${isExtra ? "dashed" : "solid"} ${
                   isSelected ? CHARCOAL : BORDER
                 }`,
                 fontWeight: isSelected ? 600 : 500,
+                boxShadow: isSelected
+                  ? "0 1px 2px rgba(28,28,28,0.15)"
+                  : "inset 0 1px 0 rgba(255,255,255,0.6)",
               }}
             >
               {isSelected && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
@@ -240,11 +247,23 @@ export function TagInput({ value, onChange, extras }: TagInputProps) {
           );
         })}
       </div>
-      <span className="px-1 text-[11px]" style={{ color: MUTED }}>
-        {atLimit
-          ? `${MAX_TAGS_PER_ACCOUNT} tag limit reached.`
-          : "Tap a tag to add or remove it. Custom tags are disabled."}
-      </span>
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-[10.5px]" style={{ color: MUTED }}>
+          {atLimit
+            ? `${MAX_TAGS_PER_ACCOUNT} tag limit reached`
+            : "Swipe to browse · tap to toggle"}
+        </span>
+        <span
+          className="text-[10.5px]"
+          style={{
+            color: MUTED,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {value.length}/{MAX_TAGS_PER_ACCOUNT}
+        </span>
+      </div>
     </div>
   );
 }
