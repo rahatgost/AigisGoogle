@@ -503,6 +503,7 @@ function ManualTab({
     algorithm: Algorithm;
     digits: number;
     period: number;
+    tags: string[];
   }) => void;
   saving: boolean;
 }) {
@@ -512,6 +513,7 @@ function ManualTab({
   const [algorithm, setAlgorithm] = useState<Algorithm>("SHA1");
   const [digits, setDigits] = useState(6);
   const [period, setPeriod] = useState(30);
+  const [tags, setTags] = useState<string[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localErr, setLocalErr] = useState<string | null>(null);
 
@@ -524,7 +526,7 @@ function ManualTab({
     if (!issuer.trim()) return setLocalErr("Add an issuer, like 'GitHub'.");
     if (!isValidBase32Secret(secret))
       return setLocalErr("Secret must be base32 (letters A–Z and digits 2–7).");
-    onSubmit({ issuer, label, secret, algorithm, digits, period });
+    onSubmit({ issuer, label, secret, algorithm, digits, period, tags });
   };
 
   return (
@@ -557,6 +559,12 @@ function ManualTab({
       <p className="px-1 pt-1.5 text-[11.5px]" style={{ color: MUTED }}>
         Base32 only — letters A–Z and digits 2–7. Spaces are removed.
       </p>
+
+      <div className="pt-3">
+        <SectionLabel>Tags · optional</SectionLabel>
+        <TagInput value={tags} onChange={setTags} placeholder="work, personal, finance…" />
+      </div>
+
 
       <button
         type="button"
