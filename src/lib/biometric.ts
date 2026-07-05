@@ -1,28 +1,35 @@
 /**
  * Biometric unlock for Aegis vault.
  *
- * On the web there is no OS-level secure enclave the way native iOS/Android
- * offers. So this module uses a two-part pragmatic scheme:
+ * Security model
+ * --------------
+ * We use the WebAuthn PRF extension (prf / hmac-secret). The authenticator
+ * derives a per-credential secret from a fixed salt each time the user
+ * successfully passes userVerification (Face ID / Touch ID / Windows Hello).
+ * That secret is stretched via HKDF into an AES-GCM wrap key which unwraps
+ * the DEK.
  *
- * 1. WebAuthn platform authenticator (Face ID / Touch ID / Windows Hello) is
- *    registered per (user, device). Calling `navigator.credentials.get()`
- *    with `userVerification: "required"` will force the OS biometric prompt
- *    before returning an assertion.
- * 2. A random 256-bit AES wrap key + the DEK wrapped by it are stored in
- *    localStorage. They are only READ after a successful WebAuthn assertion.
+ * The wrap key material is NEVER written to storage. Only the
+ * credentialId, the PRF salt, and the (wrapped DEK + iv) live in
+ * localStorage. An attacker with read access to localStorage cannot decrypt
+ * the DEK without producing a genuine authenticator assertion, so biometric
+ * unlock is a real cryptographic gate rather than a UX gate.
  *
- * Losing WebAuthn (device wipe, cleared site data) still leaves the
- * passphrase as the source of truth — nothing is uploaded.
+ * If the platform authenticator does not support PRF, enrollment is
+ * refused — we do not fall back to storing a plaintext wrap key. The
+ * passphrase remains the source of truth in every case.
  */
 
 import { randomBytes } from "@/lib/vault-crypto";
 
-const BIO_STORAGE_PREFIX = "aegis.bio.v1.";
+const BIO_STORAGE_PREFIX = "aegis.bio.v2.";
+const BIO_LEGACY_PREFIX = "aegis.bio.v1.";
 const BIO_PENDING_KEY = "aegis.bio.pending";
 
 interface StoredCredential {
+  v: 2;
   credentialId: string; // base64url
-  wrapKey: string; // base64
+  prfSalt: string; // base64
   wrappedDek: string; // base64
   wrappedDekIv: string; // base64
   createdAt: number;
@@ -68,7 +75,26 @@ export async function isBiometricSupported(): Promise<boolean> {
 
 export function isBiometricEnabled(userId: string): boolean {
   if (typeof window === "undefined") return false;
+  // Only v2 (PRF-backed) enrollments count. Legacy v1 is treated as not
+  // enrolled so the UI prompts the user to re-enroll under the new model.
   return !!window.localStorage.getItem(BIO_STORAGE_PREFIX + userId);
+}
+
+/**
+ * Detects a stale v1 enrollment that predates the PRF-based model.
+ * Callers can surface a "please re-enable biometric unlock" message.
+ */
+export function hasLegacyBiometric(userId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return !!window.localStorage.getItem(BIO_LEGACY_PREFIX + userId);
+}
+
+export function clearLegacyBiometric(userId: string): void {
+  try {
+    window.localStorage.removeItem(BIO_LEGACY_PREFIX + userId);
+  } catch {
+    /* ignore */
+  }
 }
 
 /* ---------------- pending flag (set in onboarding) ---------------- */
@@ -94,47 +120,44 @@ export function isBiometricPending(): boolean {
   return window.localStorage.getItem(BIO_PENDING_KEY) === "1";
 }
 
-/* ---------------- crypto helpers ---------------- */
+/* ---------------- PRF helpers ---------------- */
 
-async function wrapDekWithRandomKey(dek: CryptoKey): Promise<{
-  wrapKey: Uint8Array;
-  wrappedDek: Uint8Array;
-  iv: Uint8Array;
-}> {
-  const wrapKeyBytes = randomBytes(32);
-  const wrapKey = await crypto.subtle.importKey(
+/**
+ * Derive an AES-GCM wrap key from raw PRF output. PRF gives us up to 32
+ * bytes of authenticator-bound entropy; we run it through HKDF-SHA256 to
+ * bind it to a stable info string and yield a fresh 256-bit AES key.
+ */
+async function wrapKeyFromPrf(prfOutput: ArrayBuffer): Promise<CryptoKey> {
+  const ikm = await crypto.subtle.importKey(
     "raw",
-    wrapKeyBytes as unknown as BufferSource,
+    prfOutput,
+    "HKDF",
+    false,
+    ["deriveKey"],
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: new Uint8Array(0) as unknown as BufferSource,
+      info: new TextEncoder().encode("aegis.bio.v2.wrap") as unknown as BufferSource,
+    },
+    ikm,
     { name: "AES-GCM", length: 256 },
     false,
     ["wrapKey", "unwrapKey"],
   );
-  const iv = randomBytes(12);
-  const wrapped = await crypto.subtle.wrapKey("raw", dek, wrapKey, {
-    name: "AES-GCM",
-    iv: iv as unknown as BufferSource,
-  });
-  return { wrapKey: wrapKeyBytes, wrappedDek: new Uint8Array(wrapped), iv };
 }
 
-async function unwrapDekFromStored(stored: StoredCredential): Promise<CryptoKey> {
-  const wrapKey = await crypto.subtle.importKey(
-    "raw",
-    b64ToBytes(stored.wrapKey) as unknown as BufferSource,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["wrapKey", "unwrapKey"],
-  );
-  const iv = b64ToBytes(stored.wrappedDekIv);
-  return crypto.subtle.unwrapKey(
-    "raw",
-    b64ToBytes(stored.wrappedDek) as unknown as BufferSource,
-    wrapKey,
-    { name: "AES-GCM", iv: iv as unknown as BufferSource },
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"],
-  );
+interface PrfExtensionResults {
+  prf?: { results?: { first?: ArrayBuffer } };
+}
+
+function readPrfFirst(cred: PublicKeyCredential | null): ArrayBuffer | null {
+  if (!cred) return null;
+  const results = (cred.getClientExtensionResults?.() ?? {}) as PrfExtensionResults;
+  const first = results.prf?.results?.first;
+  return first ?? null;
 }
 
 /* ---------------- enroll ---------------- */
@@ -150,14 +173,14 @@ export async function enrollBiometric(params: {
 
   const challenge = randomBytes(32);
   const userIdBytes = new TextEncoder().encode(params.userId);
+  const prfSalt = randomBytes(32);
 
+  // 1. Create the platform credential and request the PRF extension.
+  //    Chromium exposes PRF output at create() time; Safari only at get().
   const credential = (await navigator.credentials.create({
     publicKey: {
       challenge: challenge as unknown as BufferSource,
-      rp: {
-        name: "Aegis",
-        id: window.location.hostname,
-      },
+      rp: { name: "Aegis", id: window.location.hostname },
       user: {
         id: userIdBytes as unknown as BufferSource,
         name: params.userEmail,
@@ -174,22 +197,68 @@ export async function enrollBiometric(params: {
       },
       timeout: 60_000,
       attestation: "none",
+      extensions: {
+        prf: { eval: { first: prfSalt as unknown as BufferSource } },
+      } as AuthenticationExtensionsClientInputs,
     },
   })) as PublicKeyCredential | null;
 
   if (!credential) throw new Error("Enrollment was cancelled.");
 
-  const { wrapKey, wrappedDek, iv } = await wrapDekWithRandomKey(params.dek);
+  const credentialId = new Uint8Array(credential.rawId);
+
+  // 2. Try to read PRF output from create(). If unavailable, immediately
+  //    call get() with the same salt so the authenticator produces it.
+  let prfOutput = readPrfFirst(credential);
+  if (!prfOutput) {
+    const assertion = (await navigator.credentials.get({
+      publicKey: {
+        challenge: randomBytes(32) as unknown as BufferSource,
+        allowCredentials: [
+          {
+            id: credentialId as unknown as BufferSource,
+            type: "public-key",
+            transports: ["internal"],
+          },
+        ],
+        userVerification: "required",
+        timeout: 60_000,
+        rpId: window.location.hostname,
+        extensions: {
+          prf: { eval: { first: prfSalt as unknown as BufferSource } },
+        } as AuthenticationExtensionsClientInputs,
+      },
+    })) as PublicKeyCredential | null;
+    prfOutput = readPrfFirst(assertion);
+  }
+
+  if (!prfOutput || prfOutput.byteLength < 16) {
+    // No PRF support → we refuse to store a plaintext wrap key. The
+    // passphrase remains the sole gate.
+    throw new Error(
+      "This device's biometric authenticator doesn't support secure key binding (PRF). Please continue using your passphrase.",
+    );
+  }
+
+  // 3. Derive wrap key from PRF output and wrap the DEK.
+  const wrapKey = await wrapKeyFromPrf(prfOutput);
+  const iv = randomBytes(12);
+  const wrapped = await crypto.subtle.wrapKey("raw", params.dek, wrapKey, {
+    name: "AES-GCM",
+    iv: iv as unknown as BufferSource,
+  });
 
   const stored: StoredCredential = {
-    credentialId: bytesToB64Url(new Uint8Array(credential.rawId)),
-    wrapKey: bytesToB64(wrapKey),
-    wrappedDek: bytesToB64(wrappedDek),
+    v: 2,
+    credentialId: bytesToB64Url(credentialId),
+    prfSalt: bytesToB64(prfSalt),
+    wrappedDek: bytesToB64(new Uint8Array(wrapped)),
     wrappedDekIv: bytesToB64(iv),
     createdAt: Date.now(),
   };
 
   window.localStorage.setItem(BIO_STORAGE_PREFIX + params.userId, JSON.stringify(stored));
+  clearLegacyBiometric(params.userId);
   clearBiometricPending();
 }
 
@@ -197,11 +266,26 @@ export async function enrollBiometric(params: {
 
 export async function unlockWithBiometric(userId: string): Promise<CryptoKey> {
   const raw = window.localStorage.getItem(BIO_STORAGE_PREFIX + userId);
-  if (!raw) throw new Error("Biometrics isn't set up on this device.");
-  const stored: StoredCredential = JSON.parse(raw);
+  if (!raw) {
+    // Legacy v1 blobs are intentionally not honored — they leaked the wrap
+    // key. Surface a clear message so the caller can prompt re-enrollment.
+    if (hasLegacyBiometric(userId)) {
+      clearLegacyBiometric(userId);
+      throw new Error(
+        "Biometric unlock was updated to a more secure model. Please re-enable it from Security settings after signing in with your passphrase.",
+      );
+    }
+    throw new Error("Biometrics isn't set up on this device.");
+  }
+
+  const stored = JSON.parse(raw) as StoredCredential;
+  if (stored.v !== 2) {
+    throw new Error("Biometric setup is out of date. Please re-enable it from Security settings.");
+  }
 
   const challenge = randomBytes(32);
   const credentialId = b64UrlToBytes(stored.credentialId);
+  const prfSalt = b64ToBytes(stored.prfSalt);
 
   const assertion = (await navigator.credentials.get({
     publicKey: {
@@ -216,14 +300,32 @@ export async function unlockWithBiometric(userId: string): Promise<CryptoKey> {
       userVerification: "required",
       timeout: 60_000,
       rpId: window.location.hostname,
+      extensions: {
+        prf: { eval: { first: prfSalt as unknown as BufferSource } },
+      } as AuthenticationExtensionsClientInputs,
     },
   })) as PublicKeyCredential | null;
 
   if (!assertion) throw new Error("Biometric check was cancelled.");
 
-  // The assertion succeeded and the browser confirmed userVerification.
-  // Safe to unwrap the DEK.
-  return unwrapDekFromStored(stored);
+  const prfOutput = readPrfFirst(assertion);
+  if (!prfOutput || prfOutput.byteLength < 16) {
+    throw new Error(
+      "This device didn't return the expected biometric key material. Please unlock with your passphrase.",
+    );
+  }
+
+  const wrapKey = await wrapKeyFromPrf(prfOutput);
+  const iv = b64ToBytes(stored.wrappedDekIv);
+  return crypto.subtle.unwrapKey(
+    "raw",
+    b64ToBytes(stored.wrappedDek) as unknown as BufferSource,
+    wrapKey,
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
 }
 
 /* ---------------- disable / reset ---------------- */
@@ -231,6 +333,7 @@ export async function unlockWithBiometric(userId: string): Promise<CryptoKey> {
 export function disableBiometric(userId: string): void {
   try {
     window.localStorage.removeItem(BIO_STORAGE_PREFIX + userId);
+    window.localStorage.removeItem(BIO_LEGACY_PREFIX + userId);
   } catch {
     /* ignore */
   }
