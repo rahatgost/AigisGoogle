@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
+import type { IScannerControls } from "@zxing/browser";
 import { getVaultKey } from "@/lib/vault-session";
 import {
   addAccount,
@@ -271,6 +271,7 @@ function ScanTab({
     setDecoding(true);
     const url = URL.createObjectURL(file);
     try {
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
       const reader = new BrowserQRCodeReader();
       const result = await reader.decodeFromImageUrl(url);
       const text = result.getText();
@@ -292,6 +293,7 @@ function ScanTab({
     let cancelled = false;
 
     (async () => {
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
       const reader = new BrowserQRCodeReader();
       try {
         controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {

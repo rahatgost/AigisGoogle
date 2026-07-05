@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import QRCode from "qrcode";
-import jsPDF from "jspdf";
+
 import { ArrowLeft, Download, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVaultKey } from "@/lib/vault-session";
@@ -122,6 +122,7 @@ function RecoverySheetPage() {
     if (!payload || !qrDataUrl) return;
     setDownloading(true);
     try {
+      const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({ unit: "pt", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
       const marginX = 48;

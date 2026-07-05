@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
+import type { IScannerControls } from "@zxing/browser";
 import {
   ArrowLeft,
   ClipboardPaste,
@@ -176,6 +176,7 @@ function ImportPage() {
     setDecoding(true);
     const url = URL.createObjectURL(file);
     try {
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
       const reader = new BrowserQRCodeReader();
       const decoded = await reader.decodeFromImageUrl(url);
       const text = decoded.getText();
@@ -682,6 +683,7 @@ function ScanTab({
     let cancelled = false;
 
     (async () => {
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
       const reader = new BrowserQRCodeReader();
       try {
         controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
