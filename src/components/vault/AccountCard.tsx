@@ -170,7 +170,15 @@ function hueFor(seed: string): number {
   return h % 360;
 }
 
-export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDelete }: Props) {
+export function AccountCard({
+  account,
+  now,
+  isFavorite,
+  onToggleFavorite,
+  onDelete,
+  onTagsChanged,
+  allTagSuggestions,
+}: Props) {
   const hideCodes = useHideCodes();
   const [copied, setCopied] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
