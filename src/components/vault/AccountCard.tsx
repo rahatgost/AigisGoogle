@@ -494,23 +494,42 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
             </div>
 
             {/* Code display (revealed or dotted) */}
-            <div
-              className="mb-2 flex flex-col items-center gap-1.5 rounded-[16px] py-5"
+            <motion.div
+              layout
+              className="relative mb-2 flex flex-col items-center gap-1.5 overflow-hidden rounded-[16px] py-5"
               style={{
                 background: "#fff",
                 border: `1px solid ${BORDER}`,
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
               }}
             >
-              {revealed ? (
-                <AnimatePresence mode="popLayout" initial={false}>
+              <AnimatePresence>
+                {revealed && (
+                  <motion.div
+                    key={`sweep-${code}`}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-y-0 w-1/2"
+                    initial={{ x: "-120%", opacity: 0 }}
+                    animate={{ x: "220%", opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(28,28,28,0.06), transparent)",
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait" initial={false}>
+                {revealed ? (
                   <motion.div
                     key={`shown-${code}`}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.18 }}
-                    className="text-[32px] leading-none tabular-nums"
+                    initial={{ opacity: 0, y: 6, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -6, filter: "blur(8px)" }}
+                    transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex items-center text-[32px] leading-none tabular-nums"
                     style={{
                       color: warn ? DANGER : CHARCOAL,
                       fontFamily: "'JetBrains Mono', ui-monospace, monospace",
@@ -519,21 +538,45 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
                       letterSpacing: "0.08em",
                     }}
                   >
-                    {formatCode(code)}
+                    {formatCode(code).split("").map((ch, i) => (
+                      <motion.span
+                        key={`${code}-${i}`}
+                        initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{
+                          duration: 0.35,
+                          delay: 0.04 * i,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        style={{ display: "inline-block", minWidth: ch === " " ? "0.5em" : undefined }}
+                      >
+                        {ch === " " ? "\u00A0" : ch}
+                      </motion.span>
+                    ))}
                   </motion.div>
-                </AnimatePresence>
-              ) : (
-                <div className="flex items-center gap-2" style={{ color: MUTED }}>
-                  <EyeOff className="h-4 w-4" strokeWidth={1.7} />
-                  <span
-                    className="text-[22px] tabular-nums"
-                    style={{ letterSpacing: "0.32em", fontWeight: 600 }}
-                    aria-label="Code hidden"
+                ) : (
+                  <motion.div
+                    key="hidden"
+                    initial={{ opacity: 0, y: -4, filter: "blur(6px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: 4, filter: "blur(6px)" }}
+                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex items-center gap-2"
+                    style={{ color: MUTED }}
                   >
-                    • • •&nbsp;&nbsp;• • •
-                  </span>
-                </div>
-              )}
+                    <EyeOff className="h-4 w-4" strokeWidth={1.7} />
+                    <motion.span
+                      className="text-[22px] tabular-nums"
+                      style={{ letterSpacing: "0.32em", fontWeight: 600 }}
+                      aria-label="Code hidden"
+                      animate={{ opacity: [0.6, 1, 0.6] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      • • •&nbsp;&nbsp;• • •
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div
                 className="flex items-center gap-1.5 text-[11px]"
                 style={{ color: warn ? DANGER : MUTED }}
@@ -541,7 +584,7 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
                 <Clock3 className="h-3 w-3" strokeWidth={1.8} />
                 <span>Refreshes in {remaining}s</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Copy primary */}
             <motion.button
