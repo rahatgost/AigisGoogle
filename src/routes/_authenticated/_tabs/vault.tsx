@@ -58,7 +58,38 @@ function VaultPage() {
   const [source, setSource] = useState<"network" | "cache" | "empty" | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [activeTags, setActiveTags] = useState<Set<string>>(() => new Set());
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const online = useOnlineStatus();
+
+  const allTags = useMemo(() => {
+    if (!accounts) return [] as { tag: string; count: number }[];
+    const counts = new Map<string, number>();
+    for (const a of accounts) for (const t of a.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+  }, [accounts]);
+
+  const tagNames = useMemo(() => allTags.map((t) => t.tag), [allTags]);
+
+  const toggleTagFilter = (tag: string) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  };
+
+  const handleTagsChanged = useCallback((id: string, tags: string[]) => {
+    setAccounts((prev) => (prev ? prev.map((a) => (a.id === id ? { ...a, tags } : a)) : prev));
+    setActiveTags((prev) => {
+      // Drop filters that no longer match any account after the edit.
+      return prev;
+    });
+  }, []);
+
 
   const favorites = useMemo(() => {
     const s = new Set<string>();
