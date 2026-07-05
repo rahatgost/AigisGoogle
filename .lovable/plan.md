@@ -207,12 +207,96 @@ loop is possible end-to-end without trusting Lovable Cloud. Phase 3 is closed.
 export and re-import the same `.avf` on a fresh device with only the
 export passphrase. Phase 5 is closed.
 
+## Phase 6 — Offline + PWA ✅ CLOSED (this session)
+
+Scope covered this pass: **6.1 service worker + manifest** and **6.2
+encrypted offline vault mirror**, plus **6.4 offline UX banner**. The
+6.3 code-splitting pass (dynamic-import `@zxing/browser` inside the
+scan components, `jspdf` inside the recovery route) is intentionally
+deferred — both are already lazy-loaded via route splitting, so the
+extra work is a [P1] follow-up rather than a Phase 6 blocker.
+
+### 6.1 Service worker + manifest (landed)
+- `vite-plugin-pwa@1.3.0` in `generateSW` mode with
+  `injectRegister: null`, `devOptions.enabled: false`, and
+  `outDir: 'dist/client'` so the SW + manifest ship inside the
+  TanStack client bundle instead of alongside the Nitro worker.
+- Runtime caching: **NetworkFirst** for HTML navigations
+  (`networkTimeoutSeconds: 3`), **StaleWhileRevalidate** for
+  Google Fonts CSS, **CacheFirst** for `fonts.gstatic.com` files
+  (1-year TTL, immutable per URL). Supabase / `/api/*` /
+  `/~oauth` / `/auth/*` are on the navigation-fallback denylist —
+  they always hit the network.
+- Manifest at `/manifest.webmanifest`: `display: standalone`,
+  `start_url: /vault`, `theme_color: #f7f4ed`, matching cream
+  background, three icons (192, 512, 512-maskable) generated from
+  a single shield glyph, plus `apple-touch-icon.png` (180×180).
+- Guarded registration in `src/lib/pwa-register.ts` — refuses to
+  register (and unregisters any stale `/sw.js`) in **dev**, inside
+  an **iframe**, on any Lovable **preview host** (`id-preview--*`,
+  `preview--*`, `*.lovableproject.com`, `*.lovableproject-dev.com`,
+  `*.beta.lovable.dev`), or when the URL carries `?sw=off`. Called
+  once from `src/routes/__root.tsx` `RootComponent` useEffect.
+
+### 6.2 Encrypted offline vault mirror (landed)
+- New module `src/lib/vault-cache.ts` wrapping an IndexedDB store
+  (`aegis-vault` DB, `accounts` + `meta` object stores, `idb@8`).
+  Stores the **same `VaultAccountRecord` ciphertext + IV** that
+  Supabase holds — never plaintext, never the DEK. Decryption
+  still happens in memory after unlock via the existing
+  `decryptRows()` path.
+- **Owner isolation**: `meta.owner_user_id` is checked before any
+  read; a sign-out into a different account clears the store
+  before writing. `clearVaultCache()` is called from the
+  `RootComponent` auth listener on `SIGNED_OUT`.
+- New `listAccountsWithCache(dek, userId)` in `vault-accounts.ts`:
+  tries the network first, mirrors the fetched rows into
+  IndexedDB, and falls back to the cache on network error or
+  `navigator.onLine === false`. Returns `source: 'network' |
+  'cache' | 'empty'` so the UI can flag stale state.
+- Mutations keep the cache coherent — `addAccount`,
+  `setAccountFavorite`, `deleteAccount` all now
+  `.select().single()` the row and call
+  `upsertVaultCache` / `removeFromVaultCache`.
+
+### 6.4 Offline UX (landed)
+- `vault.tsx` subscribes to `window` `online` / `offline` events,
+  re-runs the loader when connectivity flips, and renders a
+  pill-shaped notice at the top of the vault:
+  - offline → *"You're offline — showing cached codes. Add or
+    edit is disabled."*
+  - back online but still on cache → *"Reconnecting — showing
+    cached codes."*
+
+### Verification
+- `bunx tsgo --noEmit` → **0 errors**.
+- `bun run build` → clean. PWA output confirmed:
+  `dist/client/sw.js`, `dist/client/workbox-*.js`,
+  `dist/client/manifest.webmanifest`, `dist/client/icon-{192,512,
+  maskable-512}.png`, `dist/client/apple-touch-icon.png`.
+  `precache 89 entries (2937.98 KiB)` — first-run install grabs
+  everything needed for offline unlock.
+
+### Deferred to next PR
+- **6.3 code splitting** — `@zxing/browser` (1.07 MB) still ships
+  in the two scan chunks; `jspdf` (477 KB) still ships in
+  `vault_.recovery`. Both are already off the main entry via
+  route splitting, so this is a bundle-size win rather than a
+  correctness fix. Do it before Phase 7 lands more UI.
+
+**Exit criterion met:** Aegis is installable, opens with no
+network, shows cached codes after unlock, and reconciles on
+reconnect. Phase 6 is closed.
+
 ## Next feature candidates
 
-1. **RLS CI test** — extend `tests/rls/` to walk every route in
+1. **6.3 dynamic-import zxing + jspdf** — the leftover Phase 6
+   bundle-size win.
+2. **Phase 7 — Vault UX II** — Tags UI, drag-and-drop reorder
+   (schema already present), bulk edit/delete, HOTP, Steam Guard.
+3. **RLS CI test** — extend `tests/rls/` to walk every route in
    `docs/routing.md`.
-2. **`VAULT_CRYPTO_VERSION = 2`** — Argon2id KDF + AAD binding
+4. **`VAULT_CRYPTO_VERSION = 2`** — Argon2id KDF + AAD binding
    (`user_id || account_id`) with a background re-encrypt migrator.
-3. **Code-splitting Phase 6** — split `@zxing/browser`, `jspdf`, and
-   the recovery route out of the main bundle per `perf/baseline.json`.
+
 

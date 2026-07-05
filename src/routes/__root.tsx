@@ -112,6 +112,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -146,20 +148,25 @@ function RootComponent() {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([import("@/integrations/supabase/client"), import("@/lib/vault-session")]).then(
-      ([{ supabase }, { lockVault }]) => {
-        if (!mounted) return;
-        const { data } = supabase.auth.onAuthStateChange((event) => {
-          if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-          if (event === "SIGNED_OUT") lockVault();
-          router.invalidate();
-          if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-        });
-        // Store for cleanup
-        (window as unknown as { __aegis_auth_sub?: { unsubscribe: () => void } }).__aegis_auth_sub =
-          data.subscription;
-      },
-    );
+    Promise.all([
+      import("@/integrations/supabase/client"),
+      import("@/lib/vault-session"),
+      import("@/lib/vault-cache"),
+    ]).then(([{ supabase }, { lockVault }, { clearVaultCache }]) => {
+      if (!mounted) return;
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        if (event === "SIGNED_OUT") {
+          lockVault();
+          void clearVaultCache();
+        }
+        router.invalidate();
+        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      });
+      // Store for cleanup
+      (window as unknown as { __aegis_auth_sub?: { unsubscribe: () => void } }).__aegis_auth_sub =
+        data.subscription;
+    });
     return () => {
       mounted = false;
       const sub = (window as unknown as { __aegis_auth_sub?: { unsubscribe: () => void } })
@@ -167,6 +174,15 @@ function RootComponent() {
       sub?.unsubscribe();
     };
   }, [queryClient, router]);
+
+  useEffect(() => {
+    // Guarded PWA service-worker registration. The wrapper refuses to
+    // register in dev, iframes, Lovable preview hosts, and when the URL
+    // carries `?sw=off` — see src/lib/pwa-register.ts.
+    void import("@/lib/pwa-register").then(({ registerAegisServiceWorker }) =>
+      registerAegisServiceWorker(),
+    );
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

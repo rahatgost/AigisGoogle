@@ -5,11 +5,106 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    plugins: [
+      VitePWA({
+        strategies: "generateSW",
+        registerType: "autoUpdate",
+        // The plugin never injects its own registration. Our guarded wrapper
+        // in src/lib/pwa-register.ts is the single call site so preview and
+        // sandbox contexts never register a service worker.
+        injectRegister: null,
+        devOptions: { enabled: false },
+        filename: "sw.js",
+        // TanStack Start + Nitro splits Vite's outDir into `dist/client` (browser)
+        // and `dist/server` (worker). vite-plugin-pwa infers from Vite's own
+        // build.outDir which is `dist/`, so without this override the SW and
+        // manifest.webmanifest end up siblings of the client bundle instead
+        // of inside it — and never get served.
+        outDir: "dist/client",
+        includeAssets: [
+          "favicon.ico",
+          "icon-192.png",
+          "icon-512.png",
+          "icon-maskable-512.png",
+          "apple-touch-icon.png",
+        ],
+        manifest: {
+          name: "Aegis Authenticator",
+          short_name: "Aegis",
+          description:
+            "Zero-knowledge, end-to-end encrypted TOTP authenticator that works offline.",
+          start_url: "/vault",
+          scope: "/",
+          id: "/",
+          display: "standalone",
+          orientation: "portrait",
+          background_color: "#f7f4ed",
+          theme_color: "#f7f4ed",
+          categories: ["utilities", "productivity", "security"],
+          icons: [
+            { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+            {
+              src: "/icon-maskable-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}"],
+          // OAuth callback and Supabase auth flows must always hit the network.
+          navigateFallbackDenylist: [
+            /^\/~oauth/,
+            /^\/api\//,
+            /^\/auth\/callback/,
+            /^\/auth\/reset-password/,
+          ],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          runtimeCaching: [
+            {
+              // HTML shell — network-first so a new deploy takes effect on the
+              // next successful load, but a cached copy keeps offline working.
+              urlPattern: ({ request }) => request.mode === "navigate",
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "aegis-html",
+                networkTimeoutSeconds: 3,
+                expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              },
+            },
+            {
+              // Google Fonts stylesheet — SWR keeps them fresh without blocking.
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+              handler: "StaleWhileRevalidate",
+              options: { cacheName: "google-fonts-css" },
+            },
+            {
+              // Google Fonts binary files — cache-first, they're immutable per URL.
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-files",
+                expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+          ],
+          // Never touch Supabase or /api requests — they must always hit the network.
+          navigateFallback: "/index.html",
+        },
+      }),
+    ],
   },
 });

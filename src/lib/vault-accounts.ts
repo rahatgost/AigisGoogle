@@ -5,6 +5,13 @@
 import * as OTPAuth from "otpauth";
 import { supabase } from "@/integrations/supabase/client";
 import { decryptSecret, encryptSecret, toBytes, toByteaHex } from "@/lib/vault-crypto";
+import {
+  isOffline,
+  readVaultCache,
+  removeFromVaultCache,
+  upsertVaultCache,
+  writeVaultCache,
+} from "@/lib/vault-cache";
 
 export type Algorithm = "SHA1" | "SHA256" | "SHA512";
 
@@ -100,46 +107,51 @@ export async function addAccount(
 
   const { ciphertext, iv } = await encryptSecret(dek, clean);
 
-  const { error } = await supabase.from("vault_accounts").insert({
-    user_id: userId,
-    issuer: input.issuer.trim(),
-    label: input.label.trim(),
-    icon_slug: input.icon_slug ?? null,
-    algorithm: input.algorithm ?? "SHA1",
-    digits: input.digits ?? 6,
-    period: input.period ?? 30,
-    secret_ciphertext: toByteaHex(ciphertext),
-    secret_iv: toByteaHex(iv),
-  });
+  const { data, error } = await supabase
+    .from("vault_accounts")
+    .insert({
+      user_id: userId,
+      issuer: input.issuer.trim(),
+      label: input.label.trim(),
+      icon_slug: input.icon_slug ?? null,
+      algorithm: input.algorithm ?? "SHA1",
+      digits: input.digits ?? 6,
+      period: input.period ?? 30,
+      secret_ciphertext: toByteaHex(ciphertext),
+      secret_iv: toByteaHex(iv),
+    })
+    .select(
+      "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, secret_ciphertext, secret_iv",
+    )
+    .single();
   if (error) throw error;
+  if (data) void upsertVaultCache(data as VaultAccountRecord);
 }
 
 export async function deleteAccount(id: string): Promise<void> {
   const { error } = await supabase.from("vault_accounts").delete().eq("id", id);
   if (error) throw error;
+  void removeFromVaultCache(id);
 }
 
 export async function setAccountFavorite(id: string, isFavorite: boolean): Promise<void> {
-  const { error } = await supabase
-    .from("vault_accounts")
-    .update({ is_favorite: isFavorite })
-    .eq("id", id);
-  if (error) throw error;
-}
-
-export async function listAccounts(dek: CryptoKey): Promise<DecryptedAccount[]> {
   const { data, error } = await supabase
     .from("vault_accounts")
+    .update({ is_favorite: isFavorite })
+    .eq("id", id)
     .select(
       "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, secret_ciphertext, secret_iv",
     )
-    .order("is_favorite", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+    .single();
   if (error) throw error;
+  if (data) void upsertVaultCache(data as VaultAccountRecord);
+}
 
-  const rows = (data ?? []) as VaultAccountRecord[];
-  const decrypted = await Promise.all(
+async function decryptRows(
+  dek: CryptoKey,
+  rows: VaultAccountRecord[],
+): Promise<DecryptedAccount[]> {
+  return Promise.all(
     rows.map(async (r) => {
       const secret = await decryptSecret(dek, toBytes(r.secret_ciphertext), toBytes(r.secret_iv));
       return {
@@ -155,5 +167,59 @@ export async function listAccounts(dek: CryptoKey): Promise<DecryptedAccount[]> 
       } satisfies DecryptedAccount;
     }),
   );
-  return decrypted;
 }
+
+export async function listAccounts(dek: CryptoKey): Promise<DecryptedAccount[]> {
+  const { data, error } = await supabase
+    .from("vault_accounts")
+    .select(
+      "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, secret_ciphertext, secret_iv",
+    )
+    .order("is_favorite", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return decryptRows(dek, (data ?? []) as VaultAccountRecord[]);
+}
+
+/**
+ * Vault load with an offline fallback. When we're online we fetch from the
+ * server and refresh the IndexedDB mirror in the background. When offline
+ * (or when the network fetch fails), we decrypt the cached ciphertext so
+ * the user can still see codes on the subway. The cache never holds
+ * plaintext — decryption still requires the DEK in memory.
+ *
+ * Returns `{ source: 'network' | 'cache' | 'empty' }` so the UI can show an
+ * "offline — showing cached codes" banner when appropriate.
+ */
+export async function listAccountsWithCache(
+  dek: CryptoKey,
+  userId: string,
+): Promise<{ accounts: DecryptedAccount[]; source: "network" | "cache" | "empty" }> {
+  const online = !isOffline();
+  if (online) {
+    try {
+      const { data, error } = await supabase
+        .from("vault_accounts")
+        .select(
+          "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, secret_ciphertext, secret_iv",
+        )
+        .order("is_favorite", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      const rows = (data ?? []) as VaultAccountRecord[];
+      void writeVaultCache(userId, rows);
+      const accounts = await decryptRows(dek, rows);
+      return { accounts, source: "network" };
+    } catch {
+      // Network error mid-flight — fall through to cache below.
+    }
+  }
+
+  const cached = await readVaultCache(userId);
+  if (!cached) return { accounts: [], source: "empty" };
+  const accounts = await decryptRows(dek, cached);
+  return { accounts, source: "cache" };
+}
+

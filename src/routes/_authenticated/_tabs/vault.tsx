@@ -9,12 +9,12 @@ import {
 } from "@/lib/vault-session";
 import {
   deleteAccount,
-  listAccounts,
+  listAccountsWithCache,
   setAccountFavorite,
   type DecryptedAccount,
 } from "@/lib/vault-accounts";
 import { AccountCard } from "@/components/vault/AccountCard";
-import { Shield, Plus, Loader2, Search, X } from "lucide-react";
+import { Shield, Plus, Loader2, Search, X, WifiOff } from "lucide-react";
 import {
   BORDER,
   CHARCOAL,
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/vault")({
 function VaultPage() {
   const navigate = useNavigate();
   const unlocked = useVaultUnlocked();
-  
+  const { user } = Route.useRouteContext();
 
   useActivityKeepAlive();
 
@@ -51,6 +51,10 @@ function VaultPage() {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [query, setQuery] = useState("");
+  const [source, setSource] = useState<"network" | "cache" | "empty" | null>(null);
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
 
   const favorites = useMemo(() => {
     const s = new Set<string>();
@@ -86,21 +90,35 @@ function VaultPage() {
   }, []);
 
   useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const key = getVaultKey();
     if (!key) return;
     setError(null);
-    listAccounts(key)
-      .then((list) => {
-        if (!cancelled) setAccounts(list);
+    listAccountsWithCache(key, user.id)
+      .then(({ accounts: list, source: src }) => {
+        if (cancelled) return;
+        setAccounts(list);
+        setSource(src);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load vault.");
       });
     return () => {
       cancelled = true;
     };
-  }, [unlocked]);
+  }, [unlocked, user.id, online]);
+
 
   const filtered = useMemo(() => {
     if (!accounts) return null;
@@ -132,6 +150,25 @@ function VaultPage() {
             : "One-time codes, encrypted end-to-end."
         }
       />
+
+      {(!online || source === "cache") && accounts && (
+        <div
+          className="mb-2 mt-1 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
+          style={{
+            background: CREAM_SOFT,
+            border: `1px solid ${BORDER}`,
+            color: MUTED,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+          }}
+        >
+          <WifiOff className="h-3.5 w-3.5" strokeWidth={1.8} />
+          <span>
+            {online
+              ? "Reconnecting — showing cached codes."
+              : "You're offline — showing cached codes. Add or edit is disabled."}
+          </span>
+        </div>
+      )}
 
       {accounts && accounts.length > 0 && <SearchField value={query} onChange={setQuery} />}
 
