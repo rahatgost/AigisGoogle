@@ -174,17 +174,6 @@ function NewAccountPage() {
             </motion.div>
           </AnimatePresence>
         </div>
-
-        <div className="flex justify-center pt-6">
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/vault/import" })}
-            className="text-[13px] underline decoration-[rgba(28,28,28,0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgba(28,28,28,0.7)]"
-            style={{ color: CHARCOAL, fontWeight: 500 }}
-          >
-            Or import from another app
-          </button>
-        </div>
       </div>
       <BottomTabs />
     </AegisScreen>
