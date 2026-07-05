@@ -188,73 +188,58 @@ function UnifiedAccountList({
   onDelete: (id: string) => Promise<void>;
 }) {
   const showBothLabels = favoriteList.length > 0 && otherList.length > 0;
+  const combined = [...favoriteList, ...otherList];
+  const dividerAfter = favoriteList.length > 0 ? favoriteList[favoriteList.length - 1].id : null;
+
   return (
-    <div className="flex flex-col gap-4">
-      {favoriteList.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <SectionLabel>Favorites</SectionLabel>
-          <div
-            className="overflow-hidden rounded-[16px]"
-            style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${BORDER}`,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
-            }}
-          >
-            <div className="divide-y" style={{ borderColor: BORDER }}>
-              {favoriteList.map((a) => (
-                <motion.div
-                  key={a.id}
-                  layout="position"
-                  transition={soft}
-                >
-                  <AccountCard
-                    account={a}
-                    now={now}
-                    isFavorite={favorites.has(a.id)}
-                    onToggleFavorite={onToggleFavorite}
-                    onDelete={onDelete}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
+    <div className="flex flex-col gap-1.5">
+      {favoriteList.length > 0 && <SectionLabel>Favorites</SectionLabel>}
+      {favoriteList.length === 0 && otherList.length > 0 && null}
+      <div
+        className="overflow-hidden rounded-[16px]"
+        style={{
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+        }}
+      >
+        <div>
+          {combined.map((a, idx) => {
+            const isLastFav = a.id === dividerAfter;
+            const isFirstOther = showBothLabels && idx === favoriteList.length;
+            return (
+              <motion.div
+                key={a.id}
+                layout="position"
+                transition={soft}
+                style={{
+                  borderTop: idx > 0 && !isFirstOther ? `1px solid ${BORDER}` : undefined,
+                }}
+              >
+                {isFirstOther && (
+                  <div className="px-4 pb-1.5 pt-3">
+                    <SectionLabel>All accounts</SectionLabel>
+                  </div>
+                )}
+                <AccountCard
+                  account={a}
+                  now={now}
+                  isFavorite={favorites.has(a.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  onDelete={onDelete}
+                />
+                {isLastFav && showBothLabels && (
+                  <div style={{ height: 4, background: "transparent" }} />
+                )}
+              </motion.div>
+            );
+          })}
         </div>
-      )}
-      {otherList.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          {showBothLabels && <SectionLabel>All accounts</SectionLabel>}
-          <div
-            className="overflow-hidden rounded-[16px]"
-            style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${BORDER}`,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
-            }}
-          >
-            <div className="divide-y" style={{ borderColor: BORDER }}>
-              {otherList.map((a) => (
-                <motion.div
-                  key={a.id}
-                  layout="position"
-                  transition={soft}
-                >
-                  <AccountCard
-                    account={a}
-                    now={now}
-                    isFavorite={favorites.has(a.id)}
-                    onToggleFavorite={onToggleFavorite}
-                    onDelete={onDelete}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
+
 
 function AccountGroup({
   items,
