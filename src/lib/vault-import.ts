@@ -2,8 +2,19 @@
 // no Supabase calls — so the actual commit stays on the caller's DEK path.
 import * as OTPAuth from "otpauth";
 import { parseOtpauthUri, type ParsedOtpauth, type Algorithm } from "@/lib/vault-accounts";
+import {
+  AVF_FORMAT,
+  decryptExportedFile,
+  type EncryptedExportFile,
+} from "@/lib/vault-export";
 
-export type ImportSource = "otpauth" | "otpauth-migration" | "aegis" | "2fas" | "unknown";
+export type ImportSource =
+  | "otpauth"
+  | "otpauth-migration"
+  | "aegis"
+  | "2fas"
+  | "avf"
+  | "unknown";
 
 export interface ImportResult {
   source: ImportSource;
@@ -311,8 +322,46 @@ export function importFromJson(json: unknown): ImportResult {
     if ("services" in root || "servicesEncrypted" in root) {
       return { source: "2fas", entries: parse2FASJson(json), skipped: 0 };
     }
+    if (isAvfJson(root)) {
+      throw new Error(
+        "This is an encrypted Aegis backup (.avf). Enter its export passphrase to unlock.",
+      );
+    }
   }
-  throw new Error("JSON doesn't look like an Aegis or 2FAS export.");
+  throw new Error("JSON doesn't look like an Aegis, 2FAS, or Aegis Vault File export.");
+}
+
+/** Detect a passphrase-encrypted Aegis vault file (.avf). */
+export function isAvfJson(json: unknown): json is EncryptedExportFile {
+  const r = json as { format?: unknown; version?: unknown; kdf?: unknown; cipher?: unknown };
+  return (
+    !!r &&
+    typeof r === "object" &&
+    r.format === AVF_FORMAT &&
+    typeof r.version === "number" &&
+    typeof r.kdf === "object" &&
+    typeof r.cipher === "object"
+  );
+}
+
+/**
+ * Decrypt an `.avf` file with the given export passphrase and return the
+ * accounts as ParsedOtpauth entries ready for the preview stage.
+ */
+export async function importFromAvf(
+  file: EncryptedExportFile,
+  passphrase: string,
+): Promise<ImportResult> {
+  const accounts = await decryptExportedFile(file, passphrase);
+  const entries: ParsedOtpauth[] = accounts.map((a) => ({
+    issuer: (a.issuer || a.label || "Unknown").trim(),
+    label: (a.label || "").trim(),
+    secret: a.secret.replace(/\s+/g, "").toUpperCase(),
+    algorithm: normalizeAlgo(a.algorithm),
+    digits: a.digits ?? 6,
+    period: a.period ?? 30,
+  }));
+  return { source: "avf", entries, skipped: 0 };
 }
 
 export function sourceLabel(s: ImportSource): string {
@@ -325,7 +374,10 @@ export function sourceLabel(s: ImportSource): string {
       return "Aegis";
     case "2fas":
       return "2FAS";
+    case "avf":
+      return "Aegis Vault File";
     default:
       return "Import";
   }
 }
+

@@ -17,7 +17,16 @@ import {
 import { toast } from "sonner";
 import { getVaultKey } from "@/lib/vault-session";
 import { addAccount, type ParsedOtpauth } from "@/lib/vault-accounts";
-import { importFromJson, importFromText, sourceLabel, type ImportSource } from "@/lib/vault-import";
+import {
+  importFromAvf,
+  importFromJson,
+  importFromText,
+  isAvfJson,
+  sourceLabel,
+  type ImportSource,
+} from "@/lib/vault-import";
+import type { EncryptedExportFile } from "@/lib/vault-export";
+import { KeyRound } from "lucide-react";
 import {
   AegisScreen,
   BORDER,
@@ -39,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/_locked/vault_/import")({
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
 
-type Stage = "input" | "preview";
+type Stage = "input" | "avf" | "preview";
 type Tab = "scan" | "paste" | "file";
 
 interface Preview {
@@ -59,6 +68,9 @@ function ImportPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [decoding, setDecoding] = useState(false);
+  const [avfPending, setAvfPending] = useState<EncryptedExportFile | null>(null);
+  const [avfPass, setAvfPass] = useState("");
+  const [avfBusy, setAvfBusy] = useState(false);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -115,16 +127,19 @@ function ImportPage() {
     setNotice(null);
     try {
       const text = await file.text();
-      // Auto-route: JSON goes through importFromJson, everything else through
-      // importFromText so users can drop a plain otpauth:// list too.
       const trimmed = text.trim();
-      let result: Preview;
       if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-        result = importFromJson(JSON.parse(trimmed));
+        const json = JSON.parse(trimmed);
+        if (isAvfJson(json)) {
+          setAvfPending(json);
+          setAvfPass("");
+          setStage("avf");
+          return;
+        }
+        showPreview(importFromJson(json));
       } else {
-        result = importFromText(trimmed);
+        showPreview(importFromText(trimmed));
       }
-      showPreview(result);
     } catch (err) {
       setNotice({
         kind: "error",
@@ -132,6 +147,26 @@ function ImportPage() {
       });
     }
   };
+
+  const submitAvf = async () => {
+    if (!avfPending) return;
+    setNotice(null);
+    setAvfBusy(true);
+    try {
+      const result = await importFromAvf(avfPending, avfPass);
+      setAvfPending(null);
+      setAvfPass("");
+      showPreview(result);
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Couldn't decrypt that backup.",
+      });
+    } finally {
+      setAvfBusy(false);
+    }
+  };
+
 
   const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,11 +236,20 @@ function ImportPage() {
           trailing={
             <AppBarButton
               label="Back"
-              onClick={() =>
-                stage === "preview"
-                  ? (setStage("input"), setPreview(null), setNotice(null))
-                  : navigate({ to: "/vault/new" })
-              }
+              onClick={() => {
+                if (stage === "preview") {
+                  setStage("input");
+                  setPreview(null);
+                  setNotice(null);
+                } else if (stage === "avf") {
+                  setStage("input");
+                  setAvfPending(null);
+                  setAvfPass("");
+                  setNotice(null);
+                } else {
+                  navigate({ to: "/vault/new" });
+                }
+              }}
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
             </AppBarButton>
@@ -271,7 +315,7 @@ function ImportPage() {
             <input
               ref={jsonInputRef}
               type="file"
-              accept="application/json,.json,.txt"
+              accept="application/json,.json,.txt,.avf"
               className="hidden"
               onChange={handleJsonFile}
             />
@@ -283,6 +327,14 @@ function ImportPage() {
               onChange={handleImageFile}
             />
           </>
+        ) : stage === "avf" ? (
+          <AvfPassStage
+            passphrase={avfPass}
+            onChange={setAvfPass}
+            busy={avfBusy}
+            notice={notice}
+            onSubmit={submitAvf}
+          />
         ) : preview ? (
           <PreviewStage
             preview={preview}
@@ -299,6 +351,7 @@ function ImportPage() {
     </AegisScreen>
   );
 }
+
 
 function SegmentedTabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   return (
@@ -447,10 +500,10 @@ function FileTab({
         <FileUp className="h-4 w-4" strokeWidth={1.8} />
         <div className="flex flex-1 flex-col">
           <span className="text-[13.5px]" style={{ fontWeight: 600 }}>
-            Aegis or 2FAS JSON
+            Aegis, 2FAS, or .avf backup
           </span>
           <span className="text-[11.5px]" style={{ color: MUTED }}>
-            Export as plain (not encrypted) from the source app.
+            Plain JSON from other apps, or a passphrase-encrypted .avf you exported here.
           </span>
         </div>
       </button>
@@ -754,3 +807,78 @@ function ScanTab({
     </div>
   );
 }
+
+function AvfPassStage({
+  passphrase,
+  onChange,
+  busy,
+  notice,
+  onSubmit,
+}: {
+  passphrase: string;
+  onChange: (v: string) => void;
+  busy: boolean;
+  notice: { kind: "error" | "info"; text: string } | null;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 pt-2">
+      <div className="flex flex-col gap-1.5">
+        <h1
+          className="text-[26px] leading-[1.1]"
+          style={{
+            color: CHARCOAL,
+            fontFamily: "'Sora', sans-serif",
+            fontWeight: 600,
+            letterSpacing: "-0.025em",
+          }}
+        >
+          Unlock encrypted backup
+        </h1>
+        <p className="text-[13.5px] leading-[1.4]" style={{ color: MUTED }}>
+          Enter the export passphrase you chose when creating this{" "}
+          <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>.avf</span> file. We decrypt
+          it locally — the passphrase never leaves your device.
+        </p>
+      </div>
+
+      {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+
+      <div className="flex flex-col gap-2">
+        <SectionLabel>Export passphrase</SectionLabel>
+        <input
+          type="password"
+          autoFocus
+          value={passphrase}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && passphrase && !busy) onSubmit();
+          }}
+          placeholder="Passphrase used at export time"
+          className="w-full rounded-[14px] px-4 py-3 text-[13.5px] outline-none"
+          style={{
+            background: CREAM_SOFT,
+            border: `1px solid ${BORDER}`,
+            color: CHARCOAL,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+          }}
+        />
+      </div>
+
+      <PrimaryButton
+        onClick={onSubmit}
+        disabled={busy || passphrase.length === 0}
+        icon={
+          busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+          ) : (
+            <KeyRound className="h-4 w-4" strokeWidth={2} />
+          )
+        }
+      >
+        {busy ? "Decrypting…" : "Unlock backup"}
+      </PrimaryButton>
+    </div>
+  );
+}
+
