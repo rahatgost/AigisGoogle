@@ -205,10 +205,14 @@ export function AccountCard({
     setTagSaving(true);
     setTagError(null);
     try {
-      const saved = await setAccountTags(account.id, tagsDraft);
+      const { tags: saved, queued } = await setAccountTags(account.id, tagsDraft);
       onTagsChanged?.(account.id, saved);
       setTagsDraft(saved);
-      toast.success("Tags updated");
+      if (queued) {
+        toast.success("Tags saved locally — will sync when you're back online");
+      } else {
+        toast.success("Tags updated");
+      }
     } catch (e) {
       setTagError(e instanceof Error ? e.message : "Could not update tags.");
     } finally {
