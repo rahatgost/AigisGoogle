@@ -167,44 +167,10 @@ function SecurityPage() {
             icon={<Timer className="h-4 w-4" strokeWidth={1.8} />}
             title="Auto-lock"
             value={currentAutoLockLabel}
-            onClick={() => setAutoLockOpen((v) => !v)}
+            onClick={() => setAutoLockOpen(true)}
             chevron
           />
-          <AnimatePresence initial={false}>
-            {autoLockOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={soft}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-col gap-0.5 px-2 py-1.5">
-                  {AUTO_LOCK_OPTIONS.map((opt) => {
-                    const active = opt.value === autoLockMs;
-                    return (
-                      <motion.button
-                        key={opt.label}
-                        whileTap={{ scale: 0.99, backgroundColor: "rgba(28,28,28,0.05)" }}
-                        onClick={() => {
-                          setAutoLockMs(opt.value);
-                          setAutoLockOpen(false);
-                          setNotice({ kind: "info", text: `Auto-lock set to “${opt.label.toLowerCase()}”.` });
-                        }}
-                        className="flex items-center justify-between rounded-[10px] px-3 py-2.5 text-left"
-                        style={{ color: CHARCOAL }}
-                      >
-                        <span className="text-[13.5px]" style={{ fontWeight: active ? 600 : 500 }}>
-                          {opt.label}
-                        </span>
-                        {active && <Check className="h-4 w-4" strokeWidth={2} />}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+
           <SettingsRow
             icon={<Sparkles className="h-4 w-4" strokeWidth={1.8} />}
             title="Change passphrase"
@@ -253,6 +219,17 @@ function SecurityPage() {
       </div>
 
       <AnimatePresence>
+        {autoLockOpen && (
+          <AutoLockSheet
+            current={autoLockMs}
+            onClose={() => setAutoLockOpen(false)}
+            onPick={(opt) => {
+              setAutoLockMs(opt.value);
+              setAutoLockOpen(false);
+              setNotice({ kind: "info", text: `Auto-lock set to “${opt.label.toLowerCase()}”.` });
+            }}
+          />
+        )}
         {changeOpen && (
           <ChangePassphraseSheet
             userId={user.id}
@@ -266,6 +243,7 @@ function SecurityPage() {
           />
         )}
       </AnimatePresence>
+
     </>
   );
 }
@@ -458,3 +436,117 @@ function ChangePassphraseSheet({
     </motion.div>
   );
 }
+
+type AutoLockOption = (typeof AUTO_LOCK_OPTIONS)[number];
+
+function AutoLockSheet({
+  current,
+  onClose,
+  onPick,
+}: {
+  current: number | null;
+  onClose: () => void;
+  onPick: (opt: AutoLockOption) => void;
+}) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.button
+        aria-label="Close"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0"
+        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+      />
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={soft}
+        className="relative z-10 mx-auto w-full max-w-[440px] rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px]"
+        style={{
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "0 -12px 40px -12px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div
+          aria-hidden
+          className="mx-auto mb-3 h-[4px] w-10 rounded-full"
+          style={{ background: "rgba(28,28,28,0.15)" }}
+        />
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div
+              className="text-[18px]"
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                color: CHARCOAL,
+              }}
+            >
+              Auto-lock
+            </div>
+            <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+              Lock the vault after a period of inactivity.
+            </div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" strokeWidth={1.8} />
+          </motion.button>
+        </div>
+
+        <div className="flex flex-col gap-1 pb-1">
+          {AUTO_LOCK_OPTIONS.map((opt, i) => {
+            const active = opt.value === current;
+            return (
+              <motion.button
+                key={opt.label}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...soft, delay: 0.02 * i }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => onPick(opt)}
+                className="flex items-center justify-between rounded-[14px] px-4 py-3.5 text-left"
+                style={{
+                  background: active ? CHARCOAL : "rgba(28,28,28,0.03)",
+                  color: active ? CREAM_SOFT : CHARCOAL,
+                  border: `1px solid ${active ? "transparent" : BORDER}`,
+                }}
+              >
+                <span
+                  className="text-[14px]"
+                  style={{ fontWeight: active ? 600 : 500, letterSpacing: "-0.005em" }}
+                >
+                  {opt.label}
+                </span>
+                {active && (
+                  <span
+                    className="flex h-6 w-6 items-center justify-center rounded-full"
+                    style={{ background: "rgba(255,255,255,0.14)" }}
+                  >
+                    <Check className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
