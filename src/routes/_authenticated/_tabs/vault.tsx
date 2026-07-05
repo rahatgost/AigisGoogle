@@ -8,6 +8,7 @@ import {
   useVaultUnlocked,
 } from "@/lib/vault-session";
 import { listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
+import { loadFavorites, saveFavorites } from "@/lib/favorites";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { Shield, Plus, Loader2, Search, X } from "lucide-react";
 import {
@@ -20,7 +21,7 @@ import {
   PrimaryButton,
   soft,
 } from "@/components/aegis/chrome";
-import { LargeTitle } from "@/components/aegis/settings";
+import { LargeTitle, SectionLabel } from "@/components/aegis/settings";
 
 export const Route = createFileRoute("/_authenticated/_tabs/vault")({
   beforeLoad: ({ location }) => {
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/vault")({
 function VaultPage() {
   const navigate = useNavigate();
   const unlocked = useVaultUnlocked();
+  const { user } = Route.useRouteContext();
 
   useActivityKeepAlive();
 
@@ -45,6 +47,21 @@ function VaultPage() {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [query, setQuery] = useState("");
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    setFavorites(loadFavorites(user.id));
+  }, [user.id]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      saveFavorites(user.id, next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 250);
@@ -79,6 +96,17 @@ function VaultPage() {
     );
   }, [accounts, query]);
 
+  const { favoriteList, otherList } = useMemo(() => {
+    if (!filtered) return { favoriteList: [], otherList: [] };
+    const favs: DecryptedAccount[] = [];
+    const rest: DecryptedAccount[] = [];
+    for (const a of filtered) {
+      if (favorites.has(a.id)) favs.push(a);
+      else rest.push(a);
+    }
+    return { favoriteList: favs, otherList: rest };
+  }, [filtered, favorites]);
+
   return (
     <>
 
@@ -109,29 +137,29 @@ function VaultPage() {
         )}
 
         {filtered && filtered.length > 0 && (
-          <div
-            className="overflow-hidden rounded-[16px]"
-            style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${BORDER}`,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
-            }}
-          >
-            <AnimatePresence initial={false}>
-              <div className="divide-y" style={{ borderColor: BORDER }}>
-                {filtered.map((a, i) => (
-                  <motion.div
-                    key={a.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ ...soft, delay: Math.min(i * 0.03, 0.18) }}
-                  >
-                    <AccountCard account={a} now={now} />
-                  </motion.div>
-                ))}
+          <div className="flex flex-col gap-4">
+            {favoriteList.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <SectionLabel>Favorites</SectionLabel>
+                <AccountGroup
+                  items={favoriteList}
+                  now={now}
+                  favorites={favorites}
+                  onToggleFavorite={toggleFavorite}
+                />
               </div>
-            </AnimatePresence>
+            )}
+            {otherList.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                {favoriteList.length > 0 && <SectionLabel>All accounts</SectionLabel>}
+                <AccountGroup
+                  items={otherList}
+                  now={now}
+                  favorites={favorites}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -145,6 +173,50 @@ function VaultPage() {
         )}
       </div>
     </>
+  );
+}
+
+function AccountGroup({
+  items,
+  now,
+  favorites,
+  onToggleFavorite,
+}: {
+  items: DecryptedAccount[];
+  now: number;
+  favorites: Set<string>;
+  onToggleFavorite: (id: string) => void;
+}) {
+  return (
+    <div
+      className="overflow-hidden rounded-[16px]"
+      style={{
+        background: CREAM_SOFT,
+        border: `1px solid ${BORDER}`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+      }}
+    >
+      <AnimatePresence initial={false}>
+        <div className="divide-y" style={{ borderColor: BORDER }}>
+          {items.map((a, i) => (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ ...soft, delay: Math.min(i * 0.03, 0.18) }}
+            >
+              <AccountCard
+                account={a}
+                now={now}
+                isFavorite={favorites.has(a.id)}
+                onToggleFavorite={onToggleFavorite}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </AnimatePresence>
+    </div>
   );
 }
 

@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Star } from "lucide-react";
 import { generateCode, type DecryptedAccount } from "@/lib/vault-accounts";
 import { BORDER, CHARCOAL, CREAM_SOFT, MUTED } from "@/components/aegis/chrome";
 
 const DANGER = "#b23a2a";
+const FAV = "#c99a2b";
 
 interface Props {
   account: DecryptedAccount;
   now: number;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void;
 }
 
 function formatCode(code: string): string {
@@ -30,7 +33,7 @@ function hueFor(seed: string): number {
   return h % 360;
 }
 
-export function AccountCard({ account, now }: Props) {
+export function AccountCard({ account, now, isFavorite, onToggleFavorite }: Props) {
   const [copied, setCopied] = useState(false);
 
   const period = account.period;
@@ -103,6 +106,38 @@ export function AccountCard({ account, now }: Props) {
             </div>
           )}
         </div>
+
+        {onToggleFavorite && (
+          <motion.span
+            role="button"
+            tabIndex={0}
+            aria-label={isFavorite ? "Unpin favorite" : "Pin as favorite"}
+            aria-pressed={isFavorite}
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(account.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite(account.id);
+              }
+            }}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full cursor-pointer"
+            style={{
+              color: isFavorite ? FAV : MUTED,
+              background: isFavorite ? "rgba(201,154,43,0.12)" : "transparent",
+            }}
+          >
+            <Star
+              className="h-3.5 w-3.5"
+              strokeWidth={1.9}
+              fill={isFavorite ? FAV : "none"}
+            />
+          </motion.span>
+        )}
 
         <RingTimer progress={progress} remaining={remaining} warn={warn} />
       </div>
