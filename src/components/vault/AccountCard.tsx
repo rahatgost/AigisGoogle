@@ -879,3 +879,39 @@ function RingTimer({ progress, remaining, warn }: { progress: number; remaining:
     </div>
   );
 }
+
+function MetaCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex flex-col items-center gap-1 rounded-[12px] px-2 py-2.5"
+      style={{
+        background: "#fff",
+        border: `1px solid ${BORDER}`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+      }}
+    >
+      <span
+        className="text-[9.5px] uppercase"
+        style={{
+          color: MUTED,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.22em",
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="text-[13.5px] tabular-nums"
+        style={{
+          color: CHARCOAL,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontFeatureSettings: "'tnum'",
+          fontWeight: 600,
+          letterSpacing: "0.02em",
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
