@@ -30,17 +30,6 @@ Phase 0 is closed — Phase 1 backend hardening is where new PRs go.
 
 ## Phase 1.1 — Schema migrations (landed)
 
-- `SECURITY.md` v0.1 — zero-knowledge invariant, v1 crypto parameters,
-  authorization model, coordinated-disclosure stub.
-- `docs/routing.md` — 14-route table with SSR posture and guard stack,
-  plus the public/auth/locked map that the Phase 1.2 RLS CI test will
-  consume.
-- `perf/baseline.json` — snapshot of top client chunks and server libs
-  >100 KB, with the two biggest code-split wins called out.
-- `@zxing/library@^0.22.0` added as an explicit dep (was previously an
-  unresolved peer of `@zxing/browser`).
-
-### Phase 1.1 — Schema migrations
 - `profiles.role` (`'user' | 'admin'`, default `'user'`) with a
   `prevent_role_self_promotion` trigger — role changes require the
   `service_role` connection.
