@@ -709,24 +709,59 @@ export function AccountCard({
                             letterSpacing: "0.25em",
                           }}
                         >
-                          Current code
+                          {editing ? "Editing account" : "Current code"}
                         </div>
-                        <div
-                          id={detailsTitleId}
-                          className="truncate text-[17px]"
-                          style={{
-                            fontFamily: "'Playfair Display', serif",
-                            fontWeight: 600,
-                            letterSpacing: "-0.01em",
-                            color: CHARCOAL,
-                          }}
-                        >
-                          {account.issuer || "Untitled"}
-                        </div>
-                        {account.label && (
-                          <div className="truncate text-[11.5px]" style={{ color: MUTED }}>
-                            {account.label}
+                        {editing ? (
+                          <div className="mt-1 flex flex-col gap-1.5">
+                            <input
+                              id={detailsTitleId}
+                              value={issuerDraft}
+                              onChange={(e) => setIssuerDraft(e.target.value)}
+                              placeholder="Service (e.g. Google)"
+                              maxLength={80}
+                              autoFocus
+                              className="w-full rounded-[10px] px-2.5 py-1.5 text-[15px] outline-none transition-colors focus:border-current"
+                              style={{
+                                background: "#fff",
+                                border: `1px solid ${BORDER}`,
+                                color: CHARCOAL,
+                                fontWeight: 600,
+                                letterSpacing: "-0.005em",
+                              }}
+                            />
+                            <input
+                              value={labelDraft}
+                              onChange={(e) => setLabelDraft(e.target.value)}
+                              placeholder="Account (e.g. you@email.com)"
+                              maxLength={120}
+                              className="w-full rounded-[10px] px-2.5 py-1 text-[12px] outline-none"
+                              style={{
+                                background: "#fff",
+                                border: `1px solid ${BORDER}`,
+                                color: CHARCOAL,
+                              }}
+                            />
                           </div>
+                        ) : (
+                          <>
+                            <div
+                              id={detailsTitleId}
+                              className="truncate text-[17px]"
+                              style={{
+                                fontFamily: "'Playfair Display', serif",
+                                fontWeight: 600,
+                                letterSpacing: "-0.01em",
+                                color: CHARCOAL,
+                              }}
+                            >
+                              {account.issuer || "Untitled"}
+                            </div>
+                            {account.label && (
+                              <div className="truncate text-[11.5px]" style={{ color: MUTED }}>
+                                {account.label}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       {onToggleFavorite && (
