@@ -96,6 +96,17 @@ function VaultPage() {
     );
   }, [accounts, query]);
 
+  const { favoriteList, otherList } = useMemo(() => {
+    if (!filtered) return { favoriteList: [], otherList: [] };
+    const favs: DecryptedAccount[] = [];
+    const rest: DecryptedAccount[] = [];
+    for (const a of filtered) {
+      if (favorites.has(a.id)) favs.push(a);
+      else rest.push(a);
+    }
+    return { favoriteList: favs, otherList: rest };
+  }, [filtered, favorites]);
+
   return (
     <>
 
