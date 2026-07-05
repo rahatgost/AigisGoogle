@@ -24,6 +24,12 @@ export default defineConfig({
         injectRegister: null,
         devOptions: { enabled: false },
         filename: "sw.js",
+        // TanStack Start + Nitro splits Vite's outDir into `dist/client` (browser)
+        // and `dist/server` (worker). vite-plugin-pwa infers from Vite's own
+        // build.outDir which is `dist/`, so without this override the SW and
+        // manifest.webmanifest end up siblings of the client bundle instead
+        // of inside it — and never get served.
+        outDir: "dist/client",
         includeAssets: [
           "favicon.ico",
           "icon-192.png",
