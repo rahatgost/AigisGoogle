@@ -110,6 +110,48 @@ export async function unwrapVaultKey(
   );
 }
 
+// Rotate the master passphrase without changing the DEK itself. The DEK
+// stays the same, so every existing ciphertext in `vault_accounts` remains
+// valid — we only re-wrap it with a fresh KEK derived from the new
+// passphrase and a fresh salt.
+export async function rewrapVaultKey(
+  currentPassphrase: string,
+  newPassphrase: string,
+  currentSalt: Uint8Array,
+  currentWrappedKey: Uint8Array,
+  currentWrappedKeyIv: Uint8Array,
+): Promise<{
+  salt: Uint8Array;
+  wrappedKey: Uint8Array;
+  wrappedKeyIv: Uint8Array;
+  kdfAlgorithm: string;
+}> {
+  const oldKek = await deriveKekFromPassphrase(currentPassphrase, currentSalt);
+  // Unwrap DEK as extractable so we can re-wrap it under the new KEK.
+  const dek = await crypto.subtle.unwrapKey(
+    "raw",
+    currentWrappedKey as unknown as BufferSource,
+    oldKek,
+    { name: "AES-GCM", iv: currentWrappedKeyIv as unknown as BufferSource },
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"],
+  );
+  const newSalt = randomBytes(16);
+  const newKek = await deriveKekFromPassphrase(newPassphrase, newSalt);
+  const newIv = randomBytes(12);
+  const wrapped = await crypto.subtle.wrapKey("raw", dek, newKek, {
+    name: "AES-GCM",
+    iv: newIv as unknown as BufferSource,
+  });
+  return {
+    salt: newSalt,
+    wrappedKey: new Uint8Array(wrapped),
+    wrappedKeyIv: newIv,
+    kdfAlgorithm: KDF_ALGO,
+  };
+}
+
 export async function encryptSecret(
   dek: CryptoKey,
   plaintext: string,

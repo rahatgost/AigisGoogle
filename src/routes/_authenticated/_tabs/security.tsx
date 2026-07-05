@@ -1,17 +1,53 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { KeyRound, RotateCcw, Timer, Sparkles, Lock, ShieldCheck } from "lucide-react";
-import { BORDER, CHARCOAL, CREAM_SOFT, MUTED, Notice, soft } from "@/components/aegis/chrome";
 import {
-
+  KeyRound,
+  RotateCcw,
+  Timer,
+  Sparkles,
+  Lock,
+  ShieldCheck,
+  Check,
+  X,
+} from "lucide-react";
+import {
+  BORDER,
+  CHARCOAL,
+  CREAM_SOFT,
+  MUTED,
+  Notice,
+  PrimaryButton,
+  soft,
+} from "@/components/aegis/chrome";
+import {
   LargeTitle,
   SectionLabel,
   SettingsGroup,
   SettingsRow,
 } from "@/components/aegis/settings";
-import { isVaultUnlocked, lockVault } from "@/lib/vault-session";
+import {
+  PasswordField,
+  StrengthMeter,
+  scoreStrength,
+} from "@/components/aegis/password-field";
+import {
+  AUTO_LOCK_OPTIONS,
+  getAutoLockMs,
+  isVaultUnlocked,
+  lockVault,
+  setAutoLockMs,
+  setVaultKey,
+  useAutoLockMs,
+} from "@/lib/vault-session";
+import {
+  KDF_ALGORITHM,
+  rewrapVaultKey,
+  toBytes,
+  toByteaHex,
+  unwrapVaultKey,
+} from "@/lib/vault-crypto";
 
 export const Route = createFileRoute("/_authenticated/_tabs/security")({
   beforeLoad: ({ location }) => {
@@ -26,12 +62,20 @@ export const Route = createFileRoute("/_authenticated/_tabs/security")({
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
 
+function autoLockLabel(ms: number | null): string {
+  const opt = AUTO_LOCK_OPTIONS.find((o) => o.value === ms);
+  return opt ? opt.label : "After 5 minutes of inactivity";
+}
+
 function SecurityPage() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
+  const autoLockMs = useAutoLockMs();
   const [hint, setHint] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autoLockOpen, setAutoLockOpen] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,9 +116,10 @@ function SecurityPage() {
     }
   };
 
+  const currentAutoLockLabel = useMemo(() => autoLockLabel(autoLockMs), [autoLockMs]);
+
   return (
     <>
-
       <LargeTitle
         title="Locks & recovery"
         subtitle="Everything protecting your codes lives here."
@@ -121,14 +166,51 @@ function SecurityPage() {
           <SettingsRow
             icon={<Timer className="h-4 w-4" strokeWidth={1.8} />}
             title="Auto-lock"
-            value="After 5 minutes of inactivity"
+            value={currentAutoLockLabel}
+            onClick={() => setAutoLockOpen((v) => !v)}
+            chevron
           />
+          <AnimatePresence initial={false}>
+            {autoLockOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={soft}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-0.5 px-2 py-1.5">
+                  {AUTO_LOCK_OPTIONS.map((opt) => {
+                    const active = opt.value === autoLockMs;
+                    return (
+                      <motion.button
+                        key={opt.label}
+                        whileTap={{ scale: 0.99, backgroundColor: "rgba(28,28,28,0.05)" }}
+                        onClick={() => {
+                          setAutoLockMs(opt.value);
+                          setAutoLockOpen(false);
+                          setNotice({ kind: "info", text: `Auto-lock set to “${opt.label.toLowerCase()}”.` });
+                        }}
+                        className="flex items-center justify-between rounded-[10px] px-3 py-2.5 text-left"
+                        style={{ color: CHARCOAL }}
+                      >
+                        <span className="text-[13.5px]" style={{ fontWeight: active ? 600 : 500 }}>
+                          {opt.label}
+                        </span>
+                        {active && <Check className="h-4 w-4" strokeWidth={2} />}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <SettingsRow
             icon={<Sparkles className="h-4 w-4" strokeWidth={1.8} />}
             title="Change passphrase"
             description="Rotate your master key without re-adding accounts"
-            badge="Soon"
-            disabled
+            onClick={() => setChangeOpen(true)}
+            chevron
           />
         </SettingsGroup>
 
@@ -169,6 +251,210 @@ function SecurityPage() {
           Codes are encrypted on your device. We can't read them.
         </p>
       </div>
+
+      <AnimatePresence>
+        {changeOpen && (
+          <ChangePassphraseSheet
+            userId={user.id}
+            initialHint={hint}
+            onClose={() => setChangeOpen(false)}
+            onSaved={(nextHint) => {
+              setHint(nextHint);
+              setChangeOpen(false);
+              setNotice({ kind: "info", text: "Passphrase updated." });
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
+  );
+}
+
+function ChangePassphraseSheet({
+  userId,
+  initialHint,
+  onClose,
+  onSaved,
+}: {
+  userId: string;
+  initialHint: string | null;
+  onClose: () => void;
+  onSaved: (hint: string | null) => void;
+}) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [hint, setHint] = useState(initialHint ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const canSubmit =
+    current.length > 0 &&
+    next.length >= 10 &&
+    scoreStrength(next) >= 2 &&
+    next === confirm &&
+    next !== current;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    if (!canSubmit) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("vault_meta")
+        .select("kdf_salt, recovery_wrapped_key, recovery_wrapped_key_iv, kdf_algorithm")
+        .eq("user_id", userId)
+        .single();
+      if (error) throw error;
+      if (data.kdf_algorithm !== KDF_ALGORITHM) {
+        throw new Error("Vault was created with a different key algorithm.");
+      }
+      // Verify current passphrase actually unwraps the DEK.
+      try {
+        await unwrapVaultKey(
+          current,
+          toBytes(data.kdf_salt),
+          toBytes(data.recovery_wrapped_key),
+          toBytes(data.recovery_wrapped_key_iv),
+        );
+      } catch {
+        throw new Error("Current passphrase is incorrect.");
+      }
+      // Rotate: same DEK, new KEK + salt + iv.
+      const { salt, wrappedKey, wrappedKeyIv, kdfAlgorithm } = await rewrapVaultKey(
+        current,
+        next,
+        toBytes(data.kdf_salt),
+        toBytes(data.recovery_wrapped_key),
+        toBytes(data.recovery_wrapped_key_iv),
+      );
+      const trimmedHint = hint.trim() ? hint.trim() : null;
+      const { error: upErr } = await supabase
+        .from("vault_meta")
+        .update({
+          kdf_salt: toByteaHex(salt),
+          kdf_algorithm: kdfAlgorithm,
+          recovery_wrapped_key: toByteaHex(wrappedKey),
+          recovery_wrapped_key_iv: toByteaHex(wrappedKeyIv),
+          passphrase_hint: trimmedHint,
+        })
+        .eq("user_id", userId);
+      if (upErr) throw upErr;
+      // Re-unlock with the new passphrase so the in-memory DEK stays valid.
+      const freshDek = await unwrapVaultKey(next, salt, wrappedKey, wrappedKeyIv);
+      setVaultKey(freshDek);
+      onSaved(trimmedHint);
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "Could not change passphrase.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.button
+        aria-label="Close"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0"
+        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+      />
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={soft}
+        className="relative z-10 mx-auto w-full max-w-[440px] rounded-t-[22px] px-6 pb-[max(24px,env(safe-area-inset-bottom))] pt-5 sm:rounded-[22px]"
+        style={{
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "0 -12px 40px -12px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div className="mb-3 flex items-start justify-between">
+          <div>
+            <div
+              className="text-[18px]"
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                color: CHARCOAL,
+              }}
+            >
+              Change passphrase
+            </div>
+            <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+              Your codes stay put. Only the key that unlocks them changes.
+            </div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full"
+            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" strokeWidth={1.8} />
+          </motion.button>
+        </div>
+
+        <form onSubmit={submit} className="flex flex-col gap-2.5">
+          <PasswordField
+            value={current}
+            onChange={setCurrent}
+            autoComplete="current-password"
+            placeholder="Current passphrase"
+            autoFocus
+          />
+          <PasswordField
+            value={next}
+            onChange={setNext}
+            autoComplete="new-password"
+            minLength={10}
+            placeholder="New passphrase"
+            delay={0.05}
+          />
+          <StrengthMeter value={next} />
+          <PasswordField
+            value={confirm}
+            onChange={setConfirm}
+            autoComplete="new-password"
+            minLength={10}
+            placeholder="Confirm new passphrase"
+            delay={0.1}
+          />
+          <input
+            type="text"
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            maxLength={80}
+            placeholder="Optional hint (never the passphrase)"
+            className="rounded-[10px] border bg-transparent px-3 py-2.5 text-[13.5px] outline-none"
+            style={{ borderColor: BORDER, color: CHARCOAL }}
+          />
+
+          {err && <Notice kind="error">{err}</Notice>}
+          {next && next === current && (
+            <Notice kind="error">The new passphrase must be different.</Notice>
+          )}
+
+          <div className="pt-1">
+            <PrimaryButton type="submit" loading={saving} disabled={!canSubmit}>
+              Update passphrase
+            </PrimaryButton>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
   );
 }
