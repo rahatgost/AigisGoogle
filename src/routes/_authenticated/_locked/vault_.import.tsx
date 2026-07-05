@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrowserQRCodeReader } from "@zxing/browser";
+import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import {
   ArrowLeft,
   ClipboardPaste,
@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Circle,
   DownloadCloud,
+  ScanLine,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getVaultKey } from "@/lib/vault-session";
@@ -50,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/_locked/vault_/import")({
 });
 
 type Stage = "input" | "preview";
-type Tab = "paste" | "file";
+type Tab = "scan" | "paste" | "file";
 
 interface Preview {
   source: ImportSource;
@@ -62,7 +64,7 @@ function ImportPage() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
   const [stage, setStage] = useState<Stage>("input");
-  const [tab, setTab] = useState<Tab>("paste");
+  const [tab, setTab] = useState<Tab>("scan");
   const [pasteText, setPasteText] = useState("");
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -88,6 +90,18 @@ function ImportPage() {
         ? { kind: "info", text: `${p.skipped} entry ${p.skipped === 1 ? "was" : "were"} skipped (not a TOTP link).` }
         : null,
     );
+  };
+
+  const handleScanned = (text: string) => {
+    setNotice(null);
+    try {
+      showPreview(importFromText(text));
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        text: err instanceof Error ? err.message : "That QR isn't a supported OTP code.",
+      });
+    }
   };
 
   const handlePaste = () => {
@@ -248,7 +262,13 @@ function ImportPage() {
                   exit={{ opacity: 0, y: -4 }}
                   transition={soft}
                 >
-                  {tab === "paste" ? (
+                  {tab === "scan" ? (
+                    <ScanTab
+                      onDetected={handleScanned}
+                      onError={(msg) => setNotice({ kind: "error", text: msg })}
+                      switchToPaste={() => setTab("paste")}
+                    />
+                  ) : tab === "paste" ? (
                     <PasteTab
                       value={pasteText}
                       onChange={setPasteText}
@@ -308,6 +328,13 @@ function SegmentedTabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) 
       }}
     >
       <SegButton
+        active={tab === "scan"}
+        onClick={() => setTab("scan")}
+        icon={<ScanLine className="h-3.5 w-3.5" strokeWidth={1.8} />}
+      >
+        Scan
+      </SegButton>
+      <SegButton
         active={tab === "paste"}
         onClick={() => setTab("paste")}
         icon={<ClipboardPaste className="h-3.5 w-3.5" strokeWidth={1.8} />}
@@ -319,7 +346,7 @@ function SegmentedTabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) 
         onClick={() => setTab("file")}
         icon={<FileUp className="h-3.5 w-3.5" strokeWidth={1.8} />}
       >
-        File or image
+        File
       </SegButton>
     </div>
   );
@@ -598,6 +625,165 @@ function PreviewStage({
           ? "Importing…"
           : `Import ${selected.size} account${selected.size === 1 ? "" : "s"}`}
       </PrimaryButton>
+    </div>
+  );
+}
+
+function ScanTab({
+  onDetected,
+  onError,
+  switchToPaste,
+}: {
+  onDetected: (text: string) => void;
+  onError: (msg: string) => void;
+  switchToPaste: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [starting, setStarting] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    let controls: IScannerControls | null = null;
+    let cancelled = false;
+
+    (async () => {
+      const reader = new BrowserQRCodeReader();
+      try {
+        controls = await reader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current!,
+          (result) => {
+            if (!result || cancelled || firedRef.current) return;
+            const text = result.getText();
+            if (
+              text.startsWith("otpauth://") ||
+              text.startsWith("otpauth-migration://")
+            ) {
+              firedRef.current = true;
+              controls?.stop();
+              onDetected(text);
+            }
+          },
+        );
+        if (!cancelled) setStarting(false);
+      } catch (err) {
+        if (cancelled) return;
+        setStarting(false);
+        const name = (err as { name?: string })?.name ?? "";
+        if (name === "NotAllowedError" || name === "SecurityError") {
+          setPermissionDenied(true);
+        } else {
+          onError(err instanceof Error ? err.message : "Could not start camera.");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controls?.stop();
+    };
+  }, [onDetected, onError]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="relative aspect-square w-full overflow-hidden rounded-[22px]"
+        style={{
+          border: `1px solid ${BORDER}`,
+          background: "#0a0a0a",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 32px -18px rgba(28,28,28,0.35)",
+        }}
+      >
+        <video
+          ref={videoRef}
+          className="h-full w-full object-cover"
+          playsInline
+          muted
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(closest-side, transparent 55%, rgba(0,0,0,0.55) 100%)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-8">
+          {[
+            "top-0 left-0 border-t-2 border-l-2 rounded-tl-[14px]",
+            "top-0 right-0 border-t-2 border-r-2 rounded-tr-[14px]",
+            "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-[14px]",
+            "bottom-0 right-0 border-b-2 border-r-2 rounded-br-[14px]",
+          ].map((c, i) => (
+            <span
+              key={i}
+              className={`absolute h-9 w-9 ${c}`}
+              style={{
+                borderColor: "rgba(247,244,237,0.92)",
+                boxShadow: "0 0 12px rgba(247,244,237,0.35)",
+              }}
+            />
+          ))}
+          <motion.div
+            className="absolute inset-x-2 h-[2px] rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(247,244,237,0.95), transparent)",
+              boxShadow: "0 0 14px rgba(247,244,237,0.55)",
+            }}
+            animate={{ y: [4, "calc(100% - 4px)", 4] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        {starting && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">
+            <Loader2 className="h-5 w-5 animate-spin" style={{ color: CREAM_SOFT }} />
+          </div>
+        )}
+        {permissionDenied && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center"
+            style={{ background: "rgba(10,10,10,0.72)", color: CREAM_SOFT }}
+          >
+            <Camera className="h-6 w-6" strokeWidth={1.6} />
+            <p className="max-w-[240px] text-[13px] leading-[1.4]">
+              Camera access is blocked. Enable it, upload the QR as an image, or paste the code.
+            </p>
+            <button
+              onClick={switchToPaste}
+              className="mt-2 rounded-full px-3 py-1.5 text-[12px]"
+              style={{
+                background: "rgba(247,244,237,0.14)",
+                border: "1px solid rgba(247,244,237,0.25)",
+                color: CREAM_SOFT,
+                fontWeight: 500,
+              }}
+            >
+              Paste instead
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div
+        className="flex items-center justify-center gap-2 text-[12.5px]"
+        style={{ color: MUTED }}
+      >
+        <span
+          className="inline-flex h-1.5 w-1.5 rounded-full"
+          style={{ background: starting ? "#c9a24a" : "#4a8f5a" }}
+        />
+        <span>
+          {starting
+            ? "Starting camera…"
+            : permissionDenied
+              ? "Camera unavailable"
+              : "Point at the migration QR — we'll parse it automatically"}
+        </span>
+      </div>
     </div>
   );
 }
