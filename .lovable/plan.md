@@ -311,14 +311,61 @@ extra work is a [P1] follow-up rather than a Phase 6 blocker.
 
 **Exit criterion met:** Phase 6 is fully closed.
 
+## Phase 7.1 — Tags UI ✅ CLOSED (this session)
+
+Column + GIN index already existed from Phase 1.1; only the client
+surface was missing. Landed this pass:
+
+- **Data layer** (`src/lib/vault-accounts.ts`) — `tags: string[]` on
+  `VaultAccountRecord` + `DecryptedAccount`, added to a shared
+  `ACCOUNT_SELECT` and the `INSERT` payload. New helper
+  `setAccountTags(id, tags)` returns the normalised list and refreshes
+  the IndexedDB mirror via `upsertVaultCache` — offline reads see the
+  latest tags immediately.
+- **Shared primitives** (`src/components/vault/tags.tsx`) —
+  `normalizeTag` / `normalizeTagList` (lowercase, dashify, dedupe, cap
+  at 20 to match the DB CHECK), deterministic `tagChipColors(tag)`
+  hashed off the tag name, `<TagChip>` + `<TagInput>` (Enter / comma /
+  Tab to commit, Backspace-on-empty to remove, live suggestions from
+  the current vault's tag pool).
+- **AccountCard** — up to 3 tag chips (with `+N` overflow pill) shown
+  under the label on the compact row; details sheet gets a Tags editor
+  that reuses `TagInput` and only surfaces a Save button when the
+  draft diverges. Updates propagate back to the vault page via a new
+  `onTagsChanged` callback so filters + suggestions stay coherent.
+- **Vault page** — horizontal tag-filter row above the search field
+  (chip per tag with `· count`, active state inverts to charcoal,
+  Clear pill appears once anything is selected). Combined with search
+  as a union across issuer / label / tags. Empty-state copy switches
+  between "no tag match" and "no query match".
+- **Tag manager sheet** — reachable from the "Manage" button on the
+  filter row. Lists every tag with its account count and offers
+  Rename (inline input; renaming to an existing tag merges) and
+  Delete (removes the tag from every account, keeps the accounts).
+  All bulk edits run through `setAccountTags` per row so the trigger
+  and cache invariants stay identical.
+- **Add-account form** (`vault_.new.tsx`) — new optional Tags section
+  above Advanced options; QR-scan flow accepts tags too via the
+  extended `save()` signature (empty by default).
+
+### Verification
+- `bunx tsgo --noEmit` → **0 errors**.
+- `bun run build` → **clean**.
+- Route-level chunks unchanged in size class (the tag primitives add
+  ~2 KB to the vault entry, well inside the Phase 6 budget).
+
+**Exit criterion met:** Phase 7.1 is closed. Next up in Phase 7:
+7.2 drag-and-drop reorder (writing to `sort_order`) and 7.3 bulk
+select / delete / tag.
+
 ## Next feature candidates
 
-1. **Phase 7 — Vault UX II** — Tags UI, drag-and-drop reorder
-   (schema already present), bulk edit/delete, HOTP, Steam Guard.
+1. **Phase 7.2 / 7.3** — DnD reorder + bulk select/edit on the vault.
 2. **RLS CI test** — extend `tests/rls/` to walk every route in
    `docs/routing.md`.
 3. **`VAULT_CRYPTO_VERSION = 2`** — Argon2id KDF + AAD binding
    (`user_id || account_id`) with a background re-encrypt migrator.
+
 
 
 
