@@ -14,10 +14,11 @@ import {
   Clock3,
 } from "lucide-react";
 import { toast } from "sonner";
-import { generateCode, type DecryptedAccount } from "@/lib/vault-accounts";
+import { generateCode, setAccountTags, type DecryptedAccount } from "@/lib/vault-accounts";
 import { BORDER, CHARCOAL, CREAM_SOFT, MUTED, soft } from "@/components/aegis/chrome";
 import { logoUrlFor, domainFromIssuer } from "@/lib/issuer-domain";
 import { useHideCodes } from "@/lib/vault-privacy";
+import { TagChip, TagInput } from "@/components/vault/tags";
 
 const DANGER = "#b23a2a";
 const FAV = "#c99a2b";
