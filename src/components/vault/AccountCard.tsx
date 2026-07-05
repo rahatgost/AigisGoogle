@@ -859,13 +859,19 @@ export function AccountCard({
                       <RingTimer progress={progress} remaining={remaining} warn={warn} />
                     </div>
 
-                    {/* Code display (revealed or dotted) */}
-                    <motion.div
-                      className="relative mb-2 flex flex-col items-center gap-1.5 overflow-hidden rounded-[16px] py-5"
+                    {/* Code display (revealed or dotted) — tap to toggle */}
+                    <motion.button
+                      type="button"
+                      onClick={() => setRevealed((v) => !v)}
+                      whileTap={{ scale: 0.995 }}
+                      aria-label={revealed ? "Hide code" : "Reveal code"}
+                      aria-pressed={revealed}
+                      className="relative mb-2 flex w-full flex-col items-center gap-1.5 overflow-hidden rounded-[16px] py-5 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-offset-1"
                       style={{
                         background: "#fff",
                         border: `1px solid ${BORDER}`,
                         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+                        cursor: "pointer",
                       }}
                     >
                       <AnimatePresence>
@@ -947,7 +953,19 @@ export function AccountCard({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.div>
+
+                      <span
+                        className="mt-1 inline-flex items-center gap-1 text-[10px]"
+                        style={{
+                          color: MUTED,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          letterSpacing: "0.14em",
+                        }}
+                      >
+                        <MousePointerClick className="h-3 w-3" strokeWidth={1.7} />
+                        {revealed ? "TAP TO HIDE" : "TAP TO REVEAL"}
+                      </span>
+                    </motion.button>
 
                     {/* Copy primary */}
                     <motion.button
