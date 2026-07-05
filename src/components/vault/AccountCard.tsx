@@ -417,7 +417,7 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
               aria-label="Code hidden"
             >
               <EyeOff className="h-4 w-4 shrink-0" strokeWidth={1.8} />
-              <span className="flex flex-nowrap items-center gap-[6px]">
+              <span className="flex shrink-0 flex-nowrap items-center gap-[6px] whitespace-nowrap">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <span
                     key={i}
