@@ -207,11 +207,11 @@ function ProfilePage() {
       // Then normalize back to the real path so future updates work.
       setTimeout(() => setAvatarPath(path), 50);
       setNotice({ kind: "info", text: "Photo updated." });
+      toast.success("Photo updated");
     } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not upload photo.",
-      });
+      const msg = err instanceof Error ? err.message : "Could not upload photo.";
+      setNotice({ kind: "error", text: msg });
+      toast.error(msg);
     } finally {
       setAvatarBusy(false);
     }
