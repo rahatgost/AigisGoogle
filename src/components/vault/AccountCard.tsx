@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Star, Trash2, Loader2 } from "lucide-react";
+import { Copy, Check, Star, Trash2, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { generateCode, type DecryptedAccount } from "@/lib/vault-accounts";
-import { BORDER, CHARCOAL, CREAM_SOFT, MUTED } from "@/components/aegis/chrome";
+import { BORDER, CHARCOAL, CREAM_SOFT, MUTED, soft } from "@/components/aegis/chrome";
 import { logoUrlFor, domainFromIssuer } from "@/lib/issuer-domain";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const DANGER = "#b23a2a";
 const FAV = "#c99a2b";
