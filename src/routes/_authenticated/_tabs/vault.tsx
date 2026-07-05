@@ -164,6 +164,45 @@ function VaultPage() {
     setReloadKey((k) => k + 1);
   }, []);
 
+  const syncPendingTags = useCallback(async () => {
+    if (syncingTags) return;
+    setSyncingTags(true);
+    try {
+      const n = await flushPendingTagUpdates();
+      refreshPendingCount();
+      if (n > 0) {
+        toast.success(`Synced ${n} tag update${n === 1 ? "" : "s"}`);
+        setReloadKey((k) => k + 1);
+      } else if (hasQueuedTagUpdates()) {
+        toast.error("Some tag updates still can't reach the server.");
+      }
+    } finally {
+      setSyncingTags(false);
+    }
+  }, [refreshPendingCount, syncingTags]);
+
+  // Auto-flush whenever the browser reports we're back online, and when the
+  // component mounts online with pending updates.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const flush = () => {
+      if (!navigator.onLine) return;
+      if (!hasQueuedTagUpdates()) return;
+      void syncPendingTags();
+    };
+    window.addEventListener("online", flush);
+    // Fire once at mount too — the app may open online with a queue left
+    // from a previous session.
+    flush();
+    return () => window.removeEventListener("online", flush);
+  }, [syncPendingTags]);
+
+  // Keep the pending count fresh whenever the queue may have changed.
+  useEffect(() => {
+    refreshPendingCount();
+  }, [refreshPendingCount, accounts, online, reloadKey]);
+
+
 
   const filtered = useMemo(() => {
     if (!accounts) return null;
