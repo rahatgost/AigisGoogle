@@ -412,17 +412,24 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              className="flex items-center gap-2 text-[26px] leading-none tabular-nums"
-              style={{
-                color: MUTED,
-                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                fontWeight: 600,
-                letterSpacing: "0.32em",
-              }}
+              className="flex min-w-0 items-center gap-2"
+              style={{ color: MUTED }}
               aria-label="Code hidden"
             >
               <EyeOff className="h-4 w-4 shrink-0" strokeWidth={1.8} />
-              <span>• • •&nbsp;&nbsp;• • •</span>
+              <span className="flex flex-nowrap items-center gap-[6px]">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <span
+                    key={i}
+                    aria-hidden
+                    className="inline-block h-1.5 w-1.5 rounded-full"
+                    style={{
+                      background: "currentColor",
+                      marginLeft: i === 3 ? 6 : 0,
+                    }}
+                  />
+                ))}
+              </span>
             </motion.div>
           ) : (
             <motion.div
