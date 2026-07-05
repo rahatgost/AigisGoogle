@@ -64,7 +64,7 @@ function ImportPage() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
   const [stage, setStage] = useState<Stage>("input");
-  const [tab, setTab] = useState<Tab>("paste");
+  const [tab, setTab] = useState<Tab>("scan");
   const [pasteText, setPasteText] = useState("");
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
