@@ -175,6 +175,16 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
   const [deleting, setDeleting] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const longPressedRef = useRef(false);
+  const detailsPanelRef = useRef<HTMLDivElement | null>(null);
+  const confirmPanelRef = useRef<HTMLDivElement | null>(null);
+  const detailsTitleId = `acc-details-${account.id}`;
+  const confirmTitleId = `acc-confirm-${account.id}`;
+  const confirmDescId = `acc-confirm-desc-${account.id}`;
+
+  useModalA11y(detailsOpen, detailsPanelRef, () => setDetailsOpen(false));
+  useModalA11y(confirmOpen, confirmPanelRef, () => {
+    if (!deleting) setConfirmOpen(false);
+  });
 
   const period = account.period;
   const elapsed = Math.floor(now / 1000) % period;
