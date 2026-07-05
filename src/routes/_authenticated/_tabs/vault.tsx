@@ -7,8 +7,12 @@ import {
   useActivityKeepAlive,
   useVaultUnlocked,
 } from "@/lib/vault-session";
-import { deleteAccount, listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
-import { loadFavorites, saveFavorites } from "@/lib/favorites";
+import {
+  deleteAccount,
+  listAccounts,
+  setAccountFavorite,
+  type DecryptedAccount,
+} from "@/lib/vault-accounts";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { Shield, Plus, Loader2, Search, X } from "lucide-react";
 import {
