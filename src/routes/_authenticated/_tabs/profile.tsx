@@ -258,6 +258,18 @@ function ProfilePage() {
             title="Sign out"
             description="You'll need to sign in and unlock again"
             onClick={signOut}
+            chevron
+          />
+        </SettingsGroup>
+
+        <SectionLabel>Danger zone</SectionLabel>
+        <SettingsGroup>
+          <SettingsRow
+            icon={<Trash2 className="h-4 w-4" strokeWidth={1.8} />}
+            title={deleting ? "Deleting account…" : "Delete account"}
+            description="Erase your account, codes, and passphrase forever."
+            onClick={handleDelete}
+            disabled={deleting}
             danger
             chevron
           />
