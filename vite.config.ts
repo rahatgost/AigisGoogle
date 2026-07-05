@@ -62,8 +62,12 @@ export default defineConfig({
           ],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}"],
-          // OAuth callback and Supabase auth flows must always hit the network.
+          globPatterns: ["**/*.{js,css,ico,png,svg,webmanifest,woff,woff2}"],
+          // TanStack Start + Nitro doesn't emit a static index.html — SSR
+          // renders every navigation. So there's no precached "shell" URL
+          // to fall back to; instead the NetworkFirst navigation handler
+          // below serves whichever route the user previously visited from
+          // its own runtime cache. `navigateFallback` intentionally omitted.
           navigateFallbackDenylist: [
             /^\/~oauth/,
             /^\/api\//,
@@ -77,7 +81,12 @@ export default defineConfig({
             {
               // HTML shell — network-first so a new deploy takes effect on the
               // next successful load, but a cached copy keeps offline working.
-              urlPattern: ({ request }) => request.mode === "navigate",
+              urlPattern: ({ request, url }) =>
+                request.mode === "navigate" &&
+                !url.pathname.startsWith("/~oauth") &&
+                !url.pathname.startsWith("/api/") &&
+                !url.pathname.startsWith("/auth/callback") &&
+                !url.pathname.startsWith("/auth/reset-password"),
               handler: "NetworkFirst",
               options: {
                 cacheName: "aegis-html",
@@ -101,9 +110,8 @@ export default defineConfig({
               },
             },
           ],
-          // Never touch Supabase or /api requests — they must always hit the network.
-          navigateFallback: "/index.html",
         },
+
       }),
     ],
   },

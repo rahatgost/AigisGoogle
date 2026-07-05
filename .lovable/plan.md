@@ -222,11 +222,17 @@ extra work is a [P1] follow-up rather than a Phase 6 blocker.
   `outDir: 'dist/client'` so the SW + manifest ship inside the
   TanStack client bundle instead of alongside the Nitro worker.
 - Runtime caching: **NetworkFirst** for HTML navigations
-  (`networkTimeoutSeconds: 3`), **StaleWhileRevalidate** for
-  Google Fonts CSS, **CacheFirst** for `fonts.gstatic.com` files
-  (1-year TTL, immutable per URL). Supabase / `/api/*` /
-  `/~oauth` / `/auth/*` are on the navigation-fallback denylist —
-  they always hit the network.
+  (`networkTimeoutSeconds: 3`, `aegis-html` cache, denylist for
+  `/~oauth`, `/api/*`, `/auth/callback`, `/auth/reset-password`
+  applied inside the `urlPattern` itself so those URLs never enter
+  the cache), **StaleWhileRevalidate** for Google Fonts CSS,
+  **CacheFirst** for `fonts.gstatic.com` files (1-year TTL,
+  immutable per URL). No `navigateFallback` — TanStack Start SSRs
+  every route, so there is no static `index.html` to fall back to;
+  each previously-visited URL is served from its own runtime
+  cache entry when offline. *(Fixed this session — the earlier
+  `navigateFallback: "/index.html"` pointed at a file the build
+  never emits.)*
 - Manifest at `/manifest.webmanifest`: `display: standalone`,
   `start_url: /vault`, `theme_color: #f7f4ed`, matching cream
   background, three icons (192, 512, 512-maskable) generated from
