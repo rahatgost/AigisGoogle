@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          at: string
+          id: string
+          metadata: Json
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          at?: string
+          id?: string
+          metadata?: Json
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          at?: string
+          id?: string
+          metadata?: Json
+          target?: string | null
+        }
+        Relationships: []
+      }
+      client_errors: {
+        Row: {
+          at: string
+          id: string
+          message: string
+          route: string | null
+          stack_redacted: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          at?: string
+          id?: string
+          message: string
+          route?: string | null
+          stack_redacted?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          at?: string
+          id?: string
+          message?: string
+          route?: string | null
+          stack_redacted?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           auto_lock_pref: string | null
@@ -23,6 +80,7 @@ export type Database = {
           hide_codes_pref: boolean
           id: string
           onboarded_at: string | null
+          role: string
           updated_at: string
         }
         Insert: {
@@ -33,6 +91,7 @@ export type Database = {
           hide_codes_pref?: boolean
           id: string
           onboarded_at?: string | null
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -43,6 +102,7 @@ export type Database = {
           hide_codes_pref?: boolean
           id?: string
           onboarded_at?: string | null
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -133,7 +193,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id?: string }; Returns: boolean }
+      purge_old_client_errors: { Args: { days?: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never
