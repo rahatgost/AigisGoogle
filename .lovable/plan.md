@@ -259,23 +259,30 @@ extra work is a [P1] follow-up rather than a Phase 6 blocker.
   `.select().single()` the row and call
   `upsertVaultCache` / `removeFromVaultCache`.
 
-### 6.4 Offline UX (landed)
-- `vault.tsx` subscribes to `window` `online` / `offline` events,
-  re-runs the loader when connectivity flips, and renders a
-  pill-shaped notice at the top of the vault:
+### 6.4 Offline UX (fully landed this session)
+- Shared `useOnlineStatus()` hook in `src/lib/use-online.ts` —
+  SSR-safe, subscribes to `window` `online` / `offline` once,
+  reused by every screen that needs the signal.
+- `vault.tsx` — pill-shaped notice at the top of the vault when
+  offline or serving cache, now with a **Retry** button
+  (`RefreshCw` icon + spinner while re-loading). Retry bumps a
+  `reloadKey` that re-runs `listAccountsWithCache`, so a captive
+  Wi-Fi / dropped Supabase connection can be recovered without
+  navigating away.
   - offline → *"You're offline — showing cached codes. Add or
     edit is disabled."*
   - back online but still on cache → *"Reconnecting — showing
     cached codes."*
-
-### Verification
-- `bunx tsgo --noEmit` → **0 errors**.
-- `bun run build` → clean. PWA output confirmed:
-  `dist/client/sw.js`, `dist/client/workbox-*.js`,
-  `dist/client/manifest.webmanifest`, `dist/client/icon-{192,512,
-  maskable-512}.png`, `dist/client/apple-touch-icon.png`.
-  `precache 89 entries (2937.98 KiB)` — first-run install grabs
-  everything needed for offline unlock.
+- `vault_.new.tsx` — the Add-account screen now shows the same
+  offline pill and blocks `save()` with a friendly error when
+  `navigator.onLine === false`. QR scanning stays enabled because
+  decoding an `otpauth://` URI is fully local — only the write to
+  `vault_accounts` needs the network.
+- Deferred as **[P2]** for a follow-up PR: full write-outbox for
+  `addAccount` / `setAccountFavorite` / `deleteAccount` with
+  replay on reconnect. The favorite toggle already rolls back on
+  error and the Add screen is now gated, so the current gap is
+  UX polish, not data loss.
 
 ### 6.3 Dynamic-import heavy libraries ✅ CLOSED (this session)
 - `jspdf` moved to `await import("jspdf")` inside `downloadPdf` in
@@ -290,8 +297,13 @@ extra work is a [P1] follow-up rather than a Phase 6 blocker.
   picks an image file.
 - Verified `bunx tsgo --noEmit` clean and `bun run build` clean.
 
-**Exit criterion met:** heavy libs no longer sit in the initial vault
-paint. Phase 6 is fully closed.
+### Verification
+- `bunx tsgo --noEmit` → **0 errors**.
+- Phase 6 exit criteria all green: installable PWA, cached codes
+  after unlock, retry-able offline banner, add-account gated when
+  offline, heavy libs off the initial paint.
+
+**Exit criterion met:** Phase 6 is fully closed.
 
 ## Next feature candidates
 
