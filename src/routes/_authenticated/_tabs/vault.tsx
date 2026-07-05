@@ -8,6 +8,7 @@ import {
   useVaultUnlocked,
 } from "@/lib/vault-session";
 import { listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
+import { loadFavorites, saveFavorites } from "@/lib/favorites";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { Shield, Plus, Loader2, Search, X } from "lucide-react";
 import {
@@ -20,7 +21,7 @@ import {
   PrimaryButton,
   soft,
 } from "@/components/aegis/chrome";
-import { LargeTitle } from "@/components/aegis/settings";
+import { LargeTitle, SectionLabel } from "@/components/aegis/settings";
 
 export const Route = createFileRoute("/_authenticated/_tabs/vault")({
   beforeLoad: ({ location }) => {
