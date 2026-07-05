@@ -236,11 +236,20 @@ function ImportPage() {
           trailing={
             <AppBarButton
               label="Back"
-              onClick={() =>
-                stage === "preview"
-                  ? (setStage("input"), setPreview(null), setNotice(null))
-                  : navigate({ to: "/vault/new" })
-              }
+              onClick={() => {
+                if (stage === "preview") {
+                  setStage("input");
+                  setPreview(null);
+                  setNotice(null);
+                } else if (stage === "avf") {
+                  setStage("input");
+                  setAvfPending(null);
+                  setAvfPass("");
+                  setNotice(null);
+                } else {
+                  navigate({ to: "/vault/new" });
+                }
+              }}
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
             </AppBarButton>
