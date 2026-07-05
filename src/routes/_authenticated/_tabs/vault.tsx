@@ -158,6 +158,7 @@ function VaultPage() {
                   now={now}
                   favorites={favorites}
                   onToggleFavorite={toggleFavorite}
+                  onDelete={handleDelete}
                 />
               </div>
             )}
@@ -169,6 +170,7 @@ function VaultPage() {
                   now={now}
                   favorites={favorites}
                   onToggleFavorite={toggleFavorite}
+                  onDelete={handleDelete}
                 />
               </div>
             )}
