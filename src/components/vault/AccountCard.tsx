@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy,
@@ -388,7 +389,10 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
         </AnimatePresence>
       </div>
     </motion.button>
+    {typeof document !== "undefined" && createPortal(
+      <>
     <AnimatePresence>
+
       {detailsOpen && (
         <motion.div
           key="details-sheet"
@@ -933,9 +937,13 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite, onDele
         </motion.div>
       )}
     </AnimatePresence>
+      </>,
+      document.body,
+    )}
     </>
   );
 }
+
 
 function RingTimer({ progress, remaining, warn }: { progress: number; remaining: number; warn: boolean }) {
   const size = 28;
