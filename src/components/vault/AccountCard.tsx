@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Star } from "lucide-react";
 import { generateCode, type DecryptedAccount } from "@/lib/vault-accounts";
 import { BORDER, CHARCOAL, CREAM_SOFT, MUTED } from "@/components/aegis/chrome";
+import { logoUrlFor } from "@/lib/issuer-domain";
 
 const DANGER = "#b23a2a";
 const FAV = "#c99a2b";
@@ -35,6 +36,7 @@ function hueFor(seed: string): number {
 
 export function AccountCard({ account, now, isFavorite, onToggleFavorite }: Props) {
   const [copied, setCopied] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const period = account.period;
   const elapsed = Math.floor(now / 1000) % period;
@@ -70,6 +72,8 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite }: Prop
   const hue = hueFor(seed);
   const chipBg = `hsl(${hue}, 42%, 92%)`;
   const chipFg = `hsl(${hue}, 40%, 28%)`;
+  const logoUrl = useMemo(() => logoUrlFor(account.issuer, 80), [account.issuer]);
+  const showLogo = !!logoUrl && !logoFailed;
 
   return (
     <motion.button
@@ -80,9 +84,9 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite }: Prop
     >
       <div className="flex items-center gap-3">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[12.5px]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[12px] text-[12.5px]"
           style={{
-            background: chipBg,
+            background: showLogo ? "#fff" : chipBg,
             color: chipFg,
             border: `1px solid ${BORDER}`,
             fontFamily: "'Sora', sans-serif",
@@ -90,7 +94,17 @@ export function AccountCard({ account, now, isFavorite, onToggleFavorite }: Prop
             letterSpacing: "0.02em",
           }}
         >
-          {initials(seed)}
+          {showLogo ? (
+            <img
+              src={logoUrl!}
+              alt=""
+              className="h-full w-full object-contain"
+              loading="lazy"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            initials(seed)
+          )}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
