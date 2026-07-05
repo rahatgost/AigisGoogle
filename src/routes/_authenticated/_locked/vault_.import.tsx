@@ -262,7 +262,13 @@ function ImportPage() {
                   exit={{ opacity: 0, y: -4 }}
                   transition={soft}
                 >
-                  {tab === "paste" ? (
+                  {tab === "scan" ? (
+                    <ScanTab
+                      onDetected={handleScanned}
+                      onError={(msg) => setNotice({ kind: "error", text: msg })}
+                      switchToPaste={() => setTab("paste")}
+                    />
+                  ) : tab === "paste" ? (
                     <PasteTab
                       value={pasteText}
                       onChange={setPasteText}
