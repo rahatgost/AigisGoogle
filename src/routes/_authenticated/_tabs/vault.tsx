@@ -375,6 +375,7 @@ function VaultPage() {
             onToggleFavorite={toggleFavorite}
             onDelete={handleDelete}
             onTagsChanged={handleTagsChanged}
+            onDetailsChanged={handleDetailsChanged}
             tagSuggestions={tagNames}
           />
         )}
