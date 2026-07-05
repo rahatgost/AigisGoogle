@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  FileText,
 } from "lucide-react";
 import {
   BORDER,
