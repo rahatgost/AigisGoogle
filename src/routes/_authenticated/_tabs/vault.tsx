@@ -485,58 +485,139 @@ function TagFilterRow({
   onClear: () => void;
   onManage: () => void;
 }) {
+  const activeCount = active.size;
+  // Sort so active filters lead — user always sees what's on first.
+  const ordered = [...tags].sort((a, b) => {
+    const aOn = active.has(a.tag) ? 0 : 1;
+    const bOn = active.has(b.tag) ? 0 : 1;
+    if (aOn !== bOn) return aOn - bOn;
+    return b.count - a.count || a.tag.localeCompare(b.tag);
+  });
+
   return (
-    <div className="mt-2 flex items-center gap-2">
-      <div
-        className="aegis-scroll -mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 py-0.5"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {active.size > 0 && (
+    <div className="mt-2.5">
+      {/* Label row */}
+      <div className="mb-1.5 flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[9.5px] uppercase"
+            style={{
+              color: MUTED,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.22em",
+              fontWeight: 600,
+            }}
+          >
+            Filter
+          </span>
+          {activeCount > 0 && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-[10px]"
+              style={{
+                background: CHARCOAL,
+                color: CREAM_SOFT,
+                fontWeight: 700,
+                lineHeight: 1,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.06em",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {activeCount > 0 && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-black/5"
+              style={{ color: MUTED, fontWeight: 500 }}
+              aria-label="Clear tag filters"
+            >
+              <X className="h-2.5 w-2.5" strokeWidth={2.4} />
+              Clear
+            </button>
+          )}
           <button
             type="button"
-            onClick={onClear}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
-            style={{
-              background: "rgba(28,28,28,0.06)",
-              color: CHARCOAL,
-              fontWeight: 600,
-              border: `1px solid ${BORDER}`,
-            }}
-            aria-label="Clear tag filters"
+            onClick={onManage}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-black/5"
+            style={{ color: MUTED, fontWeight: 500 }}
+            aria-label="Manage tags"
           >
-            <X className="h-3 w-3" strokeWidth={2.2} />
-            Clear
+            <Tags className="h-2.5 w-2.5" strokeWidth={2.2} />
+            Manage
           </button>
-        )}
-        {tags.map(({ tag, count }) => (
-          <TagChip
-            key={tag}
-            tag={`${tag} · ${count}`}
-            as="button"
-            onClick={() => onToggle(tag)}
-            active={active.has(tag)}
-            size="sm"
-          />
-        ))}
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={onManage}
-        className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition-colors"
+
+      {/* Scrollable chip strip with edge-fade masks */}
+      <div
+        className="relative"
         style={{
-          background: CREAM_SOFT,
-          border: `1px solid ${BORDER}`,
-          color: CHARCOAL,
-          fontWeight: 600,
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%)",
+          maskImage:
+            "linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%)",
         }}
-        aria-label="Manage tags"
       >
-        <Tags className="h-3 w-3" strokeWidth={2} />
-        Manage
-      </button>
+        <div
+          className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-3 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {ordered.map(({ tag, count }) => {
+            const isActive = active.has(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => onToggle(tag)}
+                aria-pressed={isActive}
+                className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] transition-all active:scale-[0.97]"
+                style={{
+                  background: isActive ? CHARCOAL : "#fff",
+                  color: isActive ? CREAM_SOFT : CHARCOAL,
+                  border: `1px solid ${isActive ? CHARCOAL : BORDER}`,
+                  fontWeight: isActive ? 600 : 500,
+                  boxShadow: isActive
+                    ? "0 1px 2px rgba(28,28,28,0.15)"
+                    : "inset 0 1px 0 rgba(255,255,255,0.6)",
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{
+                    background: isActive ? CREAM_SOFT : `hsl(${hashHue(tag)}, 55%, 55%)`,
+                    opacity: isActive ? 0.9 : 1,
+                  }}
+                />
+                <span className="truncate">{tag}</span>
+                <span
+                  className="text-[10px] tabular-nums"
+                  style={{
+                    color: isActive ? "rgba(247,244,237,0.7)" : MUTED,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
+
+/** Deterministic hue for a tag — matches the chip color palette. */
+function hashHue(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+
 
 function TagManagerSheet({
   accounts,
