@@ -17,6 +17,7 @@ import {
   Camera,
   ChevronDown,
   KeyRound,
+  ImageUp,
 } from "lucide-react";
 import {
   AegisScreen,
@@ -242,8 +243,33 @@ function ScanTab({
   switchToManual: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [starting, setStarting] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [decoding, setDecoding] = useState(false);
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setDecoding(true);
+    const url = URL.createObjectURL(file);
+    try {
+      const reader = new BrowserQRCodeReader();
+      const result = await reader.decodeFromImageUrl(url);
+      const text = result.getText();
+      if (!text.startsWith("otpauth://")) {
+        onError("That image doesn't contain a valid otpauth QR code.");
+        return;
+      }
+      onDetected(text);
+    } catch {
+      onError("Couldn't read a QR code from that image. Try a clearer screenshot.");
+    } finally {
+      URL.revokeObjectURL(url);
+      setDecoding(false);
+    }
+  };
 
   useEffect(() => {
     let controls: IScannerControls | null = null;
@@ -329,9 +355,14 @@ function ScanTab({
           />
         </div>
 
-        {(starting || saving) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[2px]">
+        {(starting || saving || decoding) && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/35 backdrop-blur-[2px]">
             <Loader2 className="h-5 w-5 animate-spin" style={{ color: CREAM_SOFT }} />
+            {decoding && (
+              <span className="text-[11.5px]" style={{ color: CREAM_SOFT, opacity: 0.85 }}>
+                Reading image…
+              </span>
+            )}
           </div>
         )}
         {permissionDenied && (
@@ -375,6 +406,35 @@ function ScanTab({
               : "Ready — hold steady on the QR"}
         </span>
       </div>
+
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={decoding || saving}
+        className="flex w-full items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-[13.5px] transition-colors disabled:opacity-60"
+        style={{
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
+          color: CHARCOAL,
+          fontWeight: 600,
+          letterSpacing: "-0.005em",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+        }}
+      >
+        {decoding ? (
+          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
+        ) : (
+          <ImageUp className="h-4 w-4" strokeWidth={1.8} />
+        )}
+        <span>{decoding ? "Reading image…" : "Upload a screenshot"}</span>
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageFile}
+      />
 
       <button
         type="button"
