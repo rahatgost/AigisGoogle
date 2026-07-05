@@ -91,6 +91,9 @@ function SecurityPage() {
   const [busy, setBusy] = useState(false);
   const [autoLockOpen, setAutoLockOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioEnrolled, setBioEnrolled] = useState<boolean>(() => isBiometricEnabled(user.id));
+  const [bioBusy, setBioBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,10 +105,39 @@ function SecurityPage() {
       .then(({ data }) => {
         if (!cancelled) setHint(data?.passphrase_hint ?? null);
       });
+    void isBiometricSupported().then((ok) => {
+      if (!cancelled) setBioSupported(ok);
+    });
     return () => {
       cancelled = true;
     };
   }, [user.id]);
+
+  const toggleBiometric = async (next: boolean) => {
+    if (bioBusy) return;
+    setBioBusy(true);
+    setNotice(null);
+    try {
+      if (next) {
+        const dek = getVaultKey();
+        if (!dek) throw new Error("Vault is locked. Unlock first to enable biometrics.");
+        await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dek });
+        setBioEnrolled(true);
+        setNotice({ kind: "info", text: "Biometric unlock enabled on this device." });
+      } else {
+        disableBiometric(user.id);
+        setBioEnrolled(false);
+        setNotice({ kind: "info", text: "Biometric unlock disabled on this device." });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not update biometric setting.";
+      setNotice({ kind: "error", text: msg });
+      setBioEnrolled(isBiometricEnabled(user.id));
+    } finally {
+      setBioBusy(false);
+    }
+  };
+
 
   const lockNow = () => {
     lockVault();
