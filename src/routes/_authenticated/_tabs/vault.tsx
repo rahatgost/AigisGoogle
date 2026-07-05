@@ -155,11 +155,20 @@ function VaultPage() {
   const filtered = useMemo(() => {
     if (!accounts) return null;
     const q = query.trim().toLowerCase();
-    if (!q) return accounts;
-    return accounts.filter(
-      (a) => a.issuer.toLowerCase().includes(q) || a.label.toLowerCase().includes(q),
-    );
-  }, [accounts, query]);
+    const tagFilter = activeTags;
+    return accounts.filter((a) => {
+      if (tagFilter.size > 0) {
+        const has = (a.tags ?? []).some((t) => tagFilter.has(t));
+        if (!has) return false;
+      }
+      if (!q) return true;
+      return (
+        a.issuer.toLowerCase().includes(q) ||
+        a.label.toLowerCase().includes(q) ||
+        (a.tags ?? []).some((t) => t.toLowerCase().includes(q))
+      );
+    });
+  }, [accounts, query, activeTags]);
 
   const { favoriteList, otherList } = useMemo(() => {
     if (!filtered) return { favoriteList: [], otherList: [] };
