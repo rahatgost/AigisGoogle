@@ -53,6 +53,8 @@ import {
   isBiometricEnabled,
   isBiometricSupported,
 } from "@/lib/biometric";
+import { listAccounts } from "@/lib/vault-accounts";
+import { buildEncryptedExport, downloadExport } from "@/lib/vault-export";
 
 export const Route = createFileRoute("/_authenticated/_tabs/security")({
   beforeLoad: ({ location }) => {
