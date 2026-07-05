@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lockVault } from "@/lib/vault-session";
 import { deleteMyAccount } from "@/lib/account.functions";
@@ -206,11 +207,11 @@ function ProfilePage() {
       // Then normalize back to the real path so future updates work.
       setTimeout(() => setAvatarPath(path), 50);
       setNotice({ kind: "info", text: "Photo updated." });
+      toast.success("Photo updated");
     } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not upload photo.",
-      });
+      const msg = err instanceof Error ? err.message : "Could not upload photo.";
+      setNotice({ kind: "error", text: msg });
+      toast.error(msg);
     } finally {
       setAvatarBusy(false);
     }
@@ -229,11 +230,11 @@ function ProfilePage() {
         .upsert({ id: user.id, avatar_url: null }, { onConflict: "id" });
       if (error) throw error;
       setAvatarPath(null);
+      toast.success("Photo removed");
     } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not remove photo.",
-      });
+      const msg = err instanceof Error ? err.message : "Could not remove photo.";
+      setNotice({ kind: "error", text: msg });
+      toast.error(msg);
     } finally {
       setAvatarBusy(false);
     }
