@@ -170,6 +170,15 @@ function RootComponent() {
     };
   }, [queryClient, router]);
 
+  useEffect(() => {
+    // Guarded PWA service-worker registration. The wrapper refuses to
+    // register in dev, iframes, Lovable preview hosts, and when the URL
+    // carries `?sw=off` — see src/lib/pwa-register.ts.
+    void import("@/lib/pwa-register").then(({ registerAegisServiceWorker }) =>
+      registerAegisServiceWorker(),
+    );
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
