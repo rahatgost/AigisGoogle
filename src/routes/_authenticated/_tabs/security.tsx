@@ -84,6 +84,7 @@ function SecurityPage() {
   const [busy, setBusy] = useState(false);
   const [autoLockOpen, setAutoLockOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
   const [bioEnrolled, setBioEnrolled] = useState<boolean>(() => isBiometricEnabled(user.id));
   const [bioBusy, setBioBusy] = useState(false);
