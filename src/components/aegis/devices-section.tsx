@@ -1,10 +1,21 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { Loader2, Monitor, Smartphone, Tablet, LogOut, RefreshCw } from "lucide-react";
 
 import { BORDER, CHARCOAL, CREAM_SOFT, MUTED, Notice } from "@/components/aegis/chrome";
 import { SectionLabel, SettingsGroup } from "@/components/aegis/settings";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   listMyDevices,
   revokeDeviceSession,
@@ -50,7 +61,8 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [pendingRevoke, setPendingRevoke] = useState<DeviceRow | null>(null);
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -58,11 +70,11 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
     try {
       const rows = await listFn();
       setDevices(rows);
+      setLoadError(null);
     } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not load devices.",
-      });
+      const text = err instanceof Error ? err.message : "Could not load devices.";
+      setLoadError(text);
+      if (silent) toast.error(text);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -74,28 +86,27 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const revoke = async (row: DeviceRow) => {
+  const confirmRevoke = async () => {
+    const row = pendingRevoke;
+    if (!row) return;
     const label = row.is_current ? "this device" : row.device_label;
-    const ok = window.confirm(
-      row.is_current
-        ? `Sign this device out?\n\nYou'll be sent back to the sign-in screen.`
-        : `Sign out ${label}?\n\nThat device will need to sign in again to see your codes.`,
-    );
-    if (!ok) return;
     setBusyId(row.session_id);
-    setNotice(null);
     try {
       await revokeFn({ data: { sessionId: row.session_id } });
       if (row.is_current) {
+        toast.success("Signed out. Redirecting…");
+        setPendingRevoke(null);
         window.location.replace("/auth");
         return;
       }
       setDevices((prev) => (prev ? prev.filter((d) => d.session_id !== row.session_id) : prev));
-      setNotice({ kind: "info", text: `Signed out ${label}.` });
+      toast.success(`Signed out ${label}`, {
+        description: `${formatLocation(row.coarse_country, row.coarse_region)} · Last active ${formatWhen(row.last_seen_at)}`,
+      });
+      setPendingRevoke(null);
     } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not sign out that device.",
+      toast.error("Couldn't sign that device out", {
+        description: err instanceof Error ? err.message : "Please try again.",
       });
     } finally {
       setBusyId(null);
@@ -149,7 +160,11 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
         </div>
       )}
 
-      {!loading && devices && devices.length === 0 && (
+      {!loading && loadError && (
+        <Notice kind="error">{loadError}</Notice>
+      )}
+
+      {!loading && !loadError && devices && devices.length === 0 && (
         <div
           className="rounded-[16px] px-4 py-6 text-center text-[13px]"
           style={{
@@ -178,7 +193,7 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
                   className="flex items-center gap-3 px-4 py-3"
                 >
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                     style={{
                       background: d.is_current
                         ? CHARCOAL
@@ -188,9 +203,19 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
                     }}
                   >
                     <Icon className="h-4 w-4" strokeWidth={1.8} />
+                    {d.is_current && (
+                      <span
+                        className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full"
+                        style={{
+                          background: "#4ade80",
+                          border: `2px solid ${CREAM_SOFT}`,
+                        }}
+                        aria-hidden
+                      />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-baseline gap-2">
                       <span
                         className="truncate text-[14.5px]"
                         style={{
@@ -203,15 +228,14 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
                       </span>
                       {d.is_current && (
                         <span
-                          className="rounded-full px-1.5 py-[1px] text-[9px] uppercase"
+                          className="shrink-0 text-[10px] uppercase"
                           style={{
-                            background: CHARCOAL,
-                            color: CREAM_SOFT,
-                            letterSpacing: "0.14em",
+                            color: MUTED,
+                            letterSpacing: "0.12em",
                             fontWeight: 600,
                           }}
                         >
-                          This device
+                          · This device
                         </span>
                       )}
                     </div>
@@ -225,9 +249,9 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => void revoke(d)}
+                    onClick={() => setPendingRevoke(d)}
                     disabled={busy}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] disabled:opacity-50"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] transition-colors hover:opacity-80 disabled:opacity-50"
                     style={{
                       border: `1px solid ${BORDER}`,
                       color: CHARCOAL,
@@ -253,11 +277,70 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
         </SettingsGroup>
       )}
 
-      {notice && (
-        <div className="pt-3">
-          <Notice kind={notice.kind}>{notice.text}</Notice>
-        </div>
-      )}
+      <AlertDialog
+        open={pendingRevoke !== null}
+        onOpenChange={(open) => {
+          if (!open && !busyId) setPendingRevoke(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingRevoke?.is_current
+                ? "Sign out this device?"
+                : `Revoke ${pendingRevoke?.device_label ?? "device"}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {pendingRevoke?.is_current
+                    ? "You'll be signed out immediately and sent back to the sign-in screen."
+                    : "That device's session will be revoked. It will need to sign in again to see your codes."}
+                </p>
+                {pendingRevoke && (
+                  <div
+                    className="rounded-lg border p-3 text-left text-[12.5px]"
+                    style={{ borderColor: BORDER, background: CREAM_SOFT, color: CHARCOAL }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{pendingRevoke.device_label}</div>
+                    <div className="mt-0.5" style={{ color: MUTED }}>
+                      {formatLocation(
+                        pendingRevoke.coarse_country,
+                        pendingRevoke.coarse_region,
+                      )}
+                    </div>
+                    <div style={{ color: MUTED }}>
+                      Last active {formatWhen(pendingRevoke.last_seen_at)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busyId !== null}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmRevoke();
+              }}
+              disabled={busyId !== null}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busyId ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Signing out…
+                </>
+              ) : pendingRevoke?.is_current ? (
+                "Sign out"
+              ) : (
+                "Revoke device"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
