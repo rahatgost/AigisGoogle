@@ -131,10 +131,11 @@ on reconnect. Lighthouse PWA ≥ 90, main bundle ≤ 250 KB gzipped.
 - [x] Writes existing `sort_order` column via `reorderAccounts()`; local state + IndexedDB mirror patched optimistically, server batch flushed after 400ms debounce
 - [x] Two `SortableContext`s (favorites / others) keep the fav grouping intact; DnD auto-disabled while filtering (query or tag filter) or offline
 
-### 7.3 Bulk operations `[P1]`
-- [ ] Long-press to enter selection mode
-- [ ] Checkbox column
-- [ ] Bulk delete + bulk tag + bulk export subset to `.avf`
+### 7.3 Bulk operations `[P1]` `[done]`
+- [x] "Select" button enters selection mode; each row shows a checkbox overlay and tap toggles instead of copying
+- [x] Sticky bulk action bar: count, Select-all, Cancel, Delete, Add tag, Export (only enabled when ≥1 selected)
+- [x] Bulk delete (parallel `deleteAccount`, respects offline outbox), bulk add-tag (preset picker, union into each row), bulk export subset to `.avf` via shared `ExportPassphraseSheet`
+- [x] DnD auto-disabled while in selection mode so drags never race the checkbox
 
 ### 7.4 HOTP + Steam Guard support `[P1]`
 - [ ] Discriminated `type: 'totp' | 'hotp' | 'steam'` in `vault-crypto` + `vault-accounts`
