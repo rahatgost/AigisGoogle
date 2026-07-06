@@ -186,8 +186,9 @@ in production, no hard-coded colours in `src/components/aegis/*`.
 - [x] Profile → Security → Devices list with "Sign out this device" revoking Supabase refresh token
 
 ### 9.2 Sign-in history `[P1]`
-- [ ] `user_login_events` row per successful sign-in, 90-day rolling window, admin-audit logged
-- [ ] Show last 20 to the user
+- [x] `user_login_events` row per successful sign-in, 90-day rolling window, admin-audit logged
+- [x] Show last 20 to the user
+
 
 ### 9.3 Vault health `[P1]`
 - [ ] Client-side pass: duplicate secrets (hash decrypted secret in memory), issuers with no icon, favourites with weak issuers

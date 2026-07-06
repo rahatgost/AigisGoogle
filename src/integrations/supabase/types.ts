@@ -173,6 +173,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_login_events: {
+        Row: {
+          coarse_country: string | null
+          coarse_region: string | null
+          created_at: string
+          device_label: string
+          event_at: string
+          id: string
+          session_id: string | null
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          coarse_country?: string | null
+          coarse_region?: string | null
+          created_at?: string
+          device_label?: string
+          event_at?: string
+          id?: string
+          session_id?: string | null
+          user_agent?: string
+          user_id: string
+        }
+        Update: {
+          coarse_country?: string | null
+          coarse_region?: string | null
+          created_at?: string
+          device_label?: string
+          event_at?: string
+          id?: string
+          session_id?: string | null
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_sessions_meta: {
         Row: {
           coarse_country: string | null
@@ -309,6 +345,7 @@ export type Database = {
     Functions: {
       is_admin: { Args: { _user_id?: string }; Returns: boolean }
       purge_old_client_errors: { Args: { days?: number }; Returns: number }
+      purge_old_login_events: { Args: { days?: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never

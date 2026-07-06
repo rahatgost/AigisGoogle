@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { DevicesSection } from "@/components/aegis/devices-section";
+import { SignInHistorySection } from "@/components/aegis/signin-history-section";
 
 import { Switch } from "@/components/ui/switch";
 import { setHideCodes, useHideCodes } from "@/lib/vault-privacy";
@@ -306,6 +307,8 @@ function SecurityPage() {
 
         <SectionLabel>{t("security.section.devices", "Devices")}</SectionLabel>
         <DevicesSection heading={t("security.devices", "Devices")} />
+        <SignInHistorySection heading={t("security.signInHistory", "Sign-in history")} />
+
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
         <SettingsGroup>

@@ -123,9 +123,61 @@ export const recordDeviceSeen = createServerFn({ method: "POST" })
         .eq("session_id", sessionId)
         .eq("user_id", context.userId);
       if (updErr) throw new Error(updErr.message);
+    } else {
+      // Brand-new session on this device → record a sign-in event.
+      // The audit trigger mirrors this into admin_audit for long-term retention.
+      await supabaseAdmin.from("user_login_events").insert({
+        user_id: context.userId,
+        session_id: sessionId,
+        device_label: label,
+        user_agent: ua,
+        coarse_country: country,
+        coarse_region: region,
+        event_at: now,
+      });
+      // Opportunistic 90-day trim. Cheap, indexed, best-effort.
+      await supabaseAdmin.rpc("purge_old_login_events", { days: 90 });
     }
 
     return { ok: true as const };
+  });
+
+/**
+ * Sign-in history — last N successful sign-ins for the current user.
+ * Backed by `user_login_events`; 90-day rolling window enforced by
+ * `purge_old_login_events`. RLS ensures the caller sees only their rows.
+ */
+export interface LoginEventRow {
+  id: string;
+  session_id: string | null;
+  device_label: string;
+  user_agent: string;
+  coarse_country: string | null;
+  coarse_region: string | null;
+  event_at: string;
+}
+
+export const listMyLoginEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LoginEventRow[]> => {
+    const { data, error } = await context.supabase
+      .from("user_login_events")
+      .select(
+        "id, session_id, device_label, user_agent, coarse_country, coarse_region, event_at",
+      )
+      .eq("user_id", context.userId)
+      .order("event_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => ({
+      id: r.id as string,
+      session_id: (r.session_id as string | null) ?? null,
+      device_label: (r.device_label as string) ?? "",
+      user_agent: (r.user_agent as string) ?? "",
+      coarse_country: (r.coarse_country as string | null) ?? null,
+      coarse_region: (r.coarse_region as string | null) ?? null,
+      event_at: r.event_at as string,
+    }));
   });
 
 /** List devices the caller has signed in on, newest first. */
