@@ -1075,49 +1075,61 @@ export function AccountCard({
                     )}
 
                     {/* Tags editor — only visible inside edit mode */}
-                    {editing && (
-                      <div
-                        className="mb-3 rounded-[14px] px-3.5 py-3"
-                        style={{
-                          background: "rgba(28,28,28,0.025)",
-                          border: `1px solid ${BORDER}`,
-                        }}
-                      >
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="text-[9.5px] uppercase"
-                              style={{
-                                color: MUTED,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                letterSpacing: "0.22em",
-                              }}
-                            >
-                              Tags
-                            </span>
-                            {tagsDraft.length > 0 && (
-                              <span
-                                className="rounded-full px-1.5 py-0.5 text-[10px]"
-                                style={{
-                                  background: CHARCOAL,
-                                  color: CREAM_SOFT,
-                                  fontWeight: 600,
-                                  lineHeight: 1,
-                                }}
-                              >
-                                {tagsDraft.length}
-                              </span>
+                    <AnimatePresence initial={false}>
+                      {editing && (
+                        <motion.div
+                          key="tags-editor"
+                          initial={{ opacity: 0, height: 0, marginBottom: 0, y: -6 }}
+                          animate={{ opacity: 1, height: "auto", marginBottom: 12, y: 0 }}
+                          exit={{ opacity: 0, height: 0, marginBottom: 0, y: -6 }}
+                          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                          style={{ overflow: "hidden" }}
+                        >
+                          <div
+                            className="rounded-[14px] px-3.5 py-3"
+                            style={{
+                              background: "rgba(28,28,28,0.025)",
+                              border: `1px solid ${BORDER}`,
+                            }}
+                          >
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="text-[9.5px] uppercase"
+                                  style={{
+                                    color: MUTED,
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    letterSpacing: "0.22em",
+                                  }}
+                                >
+                                  Tags
+                                </span>
+                                {tagsDraft.length > 0 && (
+                                  <span
+                                    className="rounded-full px-1.5 py-0.5 text-[10px]"
+                                    style={{
+                                      background: CHARCOAL,
+                                      color: CREAM_SOFT,
+                                      fontWeight: 600,
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    {tagsDraft.length}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <TagInput value={tagsDraft} onChange={setTagsDraft} />
+                            {tagError && (
+                              <p className="mt-1.5 text-[11px]" style={{ color: DANGER }}>
+                                {tagError}
+                              </p>
                             )}
                           </div>
-                        </div>
-                        <TagInput value={tagsDraft} onChange={setTagsDraft} />
-                        {tagError && (
-                          <p className="mt-1.5 text-[11px]" style={{ color: DANGER }}>
-                            {tagError}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
 
 
                     {/* Meta trio — hidden in edit mode */}
