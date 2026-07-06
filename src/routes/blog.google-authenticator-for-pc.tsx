@@ -325,6 +325,3 @@ function Faq({ q, a }: { q: string; a: string }) {
     </div>
   );
 }
-
-// Suppress unused-import warning for Laptop icon reserved for future variant.
-void Laptop;
