@@ -6,10 +6,15 @@ import * as OTPAuth from "otpauth";
 import { supabase } from "@/integrations/supabase/client";
 import { decryptSecret, encryptSecret, toBytes, toByteaHex } from "@/lib/vault-crypto";
 import {
+  clearFavoriteToggle,
   isOffline,
+  readLastSync,
+  readRecentFavoriteToggles,
   readVaultCache,
+  recordFavoriteToggle,
   removeFromVaultCache,
   upsertVaultCache,
+  writeLastSync,
   writeVaultCache,
 } from "@/lib/vault-cache";
 import { normalizeTagList } from "@/components/vault/tags";
@@ -20,7 +25,7 @@ import {
 } from "@/lib/vault-tag-queue";
 
 const ACCOUNT_SELECT =
-  "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, tags, secret_ciphertext, secret_iv";
+  "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, tags, secret_ciphertext, secret_iv, updated_at";
 
 export type Algorithm = "SHA1" | "SHA256" | "SHA512";
 
@@ -37,6 +42,9 @@ export interface VaultAccountRecord {
   tags: string[];
   secret_ciphertext: unknown;
   secret_iv: unknown;
+  // Phase 6.2: server-side row version. Drives diff sync (`updated_at >
+  // last_sync`) and the server-wins-on-tie merge rule.
+  updated_at: string;
 }
 
 export interface DecryptedAccount {
