@@ -45,6 +45,9 @@
         "@tanstack/react-router": "^1.170.16",
         "@tanstack/react-start": "^1.168.26",
         "@tanstack/router-plugin": "^1.168.18",
+        "@zxcvbn-ts/core": "^4.1.2",
+        "@zxcvbn-ts/language-common": "^4.1.2",
+        "@zxcvbn-ts/language-en": "^4.1.1",
         "@zxing/browser": "^0.2.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -935,6 +938,14 @@
 
     "@vitest/utils": ["@vitest/utils@4.1.9", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@vitest/utils/-/utils-4.1.9.tgz", { "dependencies": { "@vitest/pretty-format": "4.1.9", "convert-source-map": "^2.0.0", "tinyrainbow": "^3.1.0" } }, "sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA=="],
 
+    "@zxcvbn-ts/core": ["@zxcvbn-ts/core@4.1.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxcvbn-ts/core/-/core-4.1.2.tgz", { "dependencies": { "fastest-levenshtein": "1.0.16" } }, "sha512-RQmxWB3AMI+HGQErQdUv6Aq32aQhp6xOxrfgCP0+T9MsLZoP3xtLHuT8O8VojsUxdmQVZfJlYkYb1A0wOwIS+Q=="],
+
+    "@zxcvbn-ts/dictionary-compression": ["@zxcvbn-ts/dictionary-compression@3.0.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxcvbn-ts/dictionary-compression/-/dictionary-compression-3.0.1.tgz", {}, "sha512-p3KyPzxGc3vWSap5hHA6SllbUCmh7s+NtpGyC3qEWrxYJT9t9TUAzjPm48Okipo+UUyPQfDlIvTcs9JRShBFiQ=="],
+
+    "@zxcvbn-ts/language-common": ["@zxcvbn-ts/language-common@4.1.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxcvbn-ts/language-common/-/language-common-4.1.2.tgz", { "dependencies": { "@zxcvbn-ts/dictionary-compression": "^3.0.1" } }, "sha512-uJlBzhC9/KjPImqdnc1/lPxmdn4xKbkruN5p1mASWkXA0gli+GZ5LrVL+dqscA8Pcf4OfudE56TtCWeHljJOvA=="],
+
+    "@zxcvbn-ts/language-en": ["@zxcvbn-ts/language-en@4.1.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxcvbn-ts/language-en/-/language-en-4.1.1.tgz", { "dependencies": { "@zxcvbn-ts/dictionary-compression": "^3.0.1" } }, "sha512-6UdzuBd3Uex8TKubohcn+uXRVAH34Zjs2eCfT4hQVo9zeTy7AkQRQfdV4OnHR5hQfW/XBrK/AGTZk7VBWh7wwQ=="],
+
     "@zxing/browser": ["@zxing/browser@0.2.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxing/browser/-/browser-0.2.0.tgz", { "optionalDependencies": { "@zxing/text-encoding": "^0.9.0" }, "peerDependencies": { "@zxing/library": "^0.22.0" } }, "sha512-+ORhrLva0vm6ck74NDCmvYNW3XLoAG81Mu90qfcssN1PBKJjQadxZGeMCcIk+BdJbD/zEAjjHDXOwEK1QCmRtw=="],
 
     "@zxing/library": ["@zxing/library@0.22.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@zxing/library/-/library-0.22.0.tgz", { "dependencies": { "ts-custom-error": "^3.3.1" }, "optionalDependencies": { "@zxing/text-encoding": "~0.9.0" } }, "sha512-BmInervZV7NwaZWX1LW64sZ4Lh4wxXYFZwGmj98ArPOkRXCtO9b8Gog0Xyh82dsYYGOeRxX+aAhLSq+hQ2XLZQ=="],
@@ -1242,6 +1253,8 @@
     "fast-png": ["fast-png@6.4.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/fast-png/-/fast-png-6.4.0.tgz", { "dependencies": { "@types/pako": "^2.0.3", "iobuffer": "^5.3.2", "pako": "^2.1.0" } }, "sha512-kAqZq1TlgBjZcLr5mcN6NP5Rv4V2f22z00c3g8vRrwkcqjerx7BEhPbOnWCPqaHUl2XWQBJQvOT/FQhdMT7X/Q=="],
 
     "fast-uri": ["fast-uri@3.1.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/fast-uri/-/fast-uri-3.1.3.tgz", {}, "sha512-i70LwGWUduXqzicKXWshooq+sWL1K3WUU5rKZNG/0i3a1OSoX3HqhH5WbWwTmqWfor4urUakGPiRQcleRZTwOg=="],
+
+    "fastest-levenshtein": ["fastest-levenshtein@1.0.16", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/fastest-levenshtein/-/fastest-levenshtein-1.0.16.tgz", {}, "sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg=="],
 
     "fastq": ["fastq@1.20.1", "", { "dependencies": { "reusify": "^1.0.4" } }, "sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw=="],
 
