@@ -54,6 +54,7 @@ type Tab = "scan" | "manual";
 function NewAccountPage() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
+  const { uri: incomingUri } = Route.useSearch();
   const [tab, setTab] = useState<Tab>("scan");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
@@ -62,6 +63,8 @@ function NewAccountPage() {
   // save-side error (offline, expired key, server rejection).
   const [scanAttempt, setScanAttempt] = useState(0);
   const online = useOnlineStatus();
+  // Latch so a deep-linked `?uri=` is consumed exactly once per navigation.
+  const handledIncomingRef = useRef(false);
 
   const save = useCallback(
     async (input: {
