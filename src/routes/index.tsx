@@ -2,8 +2,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const CREAM = "#f7f4ed";
-const CHARCOAL = "#1c1c1a";
+const CREAM = "var(--aegis-cream)";
+const CHARCOAL = "var(--aegis-ink)";
 
 export const Route = createFileRoute("/")({
   ssr: false,
