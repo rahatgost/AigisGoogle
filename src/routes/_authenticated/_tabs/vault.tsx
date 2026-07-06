@@ -250,6 +250,30 @@ function VaultPage() {
     };
   }, []);
 
+  // Auto-flush the offline outbox (delete + edit) when the network comes
+  // back. Runs on mount too so pending items from a previous session get
+  // replayed as soon as the vault opens.
+  useEffect(() => {
+    if (!online) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const n = await flushPendingOutbox();
+        if (cancelled) return;
+        setPendingOutbox(pendingOutboxCount());
+        if (n > 0) {
+          toast.success(`Synced ${n} pending change${n === 1 ? "" : "s"}`);
+          setReloadKey((k) => k + 1);
+        }
+      } catch {
+        // best-effort; try again on next reconnect
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
+
   const retry = useCallback(() => {
     setRetrying(true);
     setReloadKey((k) => k + 1);
