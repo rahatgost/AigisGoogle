@@ -1328,20 +1328,9 @@ function TagManagerSheet({
         />
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3
-              className="text-[17px]"
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                color: CHARCOAL,
-              }}
-            >
-              Manage tags
-            </h3>
-            <p className="text-[11.5px]" style={{ color: MUTED }}>
-              Rename or delete tags across every account.
-            </p>
+            <h3 style={typeSheetTitle}>Manage tags</h3>
+            <p style={typeSubLabel}>Rename or delete tags across every account.</p>
+
           </div>
           <button
             onClick={onClose}
