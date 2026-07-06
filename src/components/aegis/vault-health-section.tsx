@@ -24,7 +24,7 @@ import {
 import { BORDER, CHARCOAL, CREAM_SOFT, DANGER, MUTED, soft } from "@/components/aegis/chrome";
 import { SettingsGroup, SettingsRow } from "@/components/aegis/settings";
 import { getVaultKey, useVaultUnlocked } from "@/lib/vault-session";
-import { listAccountsWithCache } from "@/lib/vault-accounts";
+import { listAccounts } from "@/lib/vault-accounts";
 import {
   checkIssuerAgainstHibp,
   computeVaultHealth,
