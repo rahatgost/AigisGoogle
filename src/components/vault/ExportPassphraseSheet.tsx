@@ -74,7 +74,7 @@ export function ExportPassphraseSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -109,7 +109,7 @@ export function ExportPassphraseSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />

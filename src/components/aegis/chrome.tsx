@@ -6,12 +6,12 @@ import type { ReactNode } from "react";
 /*  Aegis warm-cream design system (shared with the onboarding flow)          */
 /* -------------------------------------------------------------------------- */
 
-export const CREAM = "#f7f4ed";
-export const CREAM_SOFT = "#fcfbf8";
-export const CHARCOAL = "#1c1c1c";
-export const BORDER = "#eceae4";
-export const MUTED = "#5f5f5d";
-export const DANGER = "#8a2020";
+export const CREAM = "var(--aegis-cream)";
+export const CREAM_SOFT = "var(--aegis-cream-soft)";
+export const CHARCOAL = "var(--aegis-ink)";
+export const BORDER = "var(--aegis-border)";
+export const MUTED = "var(--aegis-muted)";
+export const DANGER = "var(--aegis-danger)";
 
 export const INSET_SHADOW =
   "rgba(255,255,255,0.2) 0 0.5px 0 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset, rgba(0,0,0,0.05) 0 1px 2px 0";
@@ -33,13 +33,13 @@ export function Backdrop() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(120% 80% at 20% 0%, rgba(255,214,180,0.35), transparent 55%), radial-gradient(90% 70% at 90% 15%, rgba(255,196,206,0.28), transparent 60%), radial-gradient(100% 80% at 50% 100%, rgba(180,196,230,0.32), transparent 60%)",
+            "radial-gradient(120% 80% at 20% 0%, var(--aegis-glow-a), transparent 55%), radial-gradient(90% 70% at 90% 15%, var(--aegis-glow-b), transparent 60%), radial-gradient(100% 80% at 50% 100%, var(--aegis-glow-c), transparent 60%)",
         }}
       />
       <motion.div
         className="absolute -left-24 top-[6%] h-[320px] w-[320px] rounded-full"
         style={{
-          background: "radial-gradient(closest-side, rgba(230,180,140,0.35), transparent 70%)",
+          background: "radial-gradient(closest-side, var(--aegis-glow-orb-a), transparent 70%)",
           filter: "blur(60px)",
         }}
         animate={reduce ? undefined : { x: [0, 16, 0], y: [0, -10, 0] }}
@@ -48,7 +48,7 @@ export function Backdrop() {
       <motion.div
         className="absolute -right-24 bottom-[8%] h-[380px] w-[380px] rounded-full"
         style={{
-          background: "radial-gradient(closest-side, rgba(200,170,210,0.28), transparent 70%)",
+          background: "radial-gradient(closest-side, var(--aegis-glow-orb-b), transparent 70%)",
           filter: "blur(70px)",
         }}
         animate={reduce ? undefined : { x: [0, -14, 0], y: [0, 10, 0] }}
@@ -57,7 +57,7 @@ export function Backdrop() {
       <div
         className="absolute inset-0 opacity-[0.5] mix-blend-multiply"
         style={{
-          backgroundImage: "radial-gradient(rgba(28,28,28,0.05) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(var(--aegis-grain) 1px, transparent 1px)",
           backgroundSize: "3px 3px",
         }}
       />
@@ -148,7 +148,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
         style={{
           color: `color-mix(in oklab, ${CHARCOAL} 65%, transparent)`,
           background: "rgba(255,255,255,0.55)",
-          border: `1px solid rgba(28,28,28,0.06)`,
+          border: `1px solid rgb(var(--aegis-ink-rgb) / 0.06)`,
           letterSpacing: "0.25em",
           fontWeight: 500,
           fontFamily: "'JetBrains Mono', ui-monospace, monospace",
@@ -187,14 +187,14 @@ export function HeroIcon({ Icon }: { Icon: LucideIcon }) {
       {/* Layered decorative frames */}
       <motion.div
         className="absolute inset-0 rounded-[18px]"
-        style={{ border: `1px solid rgba(28,28,28,0.10)` }}
+        style={{ border: `1px solid rgb(var(--aegis-ink-rgb) / 0.10)` }}
         initial={reduce ? undefined : { rotate: 0, opacity: 0 }}
         animate={reduce ? undefined : { rotate: 6, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
       />
       <motion.div
         className="absolute inset-0 rounded-[18px]"
-        style={{ border: `1px solid rgba(28,28,28,0.05)` }}
+        style={{ border: `1px solid rgb(var(--aegis-ink-rgb) / 0.05)` }}
         initial={reduce ? undefined : { rotate: 0, opacity: 0 }}
         animate={reduce ? undefined : { rotate: -3, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
@@ -204,7 +204,7 @@ export function HeroIcon({ Icon }: { Icon: LucideIcon }) {
         className="relative flex h-full w-full items-center justify-center rounded-[18px]"
         style={{
           background: CHARCOAL,
-          boxShadow: "0 18px 40px -18px rgba(28,28,28,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
+          boxShadow: "0 18px 40px -18px rgb(var(--aegis-ink-rgb) / 0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
         }}
         initial={reduce ? undefined : { scale: 0.92, opacity: 0 }}
         animate={reduce ? undefined : { scale: 1, opacity: 1 }}
@@ -253,9 +253,9 @@ export function Notice({ kind, children }: { kind: "error" | "info"; children: R
       transition={soft}
       className="rounded-[10px] px-3 py-2 text-[12.5px] leading-snug"
       style={{
-        background: kind === "error" ? "rgba(180,40,40,0.08)" : "rgba(28,28,28,0.05)",
+        background: kind === "error" ? "rgb(var(--aegis-danger-rgb) / 0.08)" : "rgb(var(--aegis-ink-rgb) / 0.05)",
         color: kind === "error" ? DANGER : CHARCOAL,
-        border: `1px solid ${kind === "error" ? "rgba(180,40,40,0.15)" : BORDER}`,
+        border: `1px solid ${kind === "error" ? "rgb(var(--aegis-danger-rgb) / 0.15)" : BORDER}`,
       }}
     >
       {children}
@@ -360,7 +360,7 @@ export function TextLink({
     <button
       type={type}
       onClick={onClick}
-      className="text-[13.5px] underline decoration-[rgba(28,28,28,0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgba(28,28,28,0.7)]"
+      className="text-[13.5px] underline decoration-[rgb(var(--aegis-ink-rgb) / 0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgb(var(--aegis-ink-rgb) / 0.7)]"
       style={{ color: CHARCOAL }}
     >
       {children}

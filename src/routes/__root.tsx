@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { THEME_INIT_SCRIPT, initTheme, setThemePref, type ThemePref } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -150,6 +151,9 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Applied pre-hydration so first paint matches the user's saved
+            theme — prevents a light-mode flash before React mounts. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -165,6 +169,12 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    // Idempotent theme re-apply + subscribe to OS `prefers-color-scheme`
+    // changes so a "system" user follows their OS without a reload.
+    return initTheme();
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     Promise.all([
       import("@/integrations/supabase/client"),
@@ -172,11 +182,36 @@ function RootComponent() {
       import("@/lib/vault-cache"),
     ]).then(([{ supabase }, { lockVault }, { clearVaultCache }]) => {
       if (!mounted) return;
+
+      // Pull the user's saved theme preference from `profiles.theme_pref`
+      // so a fresh sign-in on a new device matches their choice.
+      const syncThemeFromProfile = async () => {
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const uid = sess.session?.user?.id;
+          if (!uid) return;
+          const { data } = await supabase
+            .from("profiles")
+            .select("theme_pref")
+            .eq("id", uid)
+            .maybeSingle();
+          const pref = data?.theme_pref as ThemePref | undefined;
+          if (pref === "system" || pref === "light" || pref === "dark") {
+            setThemePref(pref);
+          }
+        } catch {
+          // Offline / RLS blocked — the local preference stays authoritative.
+        }
+      };
+      void syncThemeFromProfile();
+
       const { data } = supabase.auth.onAuthStateChange((event) => {
         if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
         if (event === "SIGNED_OUT") {
           lockVault();
           void clearVaultCache();
+        } else {
+          void syncThemeFromProfile();
         }
         router.invalidate();
         if (event !== "SIGNED_OUT") queryClient.invalidateQueries();

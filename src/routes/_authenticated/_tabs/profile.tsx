@@ -8,7 +8,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { lockVault } from "@/lib/vault-session";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { avatarPathFor, fileToSquareJpeg } from "@/lib/avatar";
-import { User, Mail, Loader2, LogOut, Check, Pencil, Trash2, Camera, X } from "lucide-react";
+import {
+  User,
+  Mail,
+  Loader2,
+  LogOut,
+  Check,
+  Pencil,
+  Trash2,
+  Camera,
+  X,
+  Monitor,
+  Sun,
+  Moon,
+} from "lucide-react";
 import {
   BORDER,
   CHARCOAL,
@@ -19,6 +32,7 @@ import {
   soft,
 } from "@/components/aegis/chrome";
 import { LargeTitle, SectionLabel, SettingsGroup, SettingsRow } from "@/components/aegis/settings";
+import { getThemePref, setThemePref, type ThemePref } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/_tabs/profile")({
   component: ProfilePage,
@@ -53,14 +67,25 @@ function ProfilePage() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [themePref, setThemePrefState] = useState<ThemePref>(() => getThemePref());
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const chooseTheme = async (pref: ThemePref) => {
+    setThemePrefState(pref);
+    setThemePref(pref);
+    try {
+      await supabase.from("profiles").upsert({ id: user.id, theme_pref: pref }, { onConflict: "id" });
+    } catch {
+      // Local change already applied; sync will retry next sign-in.
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, theme_pref")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
@@ -70,6 +95,8 @@ function ProfilePage() {
         setDisplayName(v);
         setInitialName(v);
         setAvatarPath(data?.avatar_url ?? null);
+        const p = data?.theme_pref;
+        if (p === "system" || p === "light" || p === "dark") setThemePrefState(p);
       }
       setLoading(false);
     })();
@@ -339,7 +366,7 @@ function ProfilePage() {
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                 style={{
-                  background: "rgba(28,28,28,0.05)",
+                  background: "rgb(var(--aegis-ink-rgb) / 0.05)",
                   color: CHARCOAL,
                   border: `1px solid ${BORDER}`,
                 }}
@@ -398,6 +425,32 @@ function ProfilePage() {
           </div>
         )}
 
+        <SectionLabel>Appearance</SectionLabel>
+        <SettingsGroup>
+          <ThemeRow
+            icon={<Monitor className="h-4 w-4" strokeWidth={1.8} />}
+            title="System"
+            description="Follow your device."
+            active={themePref === "system"}
+            onClick={() => chooseTheme("system")}
+          />
+          <ThemeRow
+            icon={<Sun className="h-4 w-4" strokeWidth={1.8} />}
+            title="Light"
+            description="Warm cream, always."
+            active={themePref === "light"}
+            onClick={() => chooseTheme("light")}
+          />
+          <ThemeRow
+            icon={<Moon className="h-4 w-4" strokeWidth={1.8} />}
+            title="Dark"
+            description="Easy on the eyes."
+            active={themePref === "dark"}
+            onClick={() => chooseTheme("dark")}
+          />
+        </SettingsGroup>
+
+
         <SectionLabel>Session</SectionLabel>
         <SettingsGroup>
           <SettingsRow
@@ -439,6 +492,60 @@ function ProfilePage() {
   );
 }
 
+function ThemeRow({
+  icon,
+  title,
+  description,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ backgroundColor: "rgb(var(--aegis-ink-rgb) / 0.04)" }}
+      className="flex w-full items-center gap-3 px-4 py-3 text-left"
+      style={{ borderColor: BORDER }}
+    >
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+        style={{
+          background: "rgb(var(--aegis-ink-rgb) / 0.05)",
+          color: CHARCOAL,
+          border: `1px solid ${BORDER}`,
+        }}
+      >
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span
+          className="truncate text-[14.5px]"
+          style={{ color: CHARCOAL, fontWeight: 500, letterSpacing: "-0.005em" }}
+        >
+          {title}
+        </span>
+        <span className="mt-0.5 truncate text-[12.5px] leading-[1.4]" style={{ color: MUTED }}>
+          {description}
+        </span>
+      </div>
+      {active && (
+        <span
+          className="flex h-6 w-6 items-center justify-center rounded-full"
+          style={{ background: CHARCOAL, color: CREAM_SOFT }}
+          aria-hidden
+        >
+          <Check className="h-3 w-3" strokeWidth={2.6} />
+        </span>
+      )}
+    </motion.button>
+  );
+}
+
 function AvatarActionSheet({
   hasAvatar,
   avatarUrl,
@@ -465,7 +572,7 @@ function AvatarActionSheet({
         aria-label="Close"
         onClick={onClose}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -482,7 +589,7 @@ function AvatarActionSheet({
         {/* grabber */}
         <div
           className="mx-auto mb-4 h-1 w-10 rounded-full"
-          style={{ background: "rgba(28,28,28,0.15)" }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
         />
 
         <div className="flex flex-col items-center gap-3 pb-4">

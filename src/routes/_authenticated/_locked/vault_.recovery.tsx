@@ -232,7 +232,7 @@ function RecoverySheetPage() {
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate({ to: "/security" })}
           className="flex h-9 w-9 items-center justify-center rounded-full"
-          style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
           aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.9} />
@@ -310,7 +310,7 @@ function RecoverySheetPage() {
             transition={{ ...soft, delay: 0.06 }}
             className="mt-4 flex items-start gap-2.5 rounded-[14px] px-4 py-3"
             style={{
-              background: "rgba(28,28,28,0.03)",
+              background: "rgb(var(--aegis-ink-rgb) / 0.03)",
               border: `1px solid ${BORDER}`,
             }}
           >

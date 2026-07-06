@@ -488,7 +488,7 @@ function ChangePassphraseSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -523,7 +523,7 @@ function ChangePassphraseSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
@@ -606,7 +606,7 @@ function AutoLockSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -623,7 +623,7 @@ function AutoLockSheet({
         <div
           aria-hidden
           className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-          style={{ background: "rgba(28,28,28,0.15)" }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
         />
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -646,7 +646,7 @@ function AutoLockSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
@@ -666,7 +666,7 @@ function AutoLockSheet({
                 onClick={() => onPick(opt)}
                 className="flex items-center justify-between rounded-[14px] px-4 py-3.5 text-left"
                 style={{
-                  background: active ? CHARCOAL : "rgba(28,28,28,0.03)",
+                  background: active ? CHARCOAL : "rgb(var(--aegis-ink-rgb) / 0.03)",
                   color: active ? CREAM_SOFT : CHARCOAL,
                   border: `1px solid ${active ? "transparent" : BORDER}`,
                 }}
@@ -749,7 +749,7 @@ function ExportSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -784,7 +784,7 @@ function ExportSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />

@@ -237,7 +237,7 @@ export function TagInput({ value, onChange, extras }: TagInputProps) {
                 }`,
                 fontWeight: isSelected ? 600 : 500,
                 boxShadow: isSelected
-                  ? "0 1px 2px rgba(28,28,28,0.15)"
+                  ? "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.15)"
                   : "inset 0 1px 0 rgba(255,255,255,0.6)",
               }}
             >

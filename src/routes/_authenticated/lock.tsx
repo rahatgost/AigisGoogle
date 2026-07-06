@@ -337,11 +337,11 @@ function LockPage() {
 
         {!isCreate && bioEnrolled && bioAvailable && (
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1" style={{ background: "rgba(28,28,28,0.1)" }} />
+            <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
             <span className="text-[11px] uppercase tracking-[0.14em]" style={{ color: MUTED }}>
               or use passphrase
             </span>
-            <div className="h-px flex-1" style={{ background: "rgba(28,28,28,0.1)" }} />
+            <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
           </div>
         )}
 

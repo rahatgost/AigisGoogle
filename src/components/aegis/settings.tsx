@@ -15,7 +15,7 @@ export function AppBar({ title, trailing }: { title?: string; trailing?: ReactNo
       className="sticky top-0 z-10 -mx-6 flex h-12 shrink-0 items-center justify-between px-6"
       style={{
         color: CHARCOAL,
-        background: "color-mix(in oklab, #f7f4ed 88%, transparent)",
+        background: "color-mix(in oklab, var(--aegis-cream) 88%, transparent)",
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
         borderBottom: `1px solid transparent`,
@@ -79,7 +79,7 @@ export function LargeTitle({ title, subtitle }: { title: string; subtitle?: stri
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[calc(100%+28px)]"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(247,244,237,0.96) 0%, rgba(247,244,237,0.92) 55%, rgba(247,244,237,0.55) 82%, rgba(247,244,237,0) 100%)",
+            "linear-gradient(to bottom, color-mix(in oklab, var(--aegis-cream) 96%, transparent) 0%, color-mix(in oklab, var(--aegis-cream) 92%, transparent) 55%, color-mix(in oklab, var(--aegis-cream) 55%, transparent) 82%, color-mix(in oklab, var(--aegis-cream) 0%, transparent) 100%)",
           backdropFilter: "blur(10px)",
           maskImage:
             "linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,0.6) 88%, transparent 100%)",
@@ -150,7 +150,7 @@ export function SettingsRow({
     <Tag
       onClick={onClick}
       disabled={onClick ? disabled : undefined}
-      whileTap={clickable ? { backgroundColor: "rgba(28,28,28,0.04)" } : undefined}
+      whileTap={clickable ? { backgroundColor: "rgb(var(--aegis-ink-rgb) / 0.04)" } : undefined}
       className="flex w-full items-center gap-3 px-4 py-3 text-left disabled:opacity-55"
       style={{ borderColor: BORDER }}
     >
@@ -158,7 +158,7 @@ export function SettingsRow({
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
           style={{
-            background: "rgba(28,28,28,0.05)",
+            background: "rgb(var(--aegis-ink-rgb) / 0.05)",
             color,
             border: `1px solid ${BORDER}`,
           }}
@@ -178,7 +178,7 @@ export function SettingsRow({
             <span
               className="rounded-full px-1.5 py-[1px] text-[9px] uppercase"
               style={{
-                background: "rgba(28,28,28,0.06)",
+                background: "rgb(var(--aegis-ink-rgb) / 0.06)",
                 color: MUTED,
                 border: `1px solid ${BORDER}`,
                 letterSpacing: "0.14em",

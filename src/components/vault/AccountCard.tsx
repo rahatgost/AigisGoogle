@@ -582,7 +582,7 @@ export function AccountCard({
           setRevealed(!hideCodes);
           setDetailsOpen(true);
         }}
-        whileTap={{ scale: 0.99, backgroundColor: "rgba(28,28,28,0.03)" }}
+        whileTap={{ scale: 0.99, backgroundColor: "rgb(var(--aegis-ink-rgb) / 0.03)" }}
         className="group relative flex w-full flex-col gap-2 px-4 py-3 text-left"
         style={{ background: "transparent" }}
       >
@@ -634,7 +634,7 @@ export function AccountCard({
                 {account.tags.length > 3 && (
                   <span
                     className="inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px]"
-                    style={{ color: MUTED, background: "rgba(28,28,28,0.06)", fontWeight: 600 }}
+                    style={{ color: MUTED, background: "rgb(var(--aegis-ink-rgb) / 0.06)", fontWeight: 600 }}
                   >
                     +{account.tags.length - 3}
                   </span>
@@ -800,7 +800,7 @@ export function AccountCard({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="absolute inset-0"
-                    style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+                    style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
                   />
                   <motion.div
                     ref={detailsPanelRef}
@@ -822,7 +822,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgba(28,28,28,0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
                     />
 
                     {/* Header: chip + eyebrow + issuer + fav + ring */}
@@ -1038,7 +1038,7 @@ export function AccountCard({
                             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                             style={{
                               background:
-                                "linear-gradient(90deg, transparent, rgba(28,28,28,0.06), transparent)",
+                                "linear-gradient(90deg, transparent, rgb(var(--aegis-ink-rgb) / 0.06), transparent)",
                             }}
                           />
                         )}
@@ -1199,7 +1199,7 @@ export function AccountCard({
                           <div
                             className="rounded-[14px] px-3.5 py-3"
                             style={{
-                              background: "rgba(28,28,28,0.025)",
+                              background: "rgb(var(--aegis-ink-rgb) / 0.025)",
                               border: `1px solid ${BORDER}`,
                             }}
                           >
@@ -1257,7 +1257,7 @@ export function AccountCard({
                       <div
                         className="mb-4 flex items-start gap-3 rounded-[14px] px-4 py-3"
                         style={{
-                          background: "rgba(28,28,28,0.03)",
+                          background: "rgb(var(--aegis-ink-rgb) / 0.03)",
                           border: `1px solid ${BORDER}`,
                         }}
                       >
@@ -1295,7 +1295,7 @@ export function AccountCard({
                           <div
                             className="flex items-start gap-3 rounded-[14px] px-4 py-3"
                             style={{
-                              background: "rgba(28,28,28,0.03)",
+                              background: "rgb(var(--aegis-ink-rgb) / 0.03)",
                               border: `1px dashed ${BORDER}`,
                             }}
                           >
@@ -1436,7 +1436,7 @@ export function AccountCard({
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setDetailsOpen(false)}
                       className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full"
-                      style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
                       aria-label="Close"
                     >
                       <X className="h-4 w-4" strokeWidth={1.8} />
@@ -1461,7 +1461,7 @@ export function AccountCard({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="absolute inset-0"
-                    style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+                    style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
                   />
                   <motion.div
                     ref={confirmPanelRef}
@@ -1484,7 +1484,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgba(28,28,28,0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
                     />
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -1530,7 +1530,7 @@ export function AccountCard({
                         onClick={() => !deleting && setConfirmOpen(false)}
                         disabled={deleting}
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+                        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" strokeWidth={1.8} />
@@ -1578,7 +1578,7 @@ export function AccountCard({
                         disabled={deleting}
                         className="rounded-[14px] px-4 py-3.5 text-[14px]"
                         style={{
-                          background: "rgba(28,28,28,0.03)",
+                          background: "rgb(var(--aegis-ink-rgb) / 0.03)",
                           color: CHARCOAL,
                           border: `1px solid ${BORDER}`,
                           fontWeight: 500,
