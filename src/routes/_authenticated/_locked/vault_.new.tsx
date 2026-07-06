@@ -76,13 +76,6 @@ function NewAccountPage() {
       period?: number;
       tags?: string[];
     }): Promise<boolean> => {
-      if (!online) {
-        setNotice({
-          kind: "error",
-          text: "You're offline. Reconnect to add a new account — the encrypted vault has to reach the server.",
-        });
-        return false;
-      }
       const key = getVaultKey();
       if (!key) {
         navigate({ to: "/lock", search: { redirect: "/vault/new" } });
@@ -91,7 +84,10 @@ function NewAccountPage() {
       setSaving(true);
       setNotice(null);
       try {
-        await addAccount(key, user.id, input);
+        const { queued } = await addAccount(key, user.id, input);
+        if (queued) {
+          toastNoticeQueued();
+        }
         navigate({ to: "/vault", replace: true });
         return true;
       } catch (err) {
@@ -101,8 +97,16 @@ function NewAccountPage() {
         setSaving(false);
       }
     },
-    [online, user.id, navigate],
+    [user.id, navigate],
   );
+
+  // Small helper so we don't need to import toast up top just for this.
+  function toastNoticeQueued() {
+    setNotice({
+      kind: "info",
+      text: "Saved offline — will sync automatically when you reconnect.",
+    });
+  }
 
   const handleQrDetected = useCallback(
     async (uri: string) => {
