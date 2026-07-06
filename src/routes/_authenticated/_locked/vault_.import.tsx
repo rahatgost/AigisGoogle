@@ -559,21 +559,14 @@ function PreviewStage({
   return (
     <div className="flex flex-col gap-4 pt-2">
       <div className="flex flex-col gap-1.5">
-        <h1
-          className="text-[26px] leading-[1.1]"
-          style={{
-            color: CHARCOAL,
-            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
-            fontWeight: 600,
-            letterSpacing: "-0.025em",
-          }}
-        >
+        <h1 style={typeDisplay}>
           Review {preview.entries.length} account
           {preview.entries.length === 1 ? "" : "s"}
         </h1>
-        <p className="text-[13.5px] leading-[1.4]" style={{ color: MUTED }}>
+        <p style={typeBody}>
           Found in your {sourceLabel(preview.source)} export. Uncheck anything you'd rather skip.
         </p>
+
       </div>
 
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
