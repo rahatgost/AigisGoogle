@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { DevicesSection } from "@/components/aegis/devices-section";
+import { ExtensionSyncSection } from "@/components/aegis/extension-sync-section";
 import { SignInHistorySection } from "@/components/aegis/signin-history-section";
 import { VaultHealthHero } from "@/components/aegis/vault-health-hero";
 
@@ -284,6 +285,11 @@ function SecurityPage() {
         <SectionLabel>{t("security.section.devices", "Devices")}</SectionLabel>
         <DevicesSection heading={t("security.devices", "Devices")} />
         <SignInHistorySection heading={t("security.signInHistory", "Sign-in history")} />
+
+        <SectionLabel>Browser extension</SectionLabel>
+        <ExtensionSyncSection />
+
+
 
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>

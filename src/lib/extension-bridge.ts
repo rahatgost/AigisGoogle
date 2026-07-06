@@ -18,9 +18,9 @@
 
 import type { DecryptedAccount } from "@/lib/vault-accounts";
 
-/** Default extension ID slot — replaced when the Web Store listing exists. */
+/** Default extension IDs. Users can add their unpacked dev extension via override. */
 const AEGIS_EXTENSION_IDS: readonly string[] = [
-  // Add the published extension id here once available.
+  "obmldhfkhjgmibnkbffjpblemdkdibip",
 ];
 
 type SendResult =
