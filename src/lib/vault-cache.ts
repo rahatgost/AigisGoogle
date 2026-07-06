@@ -130,3 +130,102 @@ export function isOffline(): boolean {
   if (typeof navigator === "undefined") return false;
   return navigator.onLine === false;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6.2: sync metadata + optimistic favorite window
+// ---------------------------------------------------------------------------
+
+/** Read the ISO timestamp of the last successful server sync for this user. */
+export async function readLastSync(userId: string): Promise<string | null> {
+  try {
+    const db = await getDb();
+    const v = await db.get(META_STORE, LAST_SYNC_KEY_PREFIX + userId);
+    return v ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist the ISO timestamp of a successful server sync. */
+export async function writeLastSync(userId: string, iso: string): Promise<void> {
+  try {
+    const db = await getDb();
+    await db.put(META_STORE, iso, LAST_SYNC_KEY_PREFIX + userId);
+  } catch {
+    // Best-effort — a missing timestamp just means next sync re-fetches everything.
+  }
+}
+
+interface FavToggleEntry {
+  value: boolean;
+  at: number;
+}
+type FavToggleMap = Record<string, FavToggleEntry>;
+
+function favToggleKey(userId: string): string {
+  return FAV_TOGGLE_LS_PREFIX + userId;
+}
+
+function readFavToggleMap(userId: string): FavToggleMap {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(favToggleKey(userId));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as FavToggleMap;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeFavToggleMap(userId: string, map: FavToggleMap): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    if (Object.keys(map).length === 0) {
+      localStorage.removeItem(favToggleKey(userId));
+    } else {
+      localStorage.setItem(favToggleKey(userId), JSON.stringify(map));
+    }
+  } catch {
+    // Storage disabled — degrade to server-wins (existing behaviour).
+  }
+}
+
+function prune(map: FavToggleMap, now: number = Date.now()): FavToggleMap {
+  const out: FavToggleMap = {};
+  for (const [id, e] of Object.entries(map)) {
+    if (now - e.at < FAV_TOGGLE_TTL_MS) out[id] = e;
+  }
+  return out;
+}
+
+/** Record an optimistic favorite toggle so an in-flight sync doesn't clobber it. */
+export function recordFavoriteToggle(userId: string, id: string, value: boolean): void {
+  const now = Date.now();
+  const next = prune(readFavToggleMap(userId), now);
+  next[id] = { value, at: now };
+  writeFavToggleMap(userId, next);
+}
+
+/** Return the still-fresh optimistic toggles for merge-time lookup. */
+export function readRecentFavoriteToggles(
+  userId: string,
+): Record<string, boolean> {
+  const map = prune(readFavToggleMap(userId));
+  writeFavToggleMap(userId, map); // opportunistic prune-on-read
+  const out: Record<string, boolean> = {};
+  for (const [id, e] of Object.entries(map)) out[id] = e.value;
+  return out;
+}
+
+/** Clear a specific toggle once it has round-tripped (or on sign-out). */
+export function clearFavoriteToggle(userId: string, id: string): void {
+  const map = readFavToggleMap(userId);
+  if (!(id in map)) return;
+  delete map[id];
+  writeFavToggleMap(userId, map);
+}
+
+/** Ceiling on the optimistic-toggle window — exported for tests / telemetry. */
+export const FAV_TOGGLE_WINDOW_MS = FAV_TOGGLE_TTL_MS;
+
