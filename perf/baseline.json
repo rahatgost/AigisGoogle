@@ -1,6 +1,6 @@
 {
   "recordedAt": "2026-07-06",
-  "note": "Phase 0 baseline snapshot. Regenerate by running `bun run build` and updating the numbers.",
+  "note": "Phase 6.3 snapshot — manual chunk-split for router runtime, React, Supabase, framer-motion, icons. zxing + jspdf dynamic-imported at call sites. Regenerate by running `bun run build` and updating the numbers.",
   "buildCommand": "bun run build",
   "buildStatus": "clean",
   "typecheck": { "command": "bunx tsgo --noEmit", "errors": 0 },
@@ -11,33 +11,38 @@
     "warningsNote": "All 10 are `react-refresh/only-export-components` in shadcn UI files. Expected — these files intentionally export helper constants alongside components."
   },
   "clientChunksTop10": [
-    { "file": "esm-*.js", "bytes": 468442, "notes": "ESM vendor bundle (React + framer-motion runtime)." },
-    { "file": "index-*.js", "bytes": 460747, "notes": "App entry + shared router runtime." },
-    { "file": "vault_.recovery-*.js", "bytes": 429547, "notes": "Recovery route — pulls jspdf + qrcode. Candidate for further split." },
-    { "file": "client-*.js", "bytes": 204520, "notes": "Supabase client + router core." },
-    { "file": "html2canvas-*.js", "bytes": 199568, "notes": "PDF export dependency. Lazy-load with the recovery route." },
-    { "file": "index.es-*.js", "bytes": 151414, "notes": "Third-party ESM chunk (dompurify + friends)." },
-    { "file": "shield-*.js", "bytes": 121413, "notes": "Icon set slice." },
-    { "file": "styles-*.css", "bytes": 84040, "notes": "Tailwind v4 output." },
-    { "file": "security-*.js", "bytes": 46767, "notes": "Security tab route." },
-    { "file": "purify.es-*.js", "bytes": 26107, "notes": "DOMPurify." }
+    { "file": "esm-*.js", "bytes": 467832, "gzip": 118195, "notes": "ESM vendor bundle." },
+    { "file": "jspdf.es.min-*.js", "bytes": 399357, "gzip": 127350, "notes": "Lazy — only loaded on /vault/recovery." },
+    { "file": "index-*.js", "bytes": 215270, "gzip": 60119, "notes": "App entry (was 460 KB pre-split, now router/react/supabase extracted)." },
+    { "file": "supabase-*.js", "bytes": 203591, "gzip": 51692, "notes": "Manual chunk — Supabase client stack." },
+    { "file": "html2canvas-*.js", "bytes": 199579, "gzip": 45724, "notes": "Lazy — recovery/PDF path." },
+    { "file": "react-*.js", "bytes": 181958, "gzip": 56451, "notes": "Manual chunk — React + react-dom + scheduler." },
+    { "file": "index.es-*.js", "bytes": 151425, "gzip": 48383, "notes": "Third-party ESM (dompurify)." },
+    { "file": "framer-motion-*.js", "bytes": 132827, "gzip": 42945, "notes": "Manual chunk — framer-motion." },
+    { "file": "tanstack-router-*.js", "bytes": 117575, "gzip": 37191, "notes": "Manual chunk — router + router-core + history." },
+    { "file": "styles-*.css", "bytes": 87068, "gzip": 14941, "notes": "Tailwind v4 output." }
   ],
-  "serverLibsOver100KB": [
-    { "name": "@zxing/browser+deps", "bytes": 1068040 },
-    { "name": "@tanstack/react-router+deps", "bytes": 655630 },
-    { "name": "jspdf", "bytes": 476730 },
-    { "name": "framer-motion", "bytes": 351880 },
-    { "name": "canvg+deps", "bytes": 330520 },
-    { "name": "html2canvas", "bytes": 318290 },
-    { "name": "@supabase/auth-js+tslib", "bytes": 301840 },
-    { "name": "fast-png+iobuffer+pako", "bytes": 142920 },
-    { "name": "@supabase/storage-js+deps", "bytes": 118930 },
-    { "name": "@supabase/postgrest-js", "bytes": 105410 }
-  ],
+  "criticalPathGzipKB": {
+    "index": 60,
+    "react": 56,
+    "tanstack-router": 37,
+    "supabase": 52,
+    "esm": 118,
+    "totalOnLoad": 323,
+    "note": "Main entry `index` is 60 KB gzipped, well under the 250 KB target. Full initial-load critical path totals ~323 KB gz including React/router/Supabase/vendor ESM. Further wins available by inlining lucide-react icons per-usage."
+  },
   "unresolvedPeerDeps": [],
+  "phase63Exits": {
+    "mainEntryUnder250KBGzipped": true,
+    "zxingLazyLoaded": true,
+    "jspdfLazyLoaded": true,
+    "html2canvasLazyLoaded": true,
+    "routerRuntimeIsolated": true,
+    "lighthousePWA": "pending on-device measurement"
+  },
   "nextWins": [
-    "Route-level code-split @zxing/browser (1.07 MB) — only /vault/import needs it.",
-    "Route-level code-split jspdf + html2canvas + canvg (~1.13 MB together) — only /vault/recovery + planned PDF export need them.",
-    "Consider swapping html2canvas for a lighter DOM→canvas path once PDF export ships."
+    "Icon-set slice: import lucide-react icons per-file instead of the barrel, cutting the icons chunk further.",
+    "Consider swapping html2canvas for a lighter DOM→canvas path once PDF export ships.",
+    "Measure Lighthouse PWA + 3G LCP on device (last unchecked Phase 6.3 exit target)."
   ]
 }
