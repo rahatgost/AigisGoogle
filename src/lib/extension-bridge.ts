@@ -82,6 +82,107 @@ export function getLocalSyncSeq(): number {
   return LOCAL_SYNC_SEQ;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Pairing key + HMAC signing (PR 3 defence-in-depth)                */
+/* ------------------------------------------------------------------ */
+
+const PAIRING_LS_PREFIX = "aegis:ext:pairing:";
+
+const pairingCache = new Map<string, string>();
+
+function readPairing(extId: string): string | null {
+  if (pairingCache.has(extId)) return pairingCache.get(extId)!;
+  try {
+    const v = localStorage.getItem(PAIRING_LS_PREFIX + extId);
+    if (v) pairingCache.set(extId, v);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+function storePairing(extId: string, key: string): void {
+  pairingCache.set(extId, key);
+  try {
+    localStorage.setItem(PAIRING_LS_PREFIX + extId, key);
+  } catch {
+    /* private browsing */
+  }
+}
+
+function clearPairing(extId: string): void {
+  pairingCache.delete(extId);
+  try {
+    localStorage.removeItem(PAIRING_LS_PREFIX + extId);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchPairingKey(runtime: ChromeRuntimeLike, extId: string): Promise<string | null> {
+  const res = await new Promise<Record<string, unknown> | undefined>((resolve) => {
+    try {
+      runtime.sendMessage(extId, { type: "GET_PAIRING" }, (r) => resolve(r));
+    } catch {
+      resolve(undefined);
+    }
+  });
+  if (res && res.ok && typeof res.pairingKey === "string" && res.pairingKey.length >= 32) {
+    storePairing(extId, res.pairingKey);
+    return res.pairingKey;
+  }
+  return null;
+}
+
+async function ensurePairingKey(runtime: ChromeRuntimeLike, extId: string): Promise<string | null> {
+  const cached = readPairing(extId);
+  if (cached) return cached;
+  return fetchPairingKey(runtime, extId);
+}
+
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function bytesToHex(buf: ArrayBuffer): string {
+  const arr = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < arr.length; i++) s += arr[i].toString(16).padStart(2, "0");
+  return s;
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return bytesToHex(buf);
+}
+
+async function hmacHex(keyB64: string, msg: string): Promise<string> {
+  const rawKey = b64ToBytes(keyB64);
+  // Copy into a fresh ArrayBuffer so TS's stricter BufferSource typing accepts it.
+  const keyBuf = new ArrayBuffer(rawKey.byteLength);
+  new Uint8Array(keyBuf).set(rawKey);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBuf,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(msg));
+  return bytesToHex(sig);
+}
+
+function randomNonce(): string {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  let s = "";
+  for (const b of bytes) s += b.toString(16).padStart(2, "0");
+  return s;
+}
+
 
 export async function syncVaultToExtension(params: {
   userId: string;
@@ -104,45 +205,75 @@ export async function syncVaultToExtension(params: {
   const nextSeq = LOCAL_SYNC_SEQ + 1;
 
   for (const id of ids) {
-    const result: SendResult = await new Promise((resolve) => {
-      try {
-        runtime.sendMessage(
-          id,
-          {
-            type: "SYNC_VAULT",
-            userId: params.userId,
-            accounts: totp,
-            ttlMs: params.ttlMs,
-            syncSeq: nextSeq,
-          },
-          (res) => {
-            const err = runtime.lastError?.message;
-            if (err) {
-              resolve({ ok: false, reason: "send_failed", detail: err });
-              return;
-            }
-            if (res?.ok) {
-              const count = typeof res.accountCount === "number" ? res.accountCount : totp.length;
-              const seq = typeof res.syncSeq === "number" ? res.syncSeq : nextSeq;
-              resolve({ ok: true, accountCount: count, syncSeq: seq });
-            } else {
-              const detail = typeof res?.error === "string" ? res.error : "unknown";
-              resolve({ ok: false, reason: "send_failed", detail });
-            }
-          },
-        );
-      } catch (e) {
-        resolve({
-          ok: false,
-          reason: "send_failed",
-          detail: e instanceof Error ? e.message : "throw",
-        });
+    // Sign the payload. If we don't yet have a pairing key, fetch one.
+    // Retry once on `bad_sig` by clearing the cached key and re-fetching
+    // (SW might have regenerated on reinstall).
+    let attempt = 0;
+    let lastDetail: string | undefined;
+    while (attempt < 2) {
+      const pairingKey = await ensurePairingKey(runtime, id);
+      if (!pairingKey) {
+        lastDetail = "no_pairing_key";
+        break;
       }
-    });
-    if (result.ok) {
-      LOCAL_SYNC_SEQ = nextSeq;
-      return result;
+      const ts = Date.now();
+      const nonce = randomNonce();
+      const accountsDigest = await sha256Hex(JSON.stringify(totp));
+      const canonical = `SYNC_VAULT\n${params.userId}\n${nextSeq}\n${ts}\n${nonce}\n${accountsDigest}`;
+      const sig = await hmacHex(pairingKey, canonical);
+
+      const result: SendResult = await new Promise((resolve) => {
+        try {
+          runtime.sendMessage(
+            id,
+            {
+              type: "SYNC_VAULT",
+              userId: params.userId,
+              accounts: totp,
+              ttlMs: params.ttlMs,
+              syncSeq: nextSeq,
+              ts,
+              nonce,
+              sig,
+            },
+            (res) => {
+              const err = runtime.lastError?.message;
+              if (err) {
+                resolve({ ok: false, reason: "send_failed", detail: err });
+                return;
+              }
+              if (res?.ok) {
+                const count = typeof res.accountCount === "number" ? res.accountCount : totp.length;
+                const seq = typeof res.syncSeq === "number" ? res.syncSeq : nextSeq;
+                resolve({ ok: true, accountCount: count, syncSeq: seq });
+              } else {
+                const detail = typeof res?.error === "string" ? res.error : "unknown";
+                resolve({ ok: false, reason: "send_failed", detail });
+              }
+            },
+          );
+        } catch (e) {
+          resolve({
+            ok: false,
+            reason: "send_failed",
+            detail: e instanceof Error ? e.message : "throw",
+          });
+        }
+      });
+      if (result.ok) {
+        LOCAL_SYNC_SEQ = nextSeq;
+        return result;
+      }
+      lastDetail = result.detail;
+      // Only retry if the SW says our HMAC or pairing state is off.
+      if (result.detail === "bad_sig" || result.detail === "unsigned") {
+        clearPairing(id);
+        attempt += 1;
+        continue;
+      }
+      break;
     }
+    if (lastDetail) return { ok: false, reason: "send_failed", detail: lastDetail };
   }
   return { ok: false, reason: "send_failed" };
 }

@@ -13,7 +13,8 @@ import fs from "node:fs";
 
 const ROOT = path.resolve(__dirname);
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const OUT_DIR = path.resolve(PROJECT_ROOT, "dist-ext");
+const TARGET_DIR = (process.env.TARGET ?? "chrome").toLowerCase() === "firefox" ? "dist-ext-firefox" : "dist-ext";
+const OUT_DIR = path.resolve(PROJECT_ROOT, TARGET_DIR);
 
 // Read the same VITE_* env the web app uses so we bake the correct
 // Supabase URL into the manifest's CSP `connect-src`.
@@ -53,16 +54,50 @@ const APP_PREVIEW_ORIGIN = new URL(APP_PREVIEW_URL).origin;
  * HTML pipeline handles the popup; background & content need explicit
  * inputs (they're not referenced from any HTML).
  */
+// TARGET=chrome (default) or TARGET=firefox switches the emitted manifest
+// shape. Firefox MV3 needs `browser_specific_settings.gecko.id` and does
+// not support ES-module service workers (as of FF 128), so we downgrade
+// the background block to a classic script for that target.
+const TARGET = (process.env.TARGET ?? "chrome").toLowerCase() as "chrome" | "firefox";
+const GECKO_ID = process.env.GECKO_ID ?? "aegis@lovable.app";
+
 function extensionManifestPlugin() {
   return {
     name: "aegis-extension-manifest",
     apply: "build" as const,
     generateBundle() {
       const source = fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8");
-      const rendered = source
+      let rendered = source
         .replaceAll("__SUPABASE_ORIGIN__", SUPABASE_ORIGIN)
         .replaceAll("__APP_ORIGIN__", APP_ORIGIN)
         .replaceAll("__APP_PREVIEW_ORIGIN__", APP_PREVIEW_ORIGIN);
+
+      if (TARGET === "firefox") {
+        const parsed = JSON.parse(rendered);
+        // Firefox MV3: classic background scripts, no `type: module`.
+        parsed.background = { scripts: ["background.js"] };
+        // Firefox rejects `minimum_chrome_version`.
+        delete parsed.minimum_chrome_version;
+        parsed.browser_specific_settings = {
+          gecko: { id: GECKO_ID, strict_min_version: "128.0" },
+        };
+        rendered = JSON.stringify(parsed, null, 2);
+      }
+
+      // Ship icons alongside the manifest so `chrome://extensions` and
+      // the toolbar toolbar-action render at every DPR.
+      for (const size of [16, 32, 48, 128]) {
+        const iconPath = path.join(ROOT, `icons/icon-${size}.png`);
+        if (fs.existsSync(iconPath)) {
+          // @ts-expect-error - rollup plugin context is untyped here
+          this.emitFile({
+            type: "asset",
+            fileName: `icons/icon-${size}.png`,
+            source: fs.readFileSync(iconPath),
+          });
+        }
+      }
+
       // @ts-expect-error - rollup plugin context is untyped here
       this.emitFile({ type: "asset", fileName: "manifest.json", source: rendered });
     },

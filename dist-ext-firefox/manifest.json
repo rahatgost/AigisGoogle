@@ -20,8 +20,9 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "scripts": [
+      "background.js"
+    ]
   },
   "permissions": [
     "storage",
@@ -36,25 +37,32 @@
   "content_scripts": [
     {
       "matches": [
-        "__APP_ORIGIN__/*",
-        "__APP_PREVIEW_ORIGIN__/*",
+        "https://hug-machine-maker.lovable.app/*",
+        "https://id-preview--04418077-cd09-40ce-bb05-4708ee844e27.lovable.app/*",
         "http://localhost:8080/*"
       ],
-      "js": ["announce.js"],
+      "js": [
+        "announce.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     }
   ],
   "externally_connectable": {
     "matches": [
-      "__APP_ORIGIN__/*",
-      "__APP_PREVIEW_ORIGIN__/*",
+      "https://hug-machine-maker.lovable.app/*",
+      "https://id-preview--04418077-cd09-40ce-bb05-4708ee844e27.lovable.app/*",
       "http://localhost:8080/*"
     ]
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' __SUPABASE_ORIGIN__ https://api.pwnedpasswords.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'none'; frame-ancestors 'none';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://oegkpbuziwipyrmjeqaf.supabase.co https://api.pwnedpasswords.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'none'; frame-ancestors 'none';"
   },
   "web_accessible_resources": [],
-  "minimum_chrome_version": "110"
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "aegis@lovable.app",
+      "strict_min_version": "128.0"
+    }
+  }
 }

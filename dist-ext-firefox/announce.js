@@ -1,0 +1,1 @@
+try{let e=chrome.runtime.id,t=document.documentElement;e&&t&&(t.dataset.aegisExtensionId=e,t.dataset.aegisExtensionVersion=chrome.runtime.getManifest().version,window.dispatchEvent(new CustomEvent(`aegis:extension-ready`,{detail:{id:e}})))}catch{}

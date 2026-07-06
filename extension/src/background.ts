@@ -57,8 +57,18 @@ export type Message =
   | { type: "PING" }
   | { type: "GET_VERSION" }
   | { type: "GET_STATE" }
+  | { type: "GET_PAIRING" }
   | { type: "LOCK" }
-  | { type: "SYNC_VAULT"; userId: string; accounts: ExtAccount[]; ttlMs?: number; syncSeq?: number }
+  | {
+      type: "SYNC_VAULT";
+      userId: string;
+      accounts: ExtAccount[];
+      ttlMs?: number;
+      syncSeq?: number;
+      ts?: number;
+      nonce?: string;
+      sig?: string;
+    }
   | { type: "MATCH_HOST"; host: string }
   | { type: "GET_CODE"; accountId: string }
   | { type: "CLIPBOARD_ARMED"; tabId: number; accountId: string };
@@ -169,6 +179,108 @@ function validateAccount(a: unknown): a is ExtAccount {
 }
 
 /* --------------------------------------------------------------------- */
+/*  Pairing key + HMAC anti-replay (PR 3)                                */
+/* --------------------------------------------------------------------- */
+/*
+ * Defence-in-depth on top of `externally_connectable`. The SW mints a
+ * random 32-byte key on first install and persists it in
+ * chrome.storage.local. Any allow-listed origin can fetch it once via
+ * GET_PAIRING. Subsequent SYNC_VAULT calls MUST include:
+ *   - ts    : epoch-ms, must be within ±60 s of the SW clock
+ *   - nonce : opaque string (≤64 chars), single-use per 5-min window
+ *   - sig   : hex HMAC-SHA256 over the canonical string below
+ *
+ * canonical = `SYNC_VAULT\n${userId}\n${syncSeq}\n${ts}\n${nonce}\n${sha256(JSON.stringify(cleanedAccounts))}`
+ *
+ * A hostile script that lands on an allow-listed origin still has the
+ * pairing key (both share localStorage on that origin), so HMAC is not
+ * a confidentiality boundary — it exists to make replay attacks and
+ * tampered-in-transit payloads impossible.
+ */
+
+const PAIRING_STORAGE_KEY = "aegisPairingKey";
+const HMAC_MAX_SKEW_MS = 60_000;
+const NONCE_TTL_MS = 5 * 60_000;
+const nonceCache = new Map<string, number>();
+
+let cachedPairingKey: string | null = null;
+
+async function getPairingKey(): Promise<string> {
+  if (cachedPairingKey) return cachedPairingKey;
+  const stored = await chrome.storage.local.get(PAIRING_STORAGE_KEY);
+  const existing = stored[PAIRING_STORAGE_KEY];
+  if (typeof existing === "string" && existing.length >= 32) {
+    cachedPairingKey = existing;
+    return existing;
+  }
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const b64 = btoa(String.fromCharCode(...bytes));
+  await chrome.storage.local.set({ [PAIRING_STORAGE_KEY]: b64 });
+  cachedPairingKey = b64;
+  swLog("pairing key generated");
+  return b64;
+}
+// Warm the cache on SW start so verifySig can be synchronous-ish after boot.
+void getPairingKey();
+
+function sweepNonces(now: number): void {
+  if (nonceCache.size < 256) return;
+  for (const [n, t] of nonceCache) {
+    if (now - t > NONCE_TTL_MS) nonceCache.delete(n);
+  }
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hmacHex(keyB64: string, msg: string): Promise<string> {
+  const raw = Uint8Array.from(atob(keyB64), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(msg));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEq(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verifySyncSig(
+  keyB64: string,
+  msg: { userId: string; syncSeq: number; ts: number; nonce: string; sig: string; accounts: ExtAccount[] },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const now = Date.now();
+  if (!Number.isFinite(msg.ts) || Math.abs(now - msg.ts) > HMAC_MAX_SKEW_MS) {
+    return { ok: false, error: "stale_ts" };
+  }
+  if (typeof msg.nonce !== "string" || msg.nonce.length === 0 || msg.nonce.length > 64) {
+    return { ok: false, error: "bad_nonce" };
+  }
+  sweepNonces(now);
+  if (nonceCache.has(msg.nonce)) return { ok: false, error: "replay" };
+  if (typeof msg.sig !== "string" || msg.sig.length !== 64) {
+    return { ok: false, error: "bad_sig_shape" };
+  }
+  const accountsDigest = await sha256Hex(JSON.stringify(msg.accounts));
+  const canonical = `SYNC_VAULT\n${msg.userId}\n${msg.syncSeq}\n${msg.ts}\n${msg.nonce}\n${accountsDigest}`;
+  const expected = await hmacHex(keyB64, canonical);
+  if (!constantTimeEq(expected, msg.sig)) return { ok: false, error: "bad_sig" };
+  nonceCache.set(msg.nonce, now);
+  return { ok: true };
+}
+
+/* --------------------------------------------------------------------- */
 /*  TOTP                                                                 */
 /* --------------------------------------------------------------------- */
 
@@ -191,13 +303,20 @@ function generateCode(account: ExtAccount): string {
 /*  Handlers                                                             */
 /* --------------------------------------------------------------------- */
 
-function handle(msg: Message, sender: chrome.runtime.MessageSender): Response {
+// SYNC_VAULT / GET_PAIRING are async (crypto.subtle + chrome.storage).
+async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promise<Response> {
   switch (msg.type) {
     case "PING":
       return { ok: true };
 
     case "GET_VERSION":
       return { ok: true, version: chrome.runtime.getManifest().version };
+
+    case "GET_PAIRING": {
+      const pairingKey = await getPairingKey();
+      swLog("GET_PAIRING issued");
+      return { ok: true, pairingKey };
+    }
 
     case "GET_STATE": {
       const unlockedNow = isUnlocked();
@@ -229,9 +348,6 @@ function handle(msg: Message, sender: chrome.runtime.MessageSender): Response {
       }
       if (!Array.isArray(msg.accounts)) { swLog("SYNC_VAULT reject: bad_payload"); return { ok: false, error: "bad_payload" }; }
       if (msg.accounts.length > MAX_ACCOUNTS) { swLog("SYNC_VAULT reject: too_many_accounts", msg.accounts.length); return { ok: false, error: "too_many_accounts" }; }
-      // Optional syncSeq: must be a finite non-negative integer if present.
-      // The web app increments this per push so a heartbeat GET_STATE can
-      // detect that the extension is running with a stale vault.
       let seq = 0;
       if (msg.syncSeq !== undefined) {
         if (
@@ -245,12 +361,33 @@ function handle(msg: Message, sender: chrome.runtime.MessageSender): Response {
         }
         seq = msg.syncSeq;
       }
-      // Validate every row; reject the whole batch on any failure so we
-      // never store a partially-corrupt vault.
       const cleaned: ExtAccount[] = [];
       for (const raw of msg.accounts) {
         if (!validateAccount(raw)) { swLog("SYNC_VAULT reject: bad_account_shape"); return { ok: false, error: "bad_account_shape" }; }
         cleaned.push(raw);
+      }
+      // HMAC gate — see the pairing block above for the canonical string.
+      // Required for every external call. Popup / same-extension pushes
+      // (rare — the popup does not push) may omit and use origin trust.
+      const isExternal = !!sender.origin && sender.id !== chrome.runtime.id;
+      if (isExternal) {
+        if (typeof msg.ts !== "number" || typeof msg.nonce !== "string" || typeof msg.sig !== "string") {
+          swLog("SYNC_VAULT reject: unsigned external call");
+          return { ok: false, error: "unsigned" };
+        }
+        const key = await getPairingKey();
+        const verdict = await verifySyncSig(key, {
+          userId: msg.userId,
+          syncSeq: seq,
+          ts: msg.ts,
+          nonce: msg.nonce,
+          sig: msg.sig,
+          accounts: cleaned,
+        });
+        if (!verdict.ok) {
+          swLog("SYNC_VAULT reject:", verdict.error);
+          return { ok: false, error: verdict.error };
+        }
       }
       const ttl = Math.min(Math.max(msg.ttlMs ?? IDLE_LOCK_MS, 30_000), IDLE_LOCK_MS);
       const now = Date.now();
@@ -261,7 +398,7 @@ function handle(msg: Message, sender: chrome.runtime.MessageSender): Response {
         syncedAt: now,
         syncSeq: seq,
       };
-      swLog("SYNC_VAULT ok", { seq, count: cleaned.length, ttlMs: ttl });
+      swLog("SYNC_VAULT ok", { seq, count: cleaned.length, ttlMs: ttl, signed: isExternal });
       return { ok: true, accountCount: cleaned.length, syncSeq: seq, syncedAt: now };
     }
 
@@ -346,12 +483,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
-  try {
-    sendResponse(handle(msg, sender));
-  } catch (e) {
-    sendResponse({ ok: false, error: e instanceof Error ? e.message : "error" });
-  }
-  return true;
+  handle(msg, sender)
+    .then(sendResponse)
+    .catch((e) => sendResponse({ ok: false, error: e instanceof Error ? e.message : "error" }));
+  return true; // keep the port open for the async response
 });
 
 chrome.runtime.onMessageExternal.addListener((msg: Message, sender, sendResponse) => {
@@ -361,26 +496,28 @@ chrome.runtime.onMessageExternal.addListener((msg: Message, sender, sendResponse
     sendResponse({ ok: false, error: "forbidden_origin" });
     return;
   }
-  // External senders may only sync or query state — never mint codes
-  // (that path is popup/content-script only, to keep code emission tied
-  // to a user action inside the extension surface).
-  if (msg.type !== "SYNC_VAULT" && msg.type !== "GET_STATE" && msg.type !== "PING" && msg.type !== "LOCK") {
+  // External senders may only sync, pair, or query state — never mint codes.
+  const externalAllowed: ReadonlySet<string> = new Set([
+    "SYNC_VAULT",
+    "GET_STATE",
+    "GET_PAIRING",
+    "PING",
+    "LOCK",
+  ]);
+  if (!externalAllowed.has(msg.type)) {
     swLog("external reject: forbidden_message", msg.type);
     sendResponse({ ok: false, error: "forbidden_message" });
     return;
   }
-  // Rate-limit SYNC_VAULT per origin to make a hostile script that lands
-  // on an allow-listed origin unable to spam the SW with vault swaps.
   if (msg.type === "SYNC_VAULT" && !checkRate(origin!)) {
     swLog("SYNC_VAULT rate_limited", origin);
     sendResponse({ ok: false, error: "rate_limited" });
     return;
   }
-  try {
-    sendResponse(handle(msg, sender));
-  } catch (e) {
-    sendResponse({ ok: false, error: e instanceof Error ? e.message : "error" });
-  }
+  handle(msg, sender)
+    .then(sendResponse)
+    .catch((e) => sendResponse({ ok: false, error: e instanceof Error ? e.message : "error" }));
+  return true;
 });
 
 // Re-exported for the popup's typed sendMessage.
