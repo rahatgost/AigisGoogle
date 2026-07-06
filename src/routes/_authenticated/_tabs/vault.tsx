@@ -375,7 +375,9 @@ function VaultPage() {
           <span className="flex-1 truncate">
             {online
               ? "Reconnecting — showing cached codes."
-              : "You're offline — showing cached codes. Add or edit is disabled."}
+              : pendingOutbox > 0
+                ? `You're offline — ${pendingOutbox} change${pendingOutbox === 1 ? "" : "s"} queued for sync.`
+                : "You're offline — showing cached codes. Add is disabled."}
           </span>
           <button
             type="button"
