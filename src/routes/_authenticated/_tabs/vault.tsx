@@ -89,12 +89,30 @@ export const Route = createFileRoute("/_authenticated/_tabs/vault")({
       throw redirect({ to: "/lock", search: { redirect: location.href } });
     }
   },
+  head: () => ({
+    meta: [
+      { title: "Your vault — Aegis" },
+      {
+        name: "description",
+        content:
+          "Your end-to-end encrypted TOTP vault. Codes decrypt locally on this device only.",
+      },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Your vault — Aegis" },
+      {
+        property: "og:description",
+        content: "End-to-end encrypted TOTP codes, unlocked only on your device.",
+      },
+      { property: "og:url", content: "https://hug-machine-maker.lovable.app/vault" },
+    ],
+  }),
   component: VaultPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
   ),
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
+
 
 function VaultPage() {
   const navigate = useNavigate();
