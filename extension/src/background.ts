@@ -179,29 +179,114 @@ function validateAccount(a: unknown): a is ExtAccount {
 }
 
 /* --------------------------------------------------------------------- */
-/*  TOTP                                                                 */
+/*  Pairing key + HMAC anti-replay (PR 3)                                */
 /* --------------------------------------------------------------------- */
+/*
+ * Defence-in-depth on top of `externally_connectable`. The SW mints a
+ * random 32-byte key on first install and persists it in
+ * chrome.storage.local. Any allow-listed origin can fetch it once via
+ * GET_PAIRING. Subsequent SYNC_VAULT calls MUST include:
+ *   - ts    : epoch-ms, must be within ±60 s of the SW clock
+ *   - nonce : opaque string (≤64 chars), single-use per 5-min window
+ *   - sig   : hex HMAC-SHA256 over the canonical string below
+ *
+ * canonical = `SYNC_VAULT\n${userId}\n${syncSeq}\n${ts}\n${nonce}\n${sha256(JSON.stringify(cleanedAccounts))}`
+ *
+ * A hostile script that lands on an allow-listed origin still has the
+ * pairing key (both share localStorage on that origin), so HMAC is not
+ * a confidentiality boundary — it exists to make replay attacks and
+ * tampered-in-transit payloads impossible.
+ */
 
-function generateCode(account: ExtAccount): string {
-  if (account.otp_type === "hotp") {
-    throw new Error("HOTP not supported in extension");
+const PAIRING_STORAGE_KEY = "aegisPairingKey";
+const HMAC_MAX_SKEW_MS = 60_000;
+const NONCE_TTL_MS = 5 * 60_000;
+const nonceCache = new Map<string, number>();
+
+let cachedPairingKey: string | null = null;
+
+async function getPairingKey(): Promise<string> {
+  if (cachedPairingKey) return cachedPairingKey;
+  const stored = await chrome.storage.local.get(PAIRING_STORAGE_KEY);
+  const existing = stored[PAIRING_STORAGE_KEY];
+  if (typeof existing === "string" && existing.length >= 32) {
+    cachedPairingKey = existing;
+    return existing;
   }
-  const totp = new OTPAuth.TOTP({
-    issuer: account.issuer,
-    label: account.label,
-    algorithm: account.algorithm,
-    digits: account.digits,
-    period: account.period,
-    secret: OTPAuth.Secret.fromBase32(account.secret),
-  });
-  return totp.generate();
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const b64 = btoa(String.fromCharCode(...bytes));
+  await chrome.storage.local.set({ [PAIRING_STORAGE_KEY]: b64 });
+  cachedPairingKey = b64;
+  swLog("pairing key generated");
+  return b64;
+}
+// Warm the cache on SW start so verifySig can be synchronous-ish after boot.
+void getPairingKey();
+
+function sweepNonces(now: number): void {
+  if (nonceCache.size < 256) return;
+  for (const [n, t] of nonceCache) {
+    if (now - t > NONCE_TTL_MS) nonceCache.delete(n);
+  }
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hmacHex(keyB64: string, msg: string): Promise<string> {
+  const raw = Uint8Array.from(atob(keyB64), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(msg));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEq(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verifySyncSig(
+  keyB64: string,
+  msg: { userId: string; syncSeq: number; ts: number; nonce: string; sig: string; accounts: ExtAccount[] },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const now = Date.now();
+  if (!Number.isFinite(msg.ts) || Math.abs(now - msg.ts) > HMAC_MAX_SKEW_MS) {
+    return { ok: false, error: "stale_ts" };
+  }
+  if (typeof msg.nonce !== "string" || msg.nonce.length === 0 || msg.nonce.length > 64) {
+    return { ok: false, error: "bad_nonce" };
+  }
+  sweepNonces(now);
+  if (nonceCache.has(msg.nonce)) return { ok: false, error: "replay" };
+  if (typeof msg.sig !== "string" || msg.sig.length !== 64) {
+    return { ok: false, error: "bad_sig_shape" };
+  }
+  const accountsDigest = await sha256Hex(JSON.stringify(msg.accounts));
+  const canonical = `SYNC_VAULT\n${msg.userId}\n${msg.syncSeq}\n${msg.ts}\n${msg.nonce}\n${accountsDigest}`;
+  const expected = await hmacHex(keyB64, canonical);
+  if (!constantTimeEq(expected, msg.sig)) return { ok: false, error: "bad_sig" };
+  nonceCache.set(msg.nonce, now);
+  return { ok: true };
 }
 
 /* --------------------------------------------------------------------- */
 /*  Handlers                                                             */
 /* --------------------------------------------------------------------- */
 
-function handle(msg: Message, sender: chrome.runtime.MessageSender): Response {
+// SYNC_VAULT is async now (HMAC verify uses crypto.subtle). Everything
+// else stays sync; the caller wraps this in a Promise where needed.
+async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promise<Response> {
   switch (msg.type) {
     case "PING":
       return { ok: true };
