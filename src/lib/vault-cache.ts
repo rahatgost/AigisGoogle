@@ -18,6 +18,14 @@ const DB_VERSION = 1;
 const STORE = "accounts";
 const META_STORE = "meta";
 const OWNER_KEY = "owner_user_id";
+const LAST_SYNC_KEY_PREFIX = "last_sync:";
+
+// Phase 6.2: local optimistic favorite toggles are honoured over the
+// server's `is_favorite` value for a short window so a tap right before a
+// diff-sync doesn't "flicker back" to the pre-toggle state. Kept in
+// localStorage (not IndexedDB) because the merge path is synchronous.
+const FAV_TOGGLE_LS_PREFIX = "aegis:fav_recent:";
+const FAV_TOGGLE_TTL_MS = 60_000;
 
 interface AegisSchema {
   [STORE]: { key: string; value: VaultAccountRecord };
