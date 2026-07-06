@@ -301,6 +301,16 @@ function SecurityPage() {
               />
             }
           />
+          <SettingsRow
+            icon={<Monitor className="h-4 w-4" strokeWidth={1.8} />}
+            title={t("security.devices", "Devices")}
+            description={t(
+              "security.devices.description",
+              "See every device signed into your vault and sign any of them out.",
+            )}
+            onClick={() => navigate({ to: "/devices" })}
+            chevron
+          />
         </SettingsGroup>
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
