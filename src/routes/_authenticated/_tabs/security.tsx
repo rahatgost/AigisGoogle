@@ -183,8 +183,8 @@ function SecurityPage() {
   return (
     <>
       <LargeTitle
-        title="Locks & recovery"
-        subtitle="Everything protecting your codes lives here."
+        title={t("security.title", "Locks & recovery")}
+        subtitle={t("security.subtitle", "Everything protecting your codes lives here.")}
       />
 
       <div className="flex flex-col gap-1 pt-1">
@@ -218,16 +218,16 @@ function SecurityPage() {
           </div>
         </motion.div>
 
-        <SectionLabel>Vault</SectionLabel>
+        <SectionLabel>{t("security.section.vault", "Vault")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
             icon={<KeyRound className="h-4 w-4" strokeWidth={1.8} />}
-            title="Passphrase hint"
-            value={hint ?? "No hint set"}
+            title={t("security.passphraseHint", "Passphrase hint")}
+            value={hint ?? t("security.passphraseHint.empty", "No hint set")}
           />
           <SettingsRow
             icon={<Timer className="h-4 w-4" strokeWidth={1.8} />}
-            title="Auto-lock"
+            title={t("security.autoLock", "Auto-lock")}
             value={currentAutoLockLabel}
             onClick={() => setAutoLockOpen(true)}
             chevron
@@ -235,32 +235,32 @@ function SecurityPage() {
 
           <SettingsRow
             icon={<Sparkles className="h-4 w-4" strokeWidth={1.8} />}
-            title="Change passphrase"
-            description="Rotate your master key without re-adding accounts"
+            title={t("security.changePassphrase", "Change passphrase")}
+            description={t("security.changePassphrase.description", "Rotate your master key without re-adding accounts")}
             onClick={() => setChangeOpen(true)}
             chevron
           />
           <SettingsRow
             icon={<FileText className="h-4 w-4" strokeWidth={1.8} />}
-            title="Recovery sheet"
-            description="Printable backup — accounts list + wrapped key QR"
+            title={t("security.recoverySheet", "Recovery sheet")}
+            description={t("security.recoverySheet.description", "Printable backup — accounts list + wrapped key QR")}
             onClick={() => navigate({ to: "/vault/recovery" })}
             chevron
           />
           <SettingsRow
             icon={<Download className="h-4 w-4" strokeWidth={1.8} />}
-            title="Encrypted export"
-            description="Download a passphrase-protected .avf backup file"
+            title={t("security.encryptedExport", "Encrypted export")}
+            description={t("security.encryptedExport.description", "Download a passphrase-protected .avf backup file")}
             onClick={() => setExportOpen(true)}
             chevron
           />
         </SettingsGroup>
 
-        <SectionLabel>Sign-in</SectionLabel>
+        <SectionLabel>{t("security.section.signIn", "Sign-in")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
             icon={<Fingerprint className="h-4 w-4" strokeWidth={1.8} />}
-            title="Biometric unlock"
+            title={t("security.biometric", "Biometric unlock")}
             description={
               !bioSupported
                 ? "Not available on this device or browser."
@@ -284,15 +284,15 @@ function SecurityPage() {
           />
         </SettingsGroup>
 
-        <SectionLabel>Privacy</SectionLabel>
+        <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
             icon={<EyeOff className="h-4 w-4" strokeWidth={1.8} />}
-            title="Hide codes"
+            title={t("security.hideCodes", "Hide codes")}
             description={
               hideCodes
-                ? "Codes stay masked. Tap an account to reveal or copy."
-                : "Codes are visible in the vault at a glance."
+                ? t("security.hideCodes.on", "Codes stay masked. Tap an account to reveal or copy.")
+                : t("security.hideCodes.off", "Codes are visible in the vault at a glance.")
             }
             onClick={() => {
               const next = !hideCodes;
@@ -319,23 +319,23 @@ function SecurityPage() {
           />
         </SettingsGroup>
 
-        <SectionLabel>Session</SectionLabel>
+        <SectionLabel>{t("security.section.session", "Session")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
             icon={<Lock className="h-4 w-4" strokeWidth={1.8} />}
-            title="Lock vault now"
-            description="Require your passphrase to open again"
+            title={t("security.lockNow", "Lock vault now")}
+            description={t("security.lockNow.description", "Require your passphrase to open again")}
             onClick={lockNow}
             chevron
           />
         </SettingsGroup>
 
-        <SectionLabel>Danger zone</SectionLabel>
+        <SectionLabel>{t("security.section.danger", "Danger zone")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
             icon={<RotateCcw className="h-4 w-4" strokeWidth={1.8} />}
-            title="Reset vault"
-            description="Erase everything. This cannot be undone."
+            title={t("security.reset", "Reset vault")}
+            description={t("security.reset.description", "Erase everything. This cannot be undone.")}
             onClick={resetVault}
             disabled={busy}
             danger
