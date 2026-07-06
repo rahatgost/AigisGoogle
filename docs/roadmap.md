@@ -18,8 +18,12 @@ post-launch. Tick `- [x]` as each task lands.
 manifest, service worker, guarded registration, protocol handler, share
 target, install prompt behind `feature_flags.pwa_install_prompt`,
 encrypted IndexedDB vault mirror with cache-first paint, delta sync,
-optimistic favorite window, focus/visibility invalidation). Currently
-on **Phase 6.3 — route-level code splitting**.
+optimistic favorite window, focus/visibility invalidation).
+**Phase 6.3 partially shipped** — `@zxing/browser` + `jspdf` now
+dynamic-imported at call sites; router manual chunk-split + bundle-size
+exit target still pending. **Offline export/restore + cache recovery
+integration tests landed** (16 tests, `src/lib/offline-recovery.test.ts`).
+Currently on **Phase 6.3 tail + 6.4 (Offline UX affordances)**.
 
 ---
 
@@ -98,8 +102,8 @@ Baseline biggest chunks (from `perf/baseline.json`):
 `@zxing/browser` 1.07 MB · `@tanstack/react-router` 656 KB · `esm` 458 KB
 · `index` 450 KB · `vault_.recovery` 419 KB · `jspdf` 477 KB.
 
-- [ ] Dynamic-import `@zxing/browser` inside `ScanTab` only
-- [ ] Dynamic-import `jspdf` inside the recovery route only
+- [x] Dynamic-import `@zxing/browser` inside `ScanTab` + importer routes only
+- [x] Dynamic-import `jspdf` inside the recovery route only
 - [ ] Manual chunk-split for the router runtime
 - [ ] **Exit target:** main entry ≤ 250 KB gzipped, first vault paint on 3G ≤ 2.5s, Lighthouse PWA 90+
 
@@ -310,6 +314,7 @@ Aegis in under 15 minutes and pass the same RLS test we ship.
 ### Testing pyramid
 - [x] Unit tests for crypto + import parsers
 - [x] Component tests for `ScanTab` (Vitest + Testing Library)
+- [x] Integration tests for offline export/restore + cache recovery paths (`src/lib/offline-recovery.test.ts`)
 - [ ] Component tests for `AccountCard`, `PasteTab`, `AvfPassStage`
 - [ ] Playwright end-to-end for onboarding → add → export → restore on second device, in CI on every PR touching `src/routes/**`
 
