@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { getVaultKey } from "@/lib/vault-session";
 import { useOnlineStatus } from "@/lib/use-online";
@@ -32,7 +33,15 @@ import {
 import { AppBar, AppBarButton, SectionLabel, SettingsGroup } from "@/components/aegis/settings";
 import { BottomTabs } from "@/components/aegis/BottomTabs";
 
+// Phase 6.1: accept an inbound `otpauth://` payload from the PWA
+// protocol handler + Web Share Target so a scan/share from another app
+// lands straight on Add Account with the URI pre-parsed.
+const searchSchema = z.object({
+  uri: z.string().optional().catch(undefined),
+});
+
 export const Route = createFileRoute("/_authenticated/_locked/vault_/new")({
+  validateSearch: searchSchema,
   component: NewAccountPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
