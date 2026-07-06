@@ -55,7 +55,20 @@ export function SignInHistorySection({ heading = "Sign-in history" }: { heading?
   const [events, setEvents] = useState<LoginEventRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [politeMsg, setPoliteMsg] = useState("");
+  const [assertiveMsg, setAssertiveMsg] = useState("");
+
+  const announce = (text: string, tone: "polite" | "assertive" = "polite") => {
+    if (tone === "assertive") {
+      setAssertiveMsg("");
+      window.setTimeout(() => setAssertiveMsg(text), 50);
+    } else {
+      setPoliteMsg("");
+      window.setTimeout(() => setPoliteMsg(text), 50);
+    }
+  };
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -63,9 +76,19 @@ export function SignInHistorySection({ heading = "Sign-in history" }: { heading?
     try {
       const rows = await listFn();
       setEvents(rows);
+      setErrorMsg(null);
+      if (silent) {
+        announce(
+          rows.length === 0
+            ? "Sign-in history refreshed. No sign-ins recorded yet."
+            : `Sign-in history refreshed. ${rows.length} recent ${rows.length === 1 ? "sign-in" : "sign-ins"}.`,
+        );
+      }
     } catch (err) {
       const text = err instanceof Error ? err.message : "Could not load sign-in history.";
+      setErrorMsg(text);
       toast.error("Couldn't load sign-in history", { description: text });
+      announce(`Couldn't load sign-in history. ${text}`, "assertive");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -81,14 +104,23 @@ export function SignInHistorySection({ heading = "Sign-in history" }: { heading?
   const latest = events?.[0] ?? null;
   const summary = loading
     ? "Loading…"
-    : count === 0
-      ? "No sign-ins recorded yet"
-      : latest
-        ? `Last sign-in ${formatWhen(latest.event_at)} · ${latest.device_label}`
-        : `${count} recent sign-ins`;
+    : errorMsg
+      ? "Couldn't load sign-in history"
+      : count === 0
+        ? "No sign-ins recorded yet"
+        : latest
+          ? `Last sign-in ${formatWhen(latest.event_at)} · ${latest.device_label}`
+          : `${count} recent sign-ins`;
 
   return (
     <>
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {politeMsg}
+      </div>
+      <div role="alert" aria-live="assertive" aria-atomic="true" className="sr-only">
+        {assertiveMsg}
+      </div>
+
       <SettingsGroup>
         <SettingsRow
           icon={<History className="h-4 w-4" strokeWidth={1.8} />}
@@ -106,6 +138,7 @@ export function SignInHistorySection({ heading = "Sign-in history" }: { heading?
             events={events}
             loading={loading}
             refreshing={refreshing}
+            errorMsg={errorMsg}
             onRefresh={() => void load(true)}
             onClose={() => setSheetOpen(false)}
           />
@@ -114,6 +147,7 @@ export function SignInHistorySection({ heading = "Sign-in history" }: { heading?
     </>
   );
 }
+
 
 function HistorySheet({
   events,
