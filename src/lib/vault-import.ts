@@ -170,7 +170,7 @@ export function parseGoogleAuthMigrationUri(uri: string): ParsedOtpauth[] {
         digits: DIGITS_MAP[sub.digits ?? 1] ?? 6,
         period: 30,
         otp_type: isHotp ? "hotp" : "totp",
-        ...(isHotp ? { counter: 0 } : {}),
+        ...(isHotp ? { counter: sub.counter ?? 0 } : {}),
       });
     } else {
       reader.skip(wire);
