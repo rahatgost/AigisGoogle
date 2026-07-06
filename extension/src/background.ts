@@ -325,7 +325,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "aegis-keepalive") {
     void chrome.storage.local.get("__aegis_touch");
     // Also GC the unlocked vault if idle.
-    if (unlocked && Date.now() > unlocked.expiresAt) unlocked = null;
+    if (unlocked && Date.now() > unlocked.expiresAt) {
+      swLog("TTL expired, clearing unlocked vault");
+      unlocked = null;
+    }
     return;
   }
   if (alarm.name.startsWith("clip-clear-")) {
@@ -354,6 +357,7 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
 chrome.runtime.onMessageExternal.addListener((msg: Message, sender, sendResponse) => {
   const origin = sender.origin ?? (sender.url ? new URL(sender.url).origin : undefined);
   if (!originAllowed(origin)) {
+    swLog("external reject: forbidden_origin", origin);
     sendResponse({ ok: false, error: "forbidden_origin" });
     return;
   }
@@ -361,12 +365,14 @@ chrome.runtime.onMessageExternal.addListener((msg: Message, sender, sendResponse
   // (that path is popup/content-script only, to keep code emission tied
   // to a user action inside the extension surface).
   if (msg.type !== "SYNC_VAULT" && msg.type !== "GET_STATE" && msg.type !== "PING" && msg.type !== "LOCK") {
+    swLog("external reject: forbidden_message", msg.type);
     sendResponse({ ok: false, error: "forbidden_message" });
     return;
   }
   // Rate-limit SYNC_VAULT per origin to make a hostile script that lands
   // on an allow-listed origin unable to spam the SW with vault swaps.
   if (msg.type === "SYNC_VAULT" && !checkRate(origin!)) {
+    swLog("SYNC_VAULT rate_limited", origin);
     sendResponse({ ok: false, error: "rate_limited" });
     return;
   }
