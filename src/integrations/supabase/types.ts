@@ -170,6 +170,8 @@ export type Database = {
       vault_accounts: {
         Row: {
           algorithm: string
+          counter_ciphertext: string | null
+          counter_iv: string | null
           created_at: string
           digits: number
           icon_slug: string | null
@@ -177,6 +179,7 @@ export type Database = {
           is_favorite: boolean
           issuer: string
           label: string
+          otp_type: string
           period: number
           secret_ciphertext: string
           secret_iv: string
@@ -187,6 +190,8 @@ export type Database = {
         }
         Insert: {
           algorithm?: string
+          counter_ciphertext?: string | null
+          counter_iv?: string | null
           created_at?: string
           digits?: number
           icon_slug?: string | null
@@ -194,6 +199,7 @@ export type Database = {
           is_favorite?: boolean
           issuer?: string
           label?: string
+          otp_type?: string
           period?: number
           secret_ciphertext: string
           secret_iv: string
@@ -204,6 +210,8 @@ export type Database = {
         }
         Update: {
           algorithm?: string
+          counter_ciphertext?: string | null
+          counter_iv?: string | null
           created_at?: string
           digits?: number
           icon_slug?: string | null
@@ -211,6 +219,7 @@ export type Database = {
           is_favorite?: boolean
           issuer?: string
           label?: string
+          otp_type?: string
           period?: number
           secret_ciphertext?: string
           secret_iv?: string
