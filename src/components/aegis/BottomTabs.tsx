@@ -45,7 +45,7 @@ export function BottomTabs() {
           background: CREAM_SOFT,
           border: `1px solid ${BORDER}`,
           boxShadow:
-            "0 -1px 0 rgba(255,255,255,0.6) inset, 0 16px 40px -18px rgba(28,28,28,0.28), 0 4px 14px -8px rgba(28,28,28,0.18)",
+            "0 -1px 0 rgba(255,255,255,0.6) inset, 0 16px 40px -18px rgb(var(--aegis-ink-rgb) / 0.28), 0 4px 14px -8px rgb(var(--aegis-ink-rgb) / 0.18)",
           backdropFilter: "blur(8px)",
         }}
       >
@@ -67,7 +67,7 @@ export function BottomTabs() {
                   style={{
                     background: CHARCOAL,
                     color: CREAM_SOFT,
-                    boxShadow: `${INSET_SHADOW}, 0 6px 16px -8px rgba(28,28,28,0.55)`,
+                    boxShadow: `${INSET_SHADOW}, 0 6px 16px -8px rgb(var(--aegis-ink-rgb) / 0.55)`,
                   }}
                 >
                   <Plus className="h-[16px] w-[16px]" strokeWidth={2.2} />
@@ -100,7 +100,7 @@ export function BottomTabs() {
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   className="absolute inset-0 rounded-[14px]"
                   style={{
-                    background: "rgba(28,28,28,0.06)",
+                    background: "rgb(var(--aegis-ink-rgb) / 0.06)",
                     border: `1px solid ${BORDER}`,
                   }}
                 />

@@ -117,7 +117,7 @@ export function scoreStrength(pw: string): number {
 
 const STRENGTH_LABELS = ["Too short", "Weak", "Okay", "Strong", "Excellent"];
 const STRENGTH_COLORS = [
-  "rgba(180,40,40,0.85)",
+  "rgb(var(--aegis-danger-rgb) / 0.85)",
   "rgba(200,110,40,0.9)",
   "rgba(180,150,40,0.9)",
   "rgba(60,140,90,0.9)",
@@ -135,7 +135,7 @@ export function StrengthMeter({ value }: { value: string }) {
             key={i}
             className="h-1 flex-1 rounded-full transition-colors"
             style={{
-              background: i < score ? STRENGTH_COLORS[score] : "rgba(28,28,28,0.08)",
+              background: i < score ? STRENGTH_COLORS[score] : "rgb(var(--aegis-ink-rgb) / 0.08)",
             }}
           />
         ))}

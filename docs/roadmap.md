@@ -156,9 +156,11 @@ HOTP + Steam Guard all in the vault screen without a new route.
 - [ ] Every component reads via `bg-surface`, `text-ink`, etc.
 - [ ] Storybook (or `/dev/tokens` internal route) rendering every token
 
-### 8.2 Dark mode `[P0]`
-- [ ] Second theme block toggled by `prefers-color-scheme` + manual override in Profile syncing to `profiles.theme_pref`
-- [ ] Screenshot regression: Playwright every route in `docs/routing.md`, snap light + dark, diff via `pixelmatch` in CI
+### 8.2 Dark mode `[P0]` `[done]`
+- [x] Warm dark palette wired through Aegis CSS variables (`--aegis-cream`, `--aegis-ink`, `--aegis-border`, `--aegis-muted`, `--aegis-danger` + glow tokens) with a `.dark` override block in `src/styles.css`; palette constants in `chrome.tsx` and `Onboarding.tsx` now reference those vars, and every `rgba(28,28,28,X)` / `rgba(180,40,40,X)` was rewritten to `rgb(var(--aegis-ink-rgb) / X)` / `rgb(var(--aegis-danger-rgb) / X)` so downstream files invert automatically
+- [x] Manual override in Profile → Appearance (System / Light / Dark rows with active checkmark), syncing to `profiles.theme_pref` and mirrored to `localStorage` for instant re-apply
+- [x] `prefers-color-scheme` respected via `subscribeToSystemTheme()`; inline pre-hydration script in `__root.tsx` sets the class + `theme-color` meta before first paint (no light-mode flash)
+- [ ] Screenshot regression harness across every route in `docs/routing.md` — deferred to Phase 8.4's a11y sweep
 
 ### 8.3 Localization `[P1]`
 - [ ] `@lingui/core` with message extraction from JSX

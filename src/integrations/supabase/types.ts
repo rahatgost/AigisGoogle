@@ -141,6 +141,7 @@ export type Database = {
           id: string
           onboarded_at: string | null
           role: string
+          theme_pref: string
           updated_at: string
         }
         Insert: {
@@ -152,6 +153,7 @@ export type Database = {
           id: string
           onboarded_at?: string | null
           role?: string
+          theme_pref?: string
           updated_at?: string
         }
         Update: {
@@ -163,6 +165,7 @@ export type Database = {
           id?: string
           onboarded_at?: string | null
           role?: string
+          theme_pref?: string
           updated_at?: string
         }
         Relationships: []

@@ -543,7 +543,7 @@ function VaultPage() {
             disabled={retrying}
             className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition-colors disabled:opacity-60"
             style={{
-              background: "rgba(28,28,28,0.06)",
+              background: "rgb(var(--aegis-ink-rgb) / 0.06)",
               color: CHARCOAL,
               fontWeight: 600,
             }}
@@ -584,7 +584,7 @@ function VaultPage() {
               disabled={syncingTags}
               className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition-colors disabled:opacity-60"
               style={{
-                background: "rgba(28,28,28,0.06)",
+                background: "rgb(var(--aegis-ink-rgb) / 0.06)",
                 color: CHARCOAL,
                 fontWeight: 600,
               }}
@@ -612,7 +612,7 @@ function VaultPage() {
             onClick={() => enterSelection()}
             className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] transition-colors"
             style={{
-              background: "rgba(28,28,28,0.06)",
+              background: "rgb(var(--aegis-ink-rgb) / 0.06)",
               color: CHARCOAL,
               fontWeight: 600,
             }}
@@ -726,7 +726,7 @@ function VaultPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0"
-              style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+              style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
             />
             <motion.div
               role="alertdialog"
@@ -747,7 +747,7 @@ function VaultPage() {
               <div
                 aria-hidden
                 className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                style={{ background: "rgba(28,28,28,0.15)" }}
+                style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
               />
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
@@ -784,7 +784,7 @@ function VaultPage() {
                   onClick={() => !bulkBusy && setBulkDeleteConfirm(false)}
                   disabled={bulkBusy}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+                  style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" strokeWidth={1.8} />
@@ -835,7 +835,7 @@ function VaultPage() {
                   disabled={bulkBusy}
                   className="rounded-[14px] px-4 py-3.5 text-[14px]"
                   style={{
-                    background: "rgba(28,28,28,0.03)",
+                    background: "rgb(var(--aegis-ink-rgb) / 0.03)",
                     color: CHARCOAL,
                     border: `1px solid ${BORDER}`,
                     fontWeight: 500,
@@ -1014,9 +1014,9 @@ function SortableAccountRow({
     transition,
     borderTop: withTopBorder ? `1px solid ${BORDER}` : undefined,
     background: isDragging
-      ? "rgba(28,28,28,0.04)"
+      ? "rgb(var(--aegis-ink-rgb) / 0.04)"
       : selectionMode && selected
-        ? "rgba(28,28,28,0.05)"
+        ? "rgb(var(--aegis-ink-rgb) / 0.05)"
         : undefined,
     zIndex: isDragging ? 5 : undefined,
     boxShadow: isDragging ? "0 6px 18px rgba(0,0,0,0.12)" : undefined,
@@ -1043,7 +1043,7 @@ function SortableAccountRow({
           aria-label={selected ? "Deselect account" : "Select account"}
           className="absolute inset-0 flex items-start justify-end p-3"
           style={{
-            background: selected ? "rgba(28,28,28,0.04)" : "transparent",
+            background: selected ? "rgb(var(--aegis-ink-rgb) / 0.04)" : "transparent",
             cursor: "pointer",
           }}
         >
@@ -1188,7 +1188,7 @@ function TagFilterRow({
                   border: `1px solid ${isActive ? CHARCOAL : BORDER}`,
                   fontWeight: isActive ? 600 : 500,
                   boxShadow: isActive
-                    ? "0 1px 2px rgba(28,28,28,0.15)"
+                    ? "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.15)"
                     : "inset 0 1px 0 rgba(255,255,255,0.6)",
                 }}
               >
@@ -1203,7 +1203,7 @@ function TagFilterRow({
                 <span
                   className="text-[10px] tabular-nums"
                   style={{
-                    color: isActive ? "rgba(247,244,237,0.7)" : MUTED,
+                    color: isActive ? "color-mix(in oklab, var(--aegis-cream-soft) 70%, transparent)" : MUTED,
                     fontFamily: "'JetBrains Mono', monospace",
                     letterSpacing: "0.04em",
                   }}
@@ -1316,7 +1316,7 @@ function TagManagerSheet({
         aria-label="Close"
         onClick={onClose}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <div
         role="dialog"
@@ -1332,7 +1332,7 @@ function TagManagerSheet({
         <div
           aria-hidden
           className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-          style={{ background: "rgba(28,28,28,0.15)" }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
         />
         <div className="mb-3 flex items-center justify-between">
           <div>
@@ -1354,7 +1354,7 @@ function TagManagerSheet({
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
@@ -1419,7 +1419,7 @@ function TagManagerSheet({
                           }}
                           className="rounded-full px-2.5 py-1 text-[11px] disabled:opacity-60"
                           style={{
-                            background: "rgba(28,28,28,0.06)",
+                            background: "rgb(var(--aegis-ink-rgb) / 0.06)",
                             color: CHARCOAL,
                             fontWeight: 600,
                           }}
@@ -1528,7 +1528,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
           type="button"
           onClick={() => onChange("")}
           className="flex h-6 w-6 items-center justify-center rounded-full"
-          style={{ color: MUTED, background: "rgba(28,28,28,0.06)" }}
+          style={{ color: MUTED, background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
           aria-label="Clear search"
         >
           <X className="h-3 w-3" strokeWidth={2} />
@@ -1618,7 +1618,7 @@ function BulkActionsBar({
           type="button"
           onClick={onCancel}
           className="flex h-9 w-9 items-center justify-center rounded-full"
-          style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
           aria-label="Cancel selection"
         >
           <X className="h-4 w-4" strokeWidth={1.8} />
@@ -1630,7 +1630,7 @@ function BulkActionsBar({
             type="button"
             onClick={onSelectAll}
             className="ml-auto rounded-full px-2 py-0.5 text-[11px]"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL, fontWeight: 600 }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, fontWeight: 600 }}
           >
             All
           </button>
@@ -1678,7 +1678,7 @@ function BulkIconBtn({
       aria-label={label}
       className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity disabled:opacity-40"
       style={{
-        background: danger ? "rgba(178,58,42,0.10)" : "rgba(28,28,28,0.06)",
+        background: danger ? "rgba(178,58,42,0.10)" : "rgb(var(--aegis-ink-rgb) / 0.06)",
         color: danger ? "#b23a2a" : CHARCOAL,
       }}
     >
@@ -1708,7 +1708,7 @@ function BulkTagSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0"
-        style={{ background: "rgba(28,28,28,0.35)", backdropFilter: "blur(4px)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
       />
       <motion.div
         initial={{ y: 40, opacity: 0 }}
@@ -1743,7 +1743,7 @@ function BulkTagSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: "rgba(28,28,28,0.06)", color: CHARCOAL }}
+            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
             aria-label="Close"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />

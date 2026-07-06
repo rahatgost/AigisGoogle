@@ -22,11 +22,11 @@ import {
 /*  Design tokens (Lovable-inspired warm cream system)                 */
 /* ------------------------------------------------------------------ */
 
-const CREAM = "#f7f4ed";
-const CREAM_SOFT = "#fcfbf8";
-const CHARCOAL = "#1c1c1c";
-const BORDER = "#eceae4";
-const MUTED = "#5f5f5d";
+const CREAM = "var(--aegis-cream)";
+const CREAM_SOFT = "var(--aegis-cream-soft)";
+const CHARCOAL = "var(--aegis-ink)";
+const BORDER = "var(--aegis-border)";
+const MUTED = "var(--aegis-muted)";
 
 const INSET_SHADOW =
   "rgba(255,255,255,0.2) 0 0.5px 0 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset, rgba(0,0,0,0.05) 0 1px 2px 0";
@@ -77,7 +77,7 @@ function Backdrop() {
       <div
         className="absolute inset-0 opacity-[0.5] mix-blend-multiply"
         style={{
-          backgroundImage: "radial-gradient(rgba(28,28,28,0.05) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgb(var(--aegis-ink-rgb) / 0.05) 1px, transparent 1px)",
           backgroundSize: "3px 3px",
         }}
       />
@@ -121,7 +121,7 @@ function TopBar({
               onClick={onBack}
               aria-label="Go back"
               className="flex h-8 w-8 items-center justify-center rounded-full"
-              style={{ color: CHARCOAL, background: "rgba(28,28,28,0.03)" }}
+              style={{ color: CHARCOAL, background: "rgb(var(--aegis-ink-rgb) / 0.03)" }}
             >
               <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
             </motion.button>
@@ -141,7 +141,7 @@ function TopBar({
               style={{
                 width: active ? 20 : 6,
                 transition: "width 320ms cubic-bezier(0.22,0.9,0.3,1)",
-                background: passed ? CHARCOAL : "rgba(28,28,28,0.15)",
+                background: passed ? CHARCOAL : "rgb(var(--aegis-ink-rgb) / 0.15)",
                 willChange: "width",
               }}
             >
@@ -166,10 +166,10 @@ function TopBar({
           aria-checked={hapticsOn}
           aria-label={hapticsOn ? "Turn off vibration feedback" : "Turn on vibration feedback"}
           title={hapticsOn ? "Vibration on" : "Vibration off"}
-          className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(28,28,28,0.4)]"
+          className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--aegis-ink-rgb) / 0.4)]"
           style={{
             color: hapticsOn ? CHARCOAL : MUTED,
-            background: hapticsOn ? "rgba(28,28,28,0.06)" : "transparent",
+            background: hapticsOn ? "rgb(var(--aegis-ink-rgb) / 0.06)" : "transparent",
             border: `1px solid ${hapticsOn ? "transparent" : BORDER}`,
           }}
         >
@@ -257,7 +257,7 @@ function GhostButton({ children, onClick }: { children: ReactNode; onClick?: () 
       style={{
         background: "transparent",
         color: CHARCOAL,
-        border: `1px solid rgba(28,28,28,0.4)`,
+        border: `1px solid rgb(var(--aegis-ink-rgb) / 0.4)`,
         fontWeight: 500,
       }}
     >
@@ -270,7 +270,7 @@ function TextLink({ children, onClick }: { children: ReactNode; onClick?: () => 
   return (
     <button
       onClick={onClick}
-      className="text-[13.5px] underline decoration-[rgba(28,28,28,0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgba(28,28,28,0.7)]"
+      className="text-[13.5px] underline decoration-[rgb(var(--aegis-ink-rgb) / 0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgb(var(--aegis-ink-rgb) / 0.7)]"
       style={{ color: CHARCOAL }}
     >
       {children}
@@ -454,8 +454,8 @@ function ImportOption({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[12px] p-3 text-left transition-colors"
       style={{
-        background: active ? "rgba(28,28,28,0.05)" : CREAM_SOFT,
-        border: `1px solid ${active ? "rgba(28,28,28,0.25)" : BORDER}`,
+        background: active ? "rgb(var(--aegis-ink-rgb) / 0.05)" : CREAM_SOFT,
+        border: `1px solid ${active ? "rgb(var(--aegis-ink-rgb) / 0.25)" : BORDER}`,
       }}
     >
       <IconChip size={38}>{icon}</IconChip>
@@ -472,7 +472,7 @@ function ImportOption({
       ) : (
         <ArrowRight
           className="h-4 w-4"
-          style={{ color: "rgba(28,28,28,0.35)" }}
+          style={{ color: "rgb(var(--aegis-ink-rgb) / 0.35)" }}
           strokeWidth={1.8}
         />
       )}
@@ -488,8 +488,8 @@ function NativeSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       onClick={onToggle}
       className="relative flex h-[26px] w-[44px] items-center rounded-full transition-colors"
       style={{
-        background: on ? CHARCOAL : "rgba(28,28,28,0.15)",
-        boxShadow: on ? INSET_SHADOW : "inset 0 0 0 1px rgba(28,28,28,0.1)",
+        background: on ? CHARCOAL : "rgb(var(--aegis-ink-rgb) / 0.15)",
+        boxShadow: on ? INSET_SHADOW : "inset 0 0 0 1px rgb(var(--aegis-ink-rgb) / 0.1)",
       }}
     >
       <motion.span

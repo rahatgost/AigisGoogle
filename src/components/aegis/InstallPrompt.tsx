@@ -18,13 +18,13 @@ export function InstallPrompt() {
       style={{
         background: CREAM_SOFT,
         border: `1px solid ${BORDER}`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 6px 18px -12px rgba(28,28,28,0.18)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 6px 18px -12px rgb(var(--aegis-ink-rgb) / 0.18)",
       }}
     >
       <div
         aria-hidden
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-        style={{ background: "rgba(28,28,28,0.06)" }}
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
       >
         <Download className="h-4 w-4" style={{ color: CHARCOAL }} strokeWidth={1.8} />
       </div>

@@ -269,7 +269,7 @@ function SegmentedTabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) 
       style={{
         background: CREAM_SOFT,
         border: `1px solid ${BORDER}`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(28,28,28,0.04)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgb(var(--aegis-ink-rgb) / 0.04)",
       }}
     >
       <SegButton
@@ -318,7 +318,7 @@ function SegButton({
           style={{
             background: "#ffffff",
             border: `1px solid ${BORDER}`,
-            boxShadow: "0 1px 2px rgba(28,28,28,0.06), 0 4px 12px -6px rgba(28,28,28,0.12)",
+            boxShadow: "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.06), 0 4px 12px -6px rgb(var(--aegis-ink-rgb) / 0.12)",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 34 }}
         />
@@ -575,7 +575,7 @@ function TypePicker({
               color: active ? CHARCOAL : MUTED,
               fontWeight: active ? 600 : 500,
               boxShadow: active
-                ? "0 1px 2px rgba(28,28,28,0.06), 0 4px 12px -6px rgba(28,28,28,0.12)"
+                ? "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.06), 0 4px 12px -6px rgb(var(--aegis-ink-rgb) / 0.12)"
                 : undefined,
               letterSpacing: "-0.005em",
             }}

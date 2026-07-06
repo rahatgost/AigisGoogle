@@ -107,7 +107,7 @@ export function ScanTab({ onDetected, onError, saving, switchToManual }: ScanTab
         style={{
           border: `1px solid ${BORDER}`,
           background: "#0a0a0a",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 32px -18px rgba(28,28,28,0.35)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 32px -18px rgb(var(--aegis-ink-rgb) / 0.35)",
         }}
       >
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
@@ -232,7 +232,7 @@ export function ScanTab({ onDetected, onError, saving, switchToManual }: ScanTab
       <button
         type="button"
         onClick={switchToManual}
-        className="mx-auto text-[13px] underline decoration-[rgba(28,28,28,0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgba(28,28,28,0.7)]"
+        className="mx-auto text-[13px] underline decoration-[rgb(var(--aegis-ink-rgb) / 0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgb(var(--aegis-ink-rgb) / 0.7)]"
         style={{ color: CHARCOAL, fontWeight: 500 }}
       >
         Can't scan? Enter the key manually

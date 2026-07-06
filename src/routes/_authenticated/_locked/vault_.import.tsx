@@ -361,7 +361,7 @@ function SegmentedTabs({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) 
       style={{
         background: CREAM_SOFT,
         border: `1px solid ${BORDER}`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(28,28,28,0.04)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgb(var(--aegis-ink-rgb) / 0.04)",
       }}
     >
       <SegButton
@@ -417,7 +417,7 @@ function SegButton({
           style={{
             background: "#ffffff",
             border: `1px solid ${BORDER}`,
-            boxShadow: "0 1px 2px rgba(28,28,28,0.06), 0 4px 12px -6px rgba(28,28,28,0.12)",
+            boxShadow: "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.06), 0 4px 12px -6px rgb(var(--aegis-ink-rgb) / 0.12)",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 34 }}
         />
@@ -589,7 +589,7 @@ function PreviewStage({
       <button
         type="button"
         onClick={toggleAll}
-        className="self-start text-[12px] underline decoration-[rgba(28,28,28,0.35)] underline-offset-[3px]"
+        className="self-start text-[12px] underline decoration-[rgb(var(--aegis-ink-rgb) / 0.35)] underline-offset-[3px]"
         style={{ color: CHARCOAL, fontWeight: 500 }}
       >
         {allChecked ? "Deselect all" : "Select all"}
@@ -721,7 +721,7 @@ function ScanTab({
         style={{
           border: `1px solid ${BORDER}`,
           background: "#0a0a0a",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 32px -18px rgba(28,28,28,0.35)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 32px -18px rgb(var(--aegis-ink-rgb) / 0.35)",
         }}
       >
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
