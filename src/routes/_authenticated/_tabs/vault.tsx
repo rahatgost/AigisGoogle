@@ -1138,7 +1138,7 @@ function TagFilterRow({
             <button
               type="button"
               onClick={onSelect}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-black/5"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.06)]"
               style={{ color: MUTED, fontWeight: 500 }}
               aria-label="Select multiple accounts"
             >
@@ -1149,7 +1149,7 @@ function TagFilterRow({
           <button
             type="button"
             onClick={onManage}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-black/5"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.06)]"
             style={{ color: MUTED, fontWeight: 500 }}
             aria-label="Manage tags"
           >
@@ -1183,13 +1183,13 @@ function TagFilterRow({
                 aria-pressed={isActive}
                 className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] transition-all active:scale-[0.97]"
                 style={{
-                  background: isActive ? CHARCOAL : "#fff",
+                  background: isActive ? CHARCOAL : CREAM_SOFT,
                   color: isActive ? CREAM_SOFT : CHARCOAL,
                   border: `1px solid ${isActive ? CHARCOAL : BORDER}`,
                   fontWeight: isActive ? 600 : 500,
                   boxShadow: isActive
                     ? "0 1px 2px rgb(var(--aegis-ink-rgb) / 0.15)"
-                    : "inset 0 1px 0 rgba(255,255,255,0.6)",
+                    : "inset 0 1px 0 rgb(255 255 255 / 0.06)",
                 }}
               >
                 <span
