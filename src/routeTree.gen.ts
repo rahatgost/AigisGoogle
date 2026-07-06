@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogAegisVsGoogleAuthenticatorRouteImport } from './routes/blog.aegis-vs-google-authenticator'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -45,6 +46,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogAegisVsGoogleAuthenticatorRoute =
+  BlogAegisVsGoogleAuthenticatorRouteImport.update({
+    id: '/blog/aegis-vs-google-authenticator',
+    path: '/blog/aegis-vs-google-authenticator',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/profile': typeof AuthenticatedTabsProfileRoute
   '/security': typeof AuthenticatedTabsSecurityRoute
   '/vault': typeof AuthenticatedTabsVaultRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/profile': typeof AuthenticatedTabsProfileRoute
   '/security': typeof AuthenticatedTabsSecurityRoute
   '/vault': typeof AuthenticatedTabsVaultRoute
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/_authenticated/_tabs/profile': typeof AuthenticatedTabsProfileRoute
   '/_authenticated/_tabs/security': typeof AuthenticatedTabsSecurityRoute
   '/_authenticated/_tabs/vault': typeof AuthenticatedTabsVaultRoute
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/blog/aegis-vs-google-authenticator'
     | '/profile'
     | '/security'
     | '/vault'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/blog/aegis-vs-google-authenticator'
     | '/profile'
     | '/security'
     | '/vault'
@@ -202,6 +214,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/blog/aegis-vs-google-authenticator'
     | '/_authenticated/_tabs/profile'
     | '/_authenticated/_tabs/security'
     | '/_authenticated/_tabs/vault'
@@ -215,6 +228,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  BlogAegisVsGoogleAuthenticatorRoute: typeof BlogAegisVsGoogleAuthenticatorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -245,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/aegis-vs-google-authenticator': {
+      id: '/blog/aegis-vs-google-authenticator'
+      path: '/blog/aegis-vs-google-authenticator'
+      fullPath: '/blog/aegis-vs-google-authenticator'
+      preLoaderRoute: typeof BlogAegisVsGoogleAuthenticatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/reset-password': {
@@ -402,6 +423,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  BlogAegisVsGoogleAuthenticatorRoute: BlogAegisVsGoogleAuthenticatorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
