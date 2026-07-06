@@ -811,22 +811,13 @@ function AvfPassStage({
   return (
     <div className="flex flex-col gap-4 pt-2">
       <div className="flex flex-col gap-1.5">
-        <h1
-          className="text-[26px] leading-[1.1]"
-          style={{
-            color: CHARCOAL,
-            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
-            fontWeight: 600,
-            letterSpacing: "-0.025em",
-          }}
-        >
-          Unlock encrypted backup
-        </h1>
-        <p className="text-[13.5px] leading-[1.4]" style={{ color: MUTED }}>
+        <h1 style={typeDisplay}>Unlock encrypted backup</h1>
+        <p style={typeBody}>
           Enter the export passphrase you chose when creating this{" "}
-          <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>.avf</span> file. We decrypt
+          <span style={typeMonoInline}>.avf</span> file. We decrypt
           it locally — the passphrase never leaves your device.
         </p>
+
       </div>
 
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
