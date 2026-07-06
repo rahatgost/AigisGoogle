@@ -304,6 +304,7 @@ function SecurityPage() {
           />
         </SettingsGroup>
 
+        <SectionLabel>{t("security.section.devices", "Devices")}</SectionLabel>
         <DevicesSection heading={t("security.devices", "Devices")} />
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
