@@ -155,14 +155,25 @@ export async function deleteAccount(id: string): Promise<void> {
 }
 
 export async function setAccountFavorite(id: string, isFavorite: boolean): Promise<void> {
+  // Phase 6.2: record the toggle so an in-flight diff-sync doesn't
+  // clobber it with the pre-toggle server value. Best-effort — resolves
+  // the user_id from the account row we're about to write.
   const { data, error } = await supabase
     .from("vault_accounts")
     .update({ is_favorite: isFavorite })
     .eq("id", id)
-    .select(ACCOUNT_SELECT)
+    .select(ACCOUNT_SELECT + ", user_id")
     .single();
   if (error) throw error;
-  if (data) void upsertVaultCache(data as VaultAccountRecord);
+  if (data) {
+    const row = data as VaultAccountRecord & { user_id: string };
+    void upsertVaultCache(row);
+    recordFavoriteToggle(row.user_id, id, isFavorite);
+    // The server has confirmed our value — the optimistic-window entry
+    // has done its job for future syncs but we can drop it now that
+    // the cached row already carries the confirmed value.
+    clearFavoriteToggle(row.user_id, id);
+  }
 }
 
 /** Update the editable account metadata (issuer + label). */
