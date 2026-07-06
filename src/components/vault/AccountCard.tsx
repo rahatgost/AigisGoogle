@@ -1293,10 +1293,10 @@ export function AccountCard({
                       ) : (
                         <motion.div
                           key="actions-idle"
-                          initial={{ opacity: 0, y: 8 }}
+                          initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={ACTION_SWAP}
                           className="grid grid-cols-2 gap-2 pb-1"
                         >
                           <motion.button
