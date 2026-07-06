@@ -627,6 +627,23 @@ async function decryptRows(
   return Promise.all(
     rows.map(async (r) => {
       const secret = await decryptSecret(dek, toBytes(r.secret_ciphertext), toBytes(r.secret_iv));
+      const otp_type: OtpType = (r.otp_type ?? "totp") as OtpType;
+      let counter: number | undefined;
+      if (otp_type === "hotp" && r.counter_ciphertext && r.counter_iv) {
+        try {
+          const raw = await decryptSecret(
+            dek,
+            toBytes(r.counter_ciphertext),
+            toBytes(r.counter_iv),
+          );
+          const n = Number.parseInt(raw, 10);
+          if (Number.isFinite(n) && n >= 0) counter = n;
+        } catch {
+          // Corrupt counter — leave undefined so generateCode falls back to 0.
+        }
+      } else if (otp_type === "hotp") {
+        counter = 0;
+      }
       return {
         id: r.id,
         issuer: r.issuer,
@@ -638,6 +655,8 @@ async function decryptRows(
         is_favorite: r.is_favorite,
         tags: Array.isArray(r.tags) ? r.tags : [],
         secret,
+        otp_type,
+        counter,
       } satisfies DecryptedAccount;
     }),
   );
