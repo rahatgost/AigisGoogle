@@ -7,5 +7,6 @@ Disallow: /onboarding
 Disallow: /lock
 Disallow: /auth/callback
 Disallow: /auth/reset-password
+Disallow: /dev/
 
 Sitemap: https://hug-machine-maker.lovable.app/sitemap.xml
