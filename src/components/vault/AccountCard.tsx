@@ -848,16 +848,10 @@ export function AccountCard({
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div
-                          className="text-[9.5px] uppercase"
-                          style={{
-                            color: MUTED,
-                            fontFamily: "'JetBrains Mono', monospace",
-                            letterSpacing: "0.25em",
-                          }}
-                        >
+                        <div style={{ ...typeEyebrow, letterSpacing: "0.25em" }}>
                           {editing ? "Editing account" : "Current code"}
                         </div>
+
                         {editing ? (
                           <div className="mt-1 flex flex-col gap-1.5">
                             <input
