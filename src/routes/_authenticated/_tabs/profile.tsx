@@ -43,12 +43,30 @@ import { useLingui } from "@lingui/react";
 import { Globe } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/_tabs/profile")({
+  head: () => ({
+    meta: [
+      { title: "Profile — Aegis" },
+      {
+        name: "description",
+        content:
+          "Manage your Aegis account: display name, avatar, theme, language, and sign-out.",
+      },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Profile — Aegis" },
+      {
+        property: "og:description",
+        content: "Account, appearance, and language settings for your Aegis authenticator.",
+      },
+      { property: "og:url", content: "https://hug-machine-maker.lovable.app/profile" },
+    ],
+  }),
   component: ProfilePage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
   ),
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
+
 
 function initials(source: string): string {
   const s = source.trim();
