@@ -307,6 +307,8 @@ function SecurityPage() {
 
         <SectionLabel>{t("security.section.devices", "Devices")}</SectionLabel>
         <DevicesSection heading={t("security.devices", "Devices")} />
+        <SignInHistorySection heading={t("security.signInHistory", "Sign-in history")} />
+
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
         <SettingsGroup>
