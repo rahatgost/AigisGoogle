@@ -590,16 +590,17 @@ export function HealthSheet({
                           type="button"
                           onClick={() => void runHibp(issuer)}
                           disabled={r === "loading"}
-                          className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] uppercase disabled:opacity-50"
+                          className="shrink-0 rounded-[6px] px-3 py-1.5 text-[13px] disabled:opacity-50"
                           style={{
-                            background: "rgb(var(--aegis-ink-rgb) / 0.06)",
+                            background: "transparent",
+                            border: `1px solid rgb(var(--aegis-ink-rgb) / 0.4)`,
                             color: CHARCOAL,
-                            letterSpacing: "0.12em",
-                            fontWeight: 600,
+                            fontWeight: 400,
                           }}
                         >
                           {r === "loading" ? "…" : r ? "Recheck" : "Check"}
                         </button>
+
                       </div>
                     );
                   })}
@@ -641,12 +642,12 @@ function Category({
     <section aria-label={title} className="space-y-2">
       <header className="flex items-center gap-2">
         <span
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] uppercase"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10.5px] uppercase"
           style={{
-            background: "rgb(var(--aegis-ink-rgb) / 0.05)",
+            background: CREAM,
             color: severity === "warn" ? DANGER : MUTED,
             border: `1px solid ${BORDER}`,
-            letterSpacing: "0.14em",
+            letterSpacing: "0.16em",
             fontWeight: 600,
           }}
         >
@@ -660,11 +661,12 @@ function Category({
           {title}
         </span>
         {count >= 0 && (
-          <span className="text-[11px]" style={{ color: MUTED }}>
+          <span className="text-[12px]" style={{ color: MUTED }}>
             {count === 0 ? "0" : count}
           </span>
         )}
       </header>
+
       {isEmpty ? (
         <div
           className="rounded-[12px] px-3 py-2.5 text-[12px]"
