@@ -1032,64 +1032,51 @@ export function AccountCard({
                       </div>
                     )}
 
-                    {/* Tags editor */}
-                    <div
-                      className="mb-3 rounded-[14px] px-3.5 py-3"
-                      style={{
-                        background: "rgba(28,28,28,0.025)",
-                        border: `1px solid ${BORDER}`,
-                      }}
-                    >
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="text-[9.5px] uppercase"
-                            style={{
-                              color: MUTED,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              letterSpacing: "0.22em",
-                            }}
-                          >
-                            Tags
-                          </span>
-                          {tagsDraft.length > 0 && (
+                    {/* Tags editor — only visible inside edit mode */}
+                    {editing && (
+                      <div
+                        className="mb-3 rounded-[14px] px-3.5 py-3"
+                        style={{
+                          background: "rgba(28,28,28,0.025)",
+                          border: `1px solid ${BORDER}`,
+                        }}
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
                             <span
-                              className="rounded-full px-1.5 py-0.5 text-[10px]"
+                              className="text-[9.5px] uppercase"
                               style={{
-                                background: CHARCOAL,
-                                color: CREAM_SOFT,
-                                fontWeight: 600,
-                                lineHeight: 1,
+                                color: MUTED,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                letterSpacing: "0.22em",
                               }}
                             >
-                              {tagsDraft.length}
+                              Tags
                             </span>
-                          )}
+                            {tagsDraft.length > 0 && (
+                              <span
+                                className="rounded-full px-1.5 py-0.5 text-[10px]"
+                                style={{
+                                  background: CHARCOAL,
+                                  color: CREAM_SOFT,
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {tagsDraft.length}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        {!editing && dirtyTags && (
-                          <button
-                            type="button"
-                            onClick={saveTags}
-                            disabled={tagSaving}
-                            className="rounded-full px-3 py-1 text-[11px] transition-all active:scale-[0.97] disabled:opacity-60"
-                            style={{
-                              background: CHARCOAL,
-                              color: CREAM_SOFT,
-                              fontWeight: 600,
-                              boxShadow: "0 1px 2px rgba(28,28,28,0.15)",
-                            }}
-                          >
-                            {tagSaving ? "Saving…" : "Save"}
-                          </button>
+                        <TagInput value={tagsDraft} onChange={setTagsDraft} />
+                        {tagError && (
+                          <p className="mt-1.5 text-[11px]" style={{ color: DANGER }}>
+                            {tagError}
+                          </p>
                         )}
                       </div>
-                      <TagInput value={tagsDraft} onChange={setTagsDraft} />
-                      {tagError && (
-                        <p className="mt-1.5 text-[11px]" style={{ color: DANGER }}>
-                          {tagError}
-                        </p>
-                      )}
-                    </div>
+                    )}
+
 
                     {/* Meta trio — hidden in edit mode */}
                     {!editing && (
