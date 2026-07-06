@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act } from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ScanTab } from "./ScanTab";
 
 // Silence the "not configured to support act(...)" warning from happy-dom.
@@ -210,5 +210,177 @@ describe("ScanTab — video scan flow", () => {
     const stop = decodeCalls[0].stop;
     unmount();
     expect(stop).toHaveBeenCalled();
+  });
+});
+
+describe("ScanTab — image upload flow", () => {
+  // Grab the hidden <input type="file"> that the upload button proxies to.
+  function getFileInput(container: HTMLElement): HTMLInputElement {
+    const input = container.querySelector('input[type="file"]');
+    if (!input) throw new Error("file input not found");
+    return input as HTMLInputElement;
+  }
+
+  function uploadImage(input: HTMLInputElement, name = "qr.png") {
+    const file = new File(["fake-bytes"], name, { type: "image/png" });
+    // happy-dom respects a plain FileList-shaped assignment.
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      value: [file] as unknown as FileList,
+    });
+    fireEvent.change(input);
+  }
+
+  it("decodes an uploaded screenshot and fires onDetected exactly once", async () => {
+    const onDetected = vi.fn();
+    const onError = vi.fn();
+    imageDecodeText = URI;
+    const { container } = render(
+      <ScanTab
+        onDetected={onDetected}
+        onError={onError}
+        saving={false}
+        switchToManual={() => {}}
+      />,
+    );
+    await flushEffects();
+
+    await act(async () => uploadImage(getFileInput(container)));
+    await flushEffects();
+
+    expect(onDetected).toHaveBeenCalledTimes(1);
+    expect(onDetected).toHaveBeenCalledWith(URI);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("reports a friendly error for non-otpauth QR payloads and does NOT call onDetected", async () => {
+    const onDetected = vi.fn();
+    const onError = vi.fn();
+    imageDecodeText = "https://example.com/not-a-totp";
+    const { container } = render(
+      <ScanTab
+        onDetected={onDetected}
+        onError={onError}
+        saving={false}
+        switchToManual={() => {}}
+      />,
+    );
+    await flushEffects();
+
+    await act(async () => uploadImage(getFileInput(container)));
+    await flushEffects();
+
+    expect(onDetected).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0][0]).toMatch(/otpauth/i);
+  });
+
+  it("reports a friendly error when the image cannot be decoded", async () => {
+    const onDetected = vi.fn();
+    const onError = vi.fn();
+    imageDecodeShouldThrow = true;
+    const { container } = render(
+      <ScanTab
+        onDetected={onDetected}
+        onError={onError}
+        saving={false}
+        switchToManual={() => {}}
+      />,
+    );
+    await flushEffects();
+
+    await act(async () => uploadImage(getFileInput(container)));
+    await flushEffects();
+
+    expect(onDetected).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0][0]).toMatch(/couldn't read/i);
+  });
+
+  it("latch prevents a duplicate upload from firing onDetected twice", async () => {
+    const onDetected = vi.fn();
+    imageDecodeText = URI;
+    const { container } = render(
+      <ScanTab
+        onDetected={onDetected}
+        onError={() => {}}
+        saving={false}
+        switchToManual={() => {}}
+      />,
+    );
+    await flushEffects();
+
+    const input = getFileInput(container);
+    await act(async () => uploadImage(input));
+    await flushEffects();
+    // User frantically re-triggers the file picker before the parent's
+    // async save resolves — latch should absorb it.
+    await act(async () => uploadImage(input));
+    await flushEffects();
+
+    expect(onDetected).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failed upload does NOT trip the latch — a subsequent valid upload still fires onDetected", async () => {
+    const onDetected = vi.fn();
+    const onError = vi.fn();
+    imageDecodeShouldThrow = true;
+    const { container } = render(
+      <ScanTab
+        onDetected={onDetected}
+        onError={onError}
+        saving={false}
+        switchToManual={() => {}}
+      />,
+    );
+    await flushEffects();
+
+    const input = getFileInput(container);
+    await act(async () => uploadImage(input, "blurry.png"));
+    await flushEffects();
+    expect(onDetected).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    // User retries with a clearer screenshot — decode now succeeds.
+    imageDecodeShouldThrow = false;
+    imageDecodeText = URI;
+    await act(async () => uploadImage(input, "clear.png"));
+    await flushEffects();
+
+    expect(onDetected).toHaveBeenCalledTimes(1);
+    expect(onDetected).toHaveBeenCalledWith(URI);
+  });
+
+  it("recovers on save failure via parent remount (key bump) — upload path", async () => {
+    const onDetected = vi.fn();
+    imageDecodeText = URI;
+    const props = {
+      onDetected,
+      onError: () => {},
+      saving: false,
+      switchToManual: () => {},
+    };
+    const { container, rerender } = render(
+      <div>
+        <ScanTab key="up-0" {...props} />
+      </div>,
+    );
+    await flushEffects();
+
+    await act(async () => uploadImage(getFileInput(container)));
+    await flushEffects();
+    expect(onDetected).toHaveBeenCalledTimes(1);
+
+    // Parent's save fails → key bump → fresh mount, fresh latch.
+    rerender(
+      <div>
+        <ScanTab key="up-1" {...props} />
+      </div>,
+    );
+    await flushEffects();
+
+    await act(async () => uploadImage(getFileInput(container)));
+    await flushEffects();
+    expect(onDetected).toHaveBeenCalledTimes(2);
   });
 });
