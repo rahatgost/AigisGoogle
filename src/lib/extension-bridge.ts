@@ -161,9 +161,12 @@ async function sha256Hex(input: string): Promise<string> {
 
 async function hmacHex(keyB64: string, msg: string): Promise<string> {
   const rawKey = b64ToBytes(keyB64);
+  // Copy into a fresh ArrayBuffer so TS's stricter BufferSource typing accepts it.
+  const keyBuf = new ArrayBuffer(rawKey.byteLength);
+  new Uint8Array(keyBuf).set(rawKey);
   const key = await crypto.subtle.importKey(
     "raw",
-    rawKey.buffer.slice(rawKey.byteOffset, rawKey.byteOffset + rawKey.byteLength),
+    keyBuf,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
