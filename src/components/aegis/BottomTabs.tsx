@@ -59,13 +59,14 @@ export function BottomTabs() {
         {TABS.map((tab) => {
           const active = isActive(pathname, tab.to);
           const Icon = tab.icon;
+          const label = t(tab.labelId, tab.labelFallback);
 
           if (tab.emphasized) {
             return (
               <Link
                 key={tab.id}
                 to={tab.to}
-                aria-label={tab.label}
+                aria-label={label}
                 className="relative flex flex-1 flex-col items-center justify-center gap-1 rounded-[14px] py-1.5"
               >
                 <motion.span
@@ -87,7 +88,7 @@ export function BottomTabs() {
                     letterSpacing: "0.01em",
                   }}
                 >
-                  {tab.label}
+                  {label}
                 </span>
               </Link>
             );
@@ -97,7 +98,7 @@ export function BottomTabs() {
             <Link
               key={tab.id}
               to={tab.to}
-              aria-label={tab.label}
+              aria-label={label}
               aria-current={active ? "page" : undefined}
               className="relative flex flex-1 flex-col items-center justify-center gap-1 rounded-[14px] py-1.5"
             >
@@ -127,7 +128,7 @@ export function BottomTabs() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {tab.label}
+                {label}
               </span>
             </Link>
           );
