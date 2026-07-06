@@ -129,6 +129,24 @@ function NewAccountPage() {
 
   const switchToManual = useCallback(() => setTab("manual"), []);
 
+  // Phase 6.1: consume an inbound `?uri=otpauth://…` from the PWA
+  // protocol handler / Share Target exactly once per navigation. Runs
+  // once `save` is stable and only if the URI actually looks like an
+  // otpauth payload — a share sheet can dump arbitrary text on us.
+  useEffect(() => {
+    if (handledIncomingRef.current) return;
+    if (!incomingUri) return;
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(incomingUri);
+    } catch {
+      decoded = incomingUri;
+    }
+    if (!decoded.startsWith("otpauth://")) return;
+    handledIncomingRef.current = true;
+    void handleQrDetected(decoded);
+  }, [incomingUri, handleQrDetected]);
+
   return (
     <AegisScreen>
       <div
