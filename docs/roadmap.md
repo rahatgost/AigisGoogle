@@ -182,8 +182,8 @@ in production, no hard-coded colours in `src/components/aegis/*`.
 ## Phase 9 — Security dashboard for the user (`[P1]`, 2 weeks)
 
 ### 9.1 Trusted devices `[P1]`
-- [ ] Table `user_sessions_meta` (server-writable only, admin-audit logged) tracking UA, coarse geo, first-seen, last-seen, current-session flag
-- [ ] Profile → Security → Devices list with "Sign out this device" revoking Supabase refresh token
+- [x] Table `user_sessions_meta` (server-writable only, admin-audit logged) tracking UA, coarse geo, first-seen, last-seen, current-session flag
+- [x] Profile → Security → Devices list with "Sign out this device" revoking Supabase refresh token
 
 ### 9.2 Sign-in history `[P1]`
 - [ ] `user_login_events` row per successful sign-in, 90-day rolling window, admin-audit logged
