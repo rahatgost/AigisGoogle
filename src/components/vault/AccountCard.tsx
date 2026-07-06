@@ -225,6 +225,11 @@ export function AccountCard({
   allTagSuggestions,
 }: Props) {
   const hideCodes = useHideCodes();
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   const [copied, setCopied] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
