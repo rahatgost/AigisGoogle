@@ -166,6 +166,26 @@ export function DevicesSection({ heading = "Devices" }: { heading?: string }) {
 
   return (
     <>
+      {/* Screen-reader-only live regions. Kept outside the sheet so
+          announcements still fire after the sheet unmounts (e.g. after
+          a revoke closes the confirmation dialog). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {politeMsg}
+      </div>
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {assertiveMsg}
+      </div>
+
       <SettingsGroup>
         <SettingsRow
           icon={<Monitor className="h-4 w-4" strokeWidth={1.8} />}
