@@ -22,7 +22,18 @@
   "optional_host_permissions": [
     "https://*/*"
   ],
-  "content_scripts": [],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.lovable.app/*",
+        "https://hug-machine-maker.lovable.app/*",
+        "http://localhost:8080/*"
+      ],
+      "js": ["announce.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
   "externally_connectable": {
     "matches": [
       "https://*.lovable.app/*",
