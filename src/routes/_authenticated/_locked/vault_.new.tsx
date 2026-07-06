@@ -51,40 +51,74 @@ function NewAccountPage() {
   const [tab, setTab] = useState<Tab>("scan");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  // Bumped when a QR-triggered save fails so ScanTab can fully re-mount the
+  // camera; without this the user is stuck with a frozen preview after any
+  // save-side error (offline, expired key, server rejection).
+  const [scanAttempt, setScanAttempt] = useState(0);
   const online = useOnlineStatus();
 
-  const save = async (input: {
-    issuer: string;
-    label: string;
-    secret: string;
-    algorithm?: Algorithm;
-    digits?: number;
-    period?: number;
-    tags?: string[];
-  }) => {
-    if (!online) {
-      setNotice({
-        kind: "error",
-        text: "You're offline. Reconnect to add a new account — the encrypted vault has to reach the server.",
-      });
-      return;
-    }
-    const key = getVaultKey();
-    if (!key) {
-      navigate({ to: "/lock", search: { redirect: "/vault/new" } });
-      return;
-    }
-    setSaving(true);
-    setNotice(null);
-    try {
-      await addAccount(key, user.id, input);
-      navigate({ to: "/vault", replace: true });
-    } catch (err) {
-      setNotice({ kind: "error", text: err instanceof Error ? err.message : "Could not save." });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const save = useCallback(
+    async (input: {
+      issuer: string;
+      label: string;
+      secret: string;
+      algorithm?: Algorithm;
+      digits?: number;
+      period?: number;
+      tags?: string[];
+    }): Promise<boolean> => {
+      if (!online) {
+        setNotice({
+          kind: "error",
+          text: "You're offline. Reconnect to add a new account — the encrypted vault has to reach the server.",
+        });
+        return false;
+      }
+      const key = getVaultKey();
+      if (!key) {
+        navigate({ to: "/lock", search: { redirect: "/vault/new" } });
+        return false;
+      }
+      setSaving(true);
+      setNotice(null);
+      try {
+        await addAccount(key, user.id, input);
+        navigate({ to: "/vault", replace: true });
+        return true;
+      } catch (err) {
+        setNotice({ kind: "error", text: err instanceof Error ? err.message : "Could not save." });
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [online, user.id, navigate],
+  );
+
+  const handleQrDetected = useCallback(
+    async (uri: string) => {
+      let parsed;
+      try {
+        parsed = parseOtpauthUri(uri);
+      } catch (err) {
+        setNotice({
+          kind: "error",
+          text: err instanceof Error ? err.message : "That QR isn't a valid otpauth code.",
+        });
+        setScanAttempt((n) => n + 1);
+        return;
+      }
+      const ok = await save(parsed);
+      if (!ok) setScanAttempt((n) => n + 1);
+    },
+    [save],
+  );
+
+  const handleScanError = useCallback((msg: string) => {
+    setNotice({ kind: "error", text: msg });
+  }, []);
+
+  const switchToManual = useCallback(() => setTab("manual"), []);
 
   return (
     <AegisScreen>
