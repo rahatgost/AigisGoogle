@@ -1,0 +1,1 @@
+INSERT INTO public.feature_flags (key, enabled, description) VALUES ('pwa_install_prompt', false, 'Show the dismissable "Install Aegis" pill on the vault screen after the third successful visit.') ON CONFLICT (key) DO NOTHING;
