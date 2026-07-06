@@ -1,0 +1,2 @@
+DELETE FROM public.user_login_events WHERE device_label IN ('Test Old', 'Test Fresh');
+DELETE FROM public.admin_audit WHERE action = 'auth.sign_in' AND metadata->>'device_label' IN ('Test Old', 'Test Fresh');
