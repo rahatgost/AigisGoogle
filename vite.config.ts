@@ -14,6 +14,31 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          // Manual chunk-split so the router runtime, Supabase client, and
+          // heavy vendor libs live in their own long-cacheable chunks
+          // instead of being duplicated across route bundles. Route code
+          // stays split automatically by TanStack's code-splitter.
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("@tanstack/react-router") || id.includes("@tanstack/router-core") || id.includes("@tanstack/history")) {
+              return "tanstack-router";
+            }
+            if (id.includes("@tanstack/react-start") || id.includes("@tanstack/start-")) {
+              return "tanstack-start";
+            }
+            if (id.includes("@supabase/")) return "supabase";
+            if (id.includes("framer-motion")) return "framer-motion";
+            if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) {
+              return "react";
+            }
+            if (id.includes("lucide-react")) return "icons";
+          },
+        },
+      },
+    },
     plugins: [
       VitePWA({
         strategies: "generateSW",
