@@ -62,9 +62,14 @@ export function hostTokens(host: string): string[] {
   return parts.filter((p) => !TLD_STOPWORDS.has(p) && p.length > 1);
 }
 
-/** Split an issuer + optional label into normalised alphanumeric tokens. */
+/** Split an issuer + optional label into normalised alphanumeric tokens.
+ *  Emails inside the label (the common "alice@example.com" case) are
+ *  stripped whole — they identify the *account*, not the brand, and
+ *  would otherwise cause the label's email domain to match unrelated
+ *  hosts. */
 export function issuerTokens(issuer: string, label?: string): string[] {
-  const raw = `${issuer ?? ""} ${label ?? ""}`.toLowerCase();
+  const cleanLabel = (label ?? "").replace(/\S+@\S+/g, " ");
+  const raw = `${issuer ?? ""} ${cleanLabel}`.toLowerCase();
   const parts = raw.split(/[^a-z0-9]+/).filter(Boolean);
   return parts.filter((p) => !ISSUER_STOPWORDS.has(p) && p.length > 1);
 }
