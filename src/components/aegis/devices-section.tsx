@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -279,6 +279,55 @@ function DevicesSheet({
   onClose: () => void;
 }) {
   const count = devices?.length ?? 0;
+  const titleId = useId();
+  const descId = useId();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Snapshot previous focus, lock body scroll, restore on close.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Defer to next tick so the sheet is mounted before we focus into it.
+    const t = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      document.body.style.overflow = prevOverflow;
+      // Only restore focus if the previously focused element is still in DOM.
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+    };
+  }, []);
+
+  // ESC to close, Tab/Shift+Tab focus trap within the sheet.
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      onClose();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const root = sheetRef.current;
+    if (!root) return;
+    const focusables = root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey && (active === first || !root.contains(active))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <motion.div
@@ -286,25 +335,31 @@ function DevicesSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onKeyDown={handleKeyDown}
     >
-      <motion.button
-        aria-label="Close"
+      <motion.div
+        aria-hidden="true"
         onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0"
+        className="absolute inset-0 cursor-pointer"
         style={{
           background: "rgb(var(--aegis-ink-rgb) / 0.35)",
           backdropFilter: "blur(4px)",
         }}
       />
       <motion.div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={soft}
-        className="relative z-10 mx-auto flex max-h-[85vh] w-full max-w-[440px] flex-col rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px]"
+        className="relative z-10 mx-auto flex max-h-[85vh] w-full max-w-[440px] flex-col rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px] focus:outline-none"
         style={{
           background: CREAM_SOFT,
           border: `1px solid ${BORDER}`,
@@ -319,7 +374,8 @@ function DevicesSheet({
 
         <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
-            <div
+            <h2
+              id={titleId}
               className="text-[18px]"
               style={{
                 fontFamily: "'Playfair Display', serif",
@@ -329,22 +385,25 @@ function DevicesSheet({
               }}
             >
               Signed-in devices
-            </div>
-            <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+            </h2>
+            <div id={descId} className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
               Every device with an active Aegis session. Sign out any that
               aren't yours.
             </div>
           </div>
           <motion.button
+            ref={closeBtnRef}
+            type="button"
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
-            aria-label="Close"
+            aria-label="Close signed-in devices"
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
           </motion.button>
         </div>
+
 
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <span
