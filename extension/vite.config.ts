@@ -89,6 +89,11 @@ export default defineConfig({
     "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify(
       readEnv("VITE_SUPABASE_PROJECT_ID"),
     ),
+    // Aegis app origins baked in at build time. Both SW (allow-list regex)
+    // and popup ("Open vault" link) read these.
+    __AEGIS_APP_URL__: JSON.stringify(APP_URL),
+    __AEGIS_APP_ORIGIN__: JSON.stringify(APP_ORIGIN),
+    __AEGIS_APP_PREVIEW_ORIGIN__: JSON.stringify(APP_PREVIEW_ORIGIN),
   },
   build: {
     outDir: OUT_DIR,
