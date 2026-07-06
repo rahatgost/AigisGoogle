@@ -86,12 +86,12 @@ function ComparisonPage() {
     <div
       className="min-h-screen"
       style={{
-        background: "#f7f4ed",
-        color: "#1c1c1c",
+        background: "var(--aegis-cream)",
+        color: "var(--aegis-ink)",
         fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
       }}
     >
-      <header className="border-b" style={{ borderColor: "rgba(28,28,28,0.08)" }}>
+      <header className="border-b" style={{ borderColor: "rgb(var(--aegis-ink-rgb) / 0.08)" }}>
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
           <Link to="/" className="text-[15px] font-semibold tracking-tight">
             Aegis
@@ -99,7 +99,7 @@ function ComparisonPage() {
           <Link
             to="/auth"
             className="rounded-full px-4 py-2 text-[13px] font-semibold"
-            style={{ background: "#1c1c1c", color: "#f7f4ed" }}
+            style={{ background: "var(--aegis-ink)", color: "var(--aegis-cream)" }}
           >
             Get Aegis free
           </Link>
@@ -110,7 +110,7 @@ function ComparisonPage() {
         <p
           className="mb-4 text-[11px] uppercase"
           style={{
-            color: "#6b6b6b",
+            color: "var(--aegis-muted)",
             fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.22em",
           }}
@@ -123,7 +123,7 @@ function ComparisonPage() {
         >
           Aegis vs Google Authenticator: the secure TOTP authenticator, compared
         </h1>
-        <p className="mt-5 max-w-2xl text-[16px] leading-relaxed" style={{ color: "#4a4a4a" }}>
+        <p className="mt-5 max-w-2xl text-[16px] leading-relaxed" style={{ color: "var(--aegis-muted)" }}>
           Google Authenticator invented mainstream TOTP and is still the default most people
           reach for. But if you care about who can read your one-time-code secrets — and about
           getting them onto more than one device without a QR-code migration dance — a{" "}
@@ -162,7 +162,7 @@ function ComparisonPage() {
           </h2>
           <div
             className="mt-4 overflow-hidden rounded-2xl border"
-            style={{ borderColor: "rgba(28,28,28,0.10)", background: "#fff" }}
+            style={{ borderColor: "rgba(28,28,28,0.10)", background: "var(--aegis-cream-soft)" }}
           >
             <table className="w-full text-left text-[14px]">
               <thead>
@@ -235,7 +235,7 @@ function ComparisonPage() {
           <h2 className="text-[22px] font-semibold tracking-tight">
             So, best TOTP authenticator in 2026?
           </h2>
-          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: "#4a4a4a" }}>
+          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: "var(--aegis-muted)" }}>
             Google Authenticator remains a fine choice for a single-device user who already
             lives inside Google. But if you want a <strong>Google Authenticator alternative</strong>{" "}
             that actually improves the security posture — zero-knowledge storage, encrypted
@@ -245,14 +245,14 @@ function ComparisonPage() {
             <Link
               to="/auth"
               className="rounded-full px-5 py-3 text-[14px] font-semibold"
-              style={{ background: "#1c1c1c", color: "#f7f4ed" }}
+              style={{ background: "var(--aegis-ink)", color: "var(--aegis-cream)" }}
             >
               Try Aegis free
             </Link>
             <Link
               to="/"
               className="rounded-full border px-5 py-3 text-[14px] font-semibold"
-              style={{ borderColor: "rgba(28,28,28,0.15)", color: "#1c1c1c" }}
+              style={{ borderColor: "rgb(var(--aegis-ink-rgb) / 0.15)", color: "var(--aegis-ink)" }}
             >
               Back to overview
             </Link>
@@ -261,7 +261,7 @@ function ComparisonPage() {
 
         <section className="mt-16">
           <h2 className="text-[22px] font-semibold tracking-tight">FAQ</h2>
-          <dl className="mt-4 space-y-5 text-[14.5px]" style={{ color: "#3a3a3a" }}>
+          <dl className="mt-4 space-y-5 text-[14.5px]" style={{ color: "var(--aegis-muted)" }}>
             <Faq
               q="Is Aegis a good Google Authenticator alternative?"
               a="Yes. Aegis is a secure TOTP authenticator that adds zero-knowledge end-to-end encryption and multi-device sync — two things Google Authenticator's cloud sync does not offer."
@@ -280,7 +280,7 @@ function ComparisonPage() {
 
       <footer
         className="border-t"
-        style={{ borderColor: "rgba(28,28,28,0.08)", color: "#6b6b6b" }}
+        style={{ borderColor: "rgb(var(--aegis-ink-rgb) / 0.08)", color: "var(--aegis-muted)" }}
       >
         <div className="mx-auto max-w-3xl px-6 py-8 text-[12px]">
           © {new Date().getFullYear()} Aegis · Secure TOTP authenticator
@@ -304,8 +304,8 @@ function VerdictCard({
       className="rounded-2xl border p-5"
       style={{
         borderColor: highlight ? "rgba(28,28,28,0.35)" : "rgba(28,28,28,0.10)",
-        background: highlight ? "#1c1c1c" : "#fff",
-        color: highlight ? "#f7f4ed" : "#1c1c1c",
+        background: highlight ? "var(--aegis-ink)" : "var(--aegis-cream-soft)",
+        color: highlight ? "var(--aegis-cream)" : "var(--aegis-ink)",
       }}
     >
       <h3 className="text-[14px] font-semibold tracking-tight">{title}</h3>
@@ -333,11 +333,11 @@ function Row({
   note?: string;
 }) {
   return (
-    <tr className="border-t" style={{ borderColor: "rgba(28,28,28,0.06)" }}>
+    <tr className="border-t" style={{ borderColor: "rgb(var(--aegis-ink-rgb) / 0.06)" }}>
       <td className="px-4 py-3 align-top">
-        <div style={{ color: "#1c1c1c", fontWeight: 500 }}>{feature}</div>
+        <div style={{ color: "var(--aegis-ink)", fontWeight: 500 }}>{feature}</div>
         {note && (
-          <div className="mt-1 text-[12px]" style={{ color: "#6b6b6b" }}>
+          <div className="mt-1 text-[12px]" style={{ color: "var(--aegis-muted)" }}>
             {note}
           </div>
         )}
@@ -355,20 +355,20 @@ function Row({
 function Mark({ v }: { v: "yes" | "no" | "partial" }) {
   if (v === "yes")
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px]" style={{ color: "#1c1c1c" }}>
+      <span className="inline-flex items-center gap-1.5 text-[13px]" style={{ color: "var(--aegis-ink)" }}>
         <Check className="h-4 w-4" aria-hidden />
         <span className="sr-only">Yes</span>
       </span>
     );
   if (v === "no")
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px]" style={{ color: "#6b6b6b" }}>
+      <span className="inline-flex items-center gap-1.5 text-[13px]" style={{ color: "var(--aegis-muted)" }}>
         <X className="h-4 w-4" aria-hidden />
         <span className="sr-only">No</span>
       </span>
     );
   return (
-    <span className="text-[12px]" style={{ color: "#6b6b6b" }}>
+    <span className="text-[12px]" style={{ color: "var(--aegis-muted)" }}>
       Partial
     </span>
   );
@@ -388,13 +388,13 @@ function Block({
       <div className="flex items-center gap-2">
         <span
           className="inline-flex h-8 w-8 items-center justify-center rounded-full"
-          style={{ background: "rgba(28,28,28,0.06)", color: "#1c1c1c" }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: "var(--aegis-ink)" }}
         >
           {icon}
         </span>
         <h3 className="text-[17px] font-semibold tracking-tight">{title}</h3>
       </div>
-      <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "#4a4a4a" }}>
+      <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--aegis-muted)" }}>
         {children}
       </p>
     </div>
@@ -404,7 +404,7 @@ function Block({
 function Faq({ q, a }: { q: string; a: string }) {
   return (
     <div>
-      <dt className="font-semibold" style={{ color: "#1c1c1c" }}>
+      <dt className="font-semibold" style={{ color: "var(--aegis-ink)" }}>
         {q}
       </dt>
       <dd className="mt-1">{a}</dd>
