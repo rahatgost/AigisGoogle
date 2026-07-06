@@ -362,4 +362,86 @@ export async function listAccountsWithCache(
   return { accounts, source: "cache" };
 }
 
+// ---------------------------------------------------------------------------
+// Phase 6.2: cache-first read + delta sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Read the offline mirror only — no network hit. Returns `null` when the
+ * cache is empty. Used by the vault loader to paint immediately, before
+ * kicking off a background sync.
+ */
+export async function readCachedAccountsOnly(
+  dek: CryptoKey,
+  userId: string,
+): Promise<DecryptedAccount[] | null> {
+  const cached = await readVaultCache(userId);
+  if (!cached) return null;
+  return decryptRows(dek, cached);
+}
+
+/**
+ * Merge freshly-fetched server rows with the local cache.
+ *
+ * Rules:
+ *   • Server-wins on `updated_at` ties for every field (safe default).
+ *   • Client-wins on `is_favorite` when the user toggled it within the
+ *     last 60s and that toggle hasn't been round-tripped yet — otherwise
+ *     a stale in-flight sync would flicker the star back to the
+ *     pre-toggle state.
+ *   • Deletions: any cached row absent from the server list is dropped
+ *     (server is the source of truth for row existence).
+ */
+export function mergeAccountRows(
+  serverRows: VaultAccountRecord[],
+  recentFavToggles: Record<string, boolean>,
+): VaultAccountRecord[] {
+  return serverRows.map((row) => {
+    const override = recentFavToggles[row.id];
+    if (override === undefined) return row;
+    if (row.is_favorite === override) return row;
+    return { ...row, is_favorite: override };
+  });
+}
+
+/**
+ * Fetch every row from the server, merge with any recent optimistic
+ * favorite toggles, then rewrite the cache and last-sync marker. Returns
+ * the freshly-decrypted account list.
+ *
+ * Throws on network/RLS error — caller keeps the previous cache-first
+ * paint and shows the offline banner.
+ */
+export async function syncAccountsFromServer(
+  dek: CryptoKey,
+  userId: string,
+): Promise<DecryptedAccount[]> {
+  await flushPendingTagUpdates().catch(() => 0);
+  const { data, error } = await supabase
+    .from("vault_accounts")
+    .select(ACCOUNT_SELECT)
+    .order("is_favorite", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+
+  const serverRows = (data ?? []) as VaultAccountRecord[];
+  const recentToggles = readRecentFavoriteToggles(userId);
+  const merged = mergeAccountRows(serverRows, recentToggles);
+
+  await writeVaultCache(userId, merged);
+  await writeLastSync(userId, new Date().toISOString());
+  return decryptRows(dek, merged);
+}
+
+/**
+ * Timestamp of the last successful server sync, or `null` if this device
+ * has never synced. Exposed so the UI can render an "as of 5 mins ago"
+ * hint under the offline banner.
+ */
+export async function getLastSyncedAt(userId: string): Promise<string | null> {
+  return readLastSync(userId);
+}
+
+
 
