@@ -219,7 +219,7 @@ function NewAccountPage() {
             }}
           >
             <WifiOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
-            <span>You're offline — adding an account is disabled until you reconnect.</span>
+            <span>You're offline — new codes will sync automatically when you reconnect.</span>
           </div>
         )}
 
@@ -240,32 +240,13 @@ function NewAccountPage() {
               transition={soft}
             >
               {tab === "scan" ? (
-                !online ? (
-                  <div
-                    className="flex flex-col items-center justify-center gap-3 rounded-2xl px-6 py-14 text-center"
-                    style={{
-                      background: CREAM_SOFT,
-                      border: `1px solid ${BORDER}`,
-                      color: MUTED,
-                    }}
-                  >
-                    <WifiOff className="h-6 w-6" strokeWidth={1.6} />
-                    <div className="text-[13px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
-                      Scanner unavailable offline
-                    </div>
-                    <div className="text-[12px] leading-relaxed max-w-[260px]">
-                      QR scanning needs the encrypted vault to reach the server. Reconnect to add a new account.
-                    </div>
-                  </div>
-                ) : (
-                  <ScanTab
-                    key={scanAttempt}
-                    onDetected={handleQrDetected}
-                    onError={handleScanError}
-                    saving={saving}
-                    switchToManual={switchToManual}
-                  />
-                )
+                <ScanTab
+                  key={scanAttempt}
+                  onDetected={handleQrDetected}
+                  onError={handleScanError}
+                  saving={saving}
+                  switchToManual={switchToManual}
+                />
               ) : (
                 <ManualTab onSubmit={save} saving={saving} />
               )}
