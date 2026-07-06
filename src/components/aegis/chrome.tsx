@@ -14,6 +14,9 @@ export const MUTED = "var(--aegis-muted)";
 export const DANGER = "var(--aegis-danger)";
 export const FAV = "var(--aegis-fav)";
 export const PLACEHOLDER = "var(--aegis-placeholder)";
+export const SUCCESS = "var(--aegis-success)";
+export const WARNING = "var(--aegis-warning)";
+export const SCANNER_BG = "var(--aegis-scanner-bg)";
 
 
 export const INSET_SHADOW =
