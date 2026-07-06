@@ -351,6 +351,11 @@ function ManualTab({
   }) => void;
   saving: boolean;
 }) {
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   const [issuer, setIssuer] = useState("");
   const [label, setLabel] = useState("");
   const [secret, setSecret] = useState("");
