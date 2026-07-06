@@ -1598,6 +1598,46 @@ export function AccountCard({
   );
 }
 
+function HotpRefreshButton({
+  onClick,
+  busy,
+  counter,
+}: {
+  onClick: () => void;
+  busy: boolean;
+  counter: number;
+}) {
+  const size = 28;
+  return (
+    <motion.button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      whileTap={{ scale: 0.9 }}
+      aria-label={`Next HOTP code (counter ${counter})`}
+      title={`Counter: ${counter}`}
+      disabled={busy}
+      className="relative flex shrink-0 items-center justify-center rounded-full"
+      style={{
+        width: size,
+        height: size,
+        background: CREAM_SOFT,
+        border: `1px solid ${BORDER}`,
+        color: CHARCOAL,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+      }}
+    >
+      {busy ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.9} />
+      ) : (
+        <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.9} />
+      )}
+    </motion.button>
+  );
+}
+
 function RingTimer({
   progress,
   remaining,
