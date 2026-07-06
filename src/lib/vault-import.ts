@@ -187,7 +187,13 @@ export function parseAegisJson(json: unknown): ParsedOtpauth[] {
         type?: string;
         name?: string;
         issuer?: string;
-        info?: { secret?: string; algo?: string; digits?: number; period?: number };
+        info?: {
+          secret?: string;
+          algo?: string;
+          digits?: number;
+          period?: number;
+          counter?: number;
+        };
       }>;
     };
     header?: { slots?: unknown };
@@ -199,16 +205,20 @@ export function parseAegisJson(json: unknown): ParsedOtpauth[] {
   }
   const out: ParsedOtpauth[] = [];
   for (const e of root.db.entries) {
-    if ((e.type ?? "").toLowerCase() !== "totp") continue;
+    const type = (e.type ?? "").toLowerCase();
+    if (!["totp", "hotp", "steam"].includes(type)) continue;
     const secret = e.info?.secret;
     if (!secret) continue;
+    const otp_type = type as "totp" | "hotp" | "steam";
     out.push({
       issuer: (e.issuer || e.name || "Unknown").trim(),
       label: (e.name || "").trim(),
       secret: secret.replace(/\s+/g, "").toUpperCase(),
-      algorithm: normalizeAlgo(e.info?.algo),
-      digits: e.info?.digits ?? 6,
-      period: e.info?.period ?? 30,
+      algorithm: otp_type === "steam" ? "SHA1" : normalizeAlgo(e.info?.algo),
+      digits: otp_type === "steam" ? 5 : e.info?.digits ?? 6,
+      period: otp_type === "steam" ? 30 : e.info?.period ?? 30,
+      otp_type,
+      ...(otp_type === "hotp" ? { counter: e.info?.counter ?? 0 } : {}),
     });
   }
   return out;
@@ -227,6 +237,8 @@ export function parse2FASJson(json: unknown): ParsedOtpauth[] {
         digits?: number;
         period?: number;
         tokenType?: string;
+        counter?: number;
+        source?: string;
       };
     }>;
     servicesEncrypted?: string;
@@ -242,15 +254,18 @@ export function parse2FASJson(json: unknown): ParsedOtpauth[] {
   const out: ParsedOtpauth[] = [];
   for (const s of root.services) {
     const type = (s.otp?.tokenType ?? "TOTP").toUpperCase();
-    if (type !== "TOTP") continue;
+    if (!["TOTP", "HOTP", "STEAM"].includes(type)) continue;
     if (!s.secret) continue;
+    const otp_type = type.toLowerCase() as "totp" | "hotp" | "steam";
     out.push({
       issuer: (s.otp?.issuer || s.name || "Unknown").trim(),
       label: (s.otp?.account || "").trim(),
       secret: s.secret.replace(/\s+/g, "").toUpperCase(),
-      algorithm: normalizeAlgo(s.otp?.algorithm),
-      digits: s.otp?.digits ?? 6,
-      period: s.otp?.period ?? 30,
+      algorithm: otp_type === "steam" ? "SHA1" : normalizeAlgo(s.otp?.algorithm),
+      digits: otp_type === "steam" ? 5 : s.otp?.digits ?? 6,
+      period: otp_type === "steam" ? 30 : s.otp?.period ?? 30,
+      otp_type,
+      ...(otp_type === "hotp" ? { counter: s.otp?.counter ?? 0 } : {}),
     });
   }
   return out;
