@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { IScannerControls } from "@zxing/browser";
 import { getVaultKey } from "@/lib/vault-session";
 import { useOnlineStatus } from "@/lib/use-online";
 import {
@@ -11,15 +10,13 @@ import {
   type Algorithm,
 } from "@/lib/vault-accounts";
 import { TagInput } from "@/components/vault/tags";
+import { ScanTab } from "@/components/vault/ScanTab";
 import {
   ArrowLeft,
   ScanLine,
   PenLine,
-  Loader2,
-  Camera,
   ChevronDown,
   KeyRound,
-  ImageUp,
   WifiOff,
 } from "lucide-react";
 import {
