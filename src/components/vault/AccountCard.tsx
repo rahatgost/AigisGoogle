@@ -354,9 +354,49 @@ export function AccountCard({
   const longPressedRef = useRef(false);
   const detailsPanelRef = useRef<HTMLDivElement | null>(null);
   const confirmPanelRef = useRef<HTMLDivElement | null>(null);
+  const editButtonRef = useRef<HTMLButtonElement | null>(null);
+  const firstEditFieldRef = useRef<HTMLInputElement | null>(null);
+  const wasEditingRef = useRef(false);
   const detailsTitleId = `acc-details-${account.id}`;
   const confirmTitleId = `acc-confirm-${account.id}`;
   const confirmDescId = `acc-confirm-desc-${account.id}`;
+
+  // Reduced-motion: honor the OS-level pref by collapsing edit-mode
+  // transitions to instant swaps. AnimatePresence still runs so state
+  // stays correct — only durations shrink to zero.
+  const prefersReducedMotion = useReducedMotion();
+  const zero = { duration: 0 } as const;
+  const expandT = prefersReducedMotion
+    ? { height: zero, opacity: zero, y: zero, marginBottom: zero }
+    : EDIT_EXPAND;
+  const collapseT = prefersReducedMotion
+    ? { height: zero, opacity: zero, y: zero, marginBottom: zero }
+    : EDIT_COLLAPSE;
+  const actionSwapT = prefersReducedMotion ? zero : ACTION_SWAP;
+
+  // Keyboard focus management: entering edit mode moves focus to the
+  // first editable field; leaving edit mode (Save/Cancel/Esc via close)
+  // returns focus to the Edit button so keyboard users don't lose place.
+  useEffect(() => {
+    if (editing && !wasEditingRef.current) {
+      const raf = window.requestAnimationFrame(() => {
+        const el = firstEditFieldRef.current;
+        if (el) {
+          el.focus();
+          el.select?.();
+        }
+      });
+      wasEditingRef.current = true;
+      return () => window.cancelAnimationFrame(raf);
+    }
+    if (!editing && wasEditingRef.current) {
+      wasEditingRef.current = false;
+      const raf = window.requestAnimationFrame(() => {
+        editButtonRef.current?.focus();
+      });
+      return () => window.cancelAnimationFrame(raf);
+    }
+  }, [editing]);
 
   useModalA11y(detailsOpen, detailsPanelRef, () => setDetailsOpen(false));
   useModalA11y(confirmOpen, confirmPanelRef, () => {
