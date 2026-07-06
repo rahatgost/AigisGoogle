@@ -207,8 +207,8 @@ revoke any of them, see their sign-in history, and get a one-glance
 ## Phase 10 — Browser extension (`[P1]`, 2 weeks)
 
 ### 10.1 Manifest V3 shell `[P1]`
-- [ ] Second Vite entry point reusing `vault-crypto`, `vault-accounts`, `biometric` verbatim
-- [ ] Origin allow-list, minimal host permissions, CSP forbidding remote code
+- [x] Second Vite entry point reusing `vault-crypto`, `vault-accounts`, `biometric` verbatim
+- [x] Origin allow-list, minimal host permissions, CSP forbidding remote code
 
 ### 10.2 Autofill flow `[P1]`
 - [ ] Content script detects `<input autocomplete="one-time-code">` + `name~=otp` heuristics
