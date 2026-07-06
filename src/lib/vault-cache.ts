@@ -130,6 +130,8 @@ export async function patchCacheSortOrders(
   } catch {
     // best-effort
   }
+}
+
 
 /** Nuke everything. Called on sign-out and delete-account. */
 export async function clearVaultCache(): Promise<void> {
