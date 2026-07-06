@@ -967,7 +967,7 @@ function UnifiedAccountList({
 
   return (
     <div className="flex flex-col gap-1.5">
-      {favoriteList.length > 0 && <SectionLabel>Favorites</SectionLabel>}
+      {favoriteList.length > 0 && <SectionLabel>{t("vault.section.favorites", "Favorites")}</SectionLabel>}
       <div
         className="overflow-hidden rounded-[16px]"
         style={{
@@ -985,7 +985,7 @@ function UnifiedAccountList({
         )}
         {showBothLabels && (
           <div className="px-4 pb-1.5 pt-3">
-            <SectionLabel>All accounts</SectionLabel>
+            <SectionLabel>{t("vault.section.all", "All accounts")}</SectionLabel>
           </div>
         )}
         {otherList.length > 0 && (
