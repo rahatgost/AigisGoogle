@@ -98,19 +98,26 @@ function touch() {
 /*  Origin allow-list (defence-in-depth vs `externally_connectable`)      */
 /* --------------------------------------------------------------------- */
 
-// Kept in sync with manifest.externally_connectable.matches. If you change
-// one, change the other. Wildcard *.lovable.app is intentionally NOT here
-// — every Lovable project would otherwise be able to push a vault at us.
-const ALLOWED_EXTERNAL_ORIGINS = [
-  /^https:\/\/hug-machine-maker\.lovable\.app$/,
-  /^https:\/\/id-preview--04418077-cd09-40ce-bb05-4708ee844e27\.lovable\.app$/,
-  /^http:\/\/localhost:8080$/,
-];
+// Baked at build time from VITE_APP_URL / VITE_APP_PREVIEW_URL — see
+// `extension/vite.config.ts`. Kept in sync with
+// manifest.externally_connectable.matches by the same build step. Wildcard
+// *.lovable.app is intentionally NOT here — every Lovable project would
+// otherwise be able to push a vault at us.
+declare const __AEGIS_APP_ORIGIN__: string;
+declare const __AEGIS_APP_PREVIEW_ORIGIN__: string;
+
+const ALLOWED_EXTERNAL_ORIGINS: ReadonlySet<string> = new Set(
+  [__AEGIS_APP_ORIGIN__, __AEGIS_APP_PREVIEW_ORIGIN__, "http://localhost:8080"].filter(
+    (o): o is string => typeof o === "string" && o.length > 0,
+  ),
+);
 
 function originAllowed(origin: string | undefined): boolean {
   if (!origin) return false;
-  return ALLOWED_EXTERNAL_ORIGINS.some((re) => re.test(origin));
+  return ALLOWED_EXTERNAL_ORIGINS.has(origin);
 }
+
+
 
 /* --------------------------------------------------------------------- */
 /*  Rate limiting + payload validation for external messages             */
