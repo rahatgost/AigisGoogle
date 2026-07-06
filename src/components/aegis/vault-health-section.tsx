@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 
-import { BORDER, CHARCOAL, CREAM_SOFT, DANGER, MUTED, soft } from "@/components/aegis/chrome";
+import { BORDER, CHARCOAL, CREAM, CREAM_SOFT, DANGER, MUTED, soft } from "@/components/aegis/chrome";
 import { SettingsGroup, SettingsRow } from "@/components/aegis/settings";
 import { getVaultKey, useVaultUnlocked } from "@/lib/vault-session";
 import { listAccounts } from "@/lib/vault-accounts";
@@ -255,34 +255,34 @@ export function HealthSheet({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={soft}
-        className="relative z-10 mx-auto flex max-h-[88vh] w-full max-w-[440px] flex-col rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px] focus:outline-none"
+        className="relative z-10 mx-auto flex max-h-[88vh] w-full max-w-[440px] flex-col rounded-t-[16px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[16px] focus:outline-none"
         style={{
-          background: CREAM_SOFT,
+          background: CREAM,
           border: `1px solid ${BORDER}`,
-          boxShadow: "0 -12px 40px -12px rgba(0,0,0,0.25)",
         }}
       >
         <div
           aria-hidden
-          className="mx-auto mb-3 h-[4px] w-10 shrink-0 rounded-full"
-          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+          className="mx-auto mb-4 h-[4px] w-10 shrink-0 rounded-full"
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.12)" }}
         />
 
-        <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
+        <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id={titleId}
-              className="text-[18px]"
+              className="text-[24px]"
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontWeight: 600,
-                letterSpacing: "-0.01em",
+                letterSpacing: "-0.5px",
+                lineHeight: 1.1,
                 color: CHARCOAL,
               }}
             >
               Vault health
             </h2>
-            <div id={descId} className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+            <div id={descId} className="mt-1.5 text-[13px]" style={{ color: MUTED, lineHeight: 1.5 }}>
               Everything below runs on this device. Your secrets never leave the vault.
             </div>
           </div>
@@ -292,21 +292,27 @@ export function HealthSheet({
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2"
-            style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
+            style={{
+              background: "transparent",
+              border: `1px solid rgb(var(--aegis-ink-rgb) / 0.4)`,
+              color: CHARCOAL,
+            }}
             aria-label="Close vault health"
           >
-            <X className="h-4 w-4" strokeWidth={1.8} />
+            <X className="h-3.5 w-3.5" strokeWidth={1.8} />
           </motion.button>
         </div>
+
 
         <div className="min-h-0 flex-1 overflow-y-auto pb-1">
           {!unlocked && (
             <div
-              className="rounded-[16px] px-4 py-6 text-center text-[13px]"
+              className="rounded-[12px] px-4 py-6 text-center text-[13px]"
               style={{
-                background: "rgb(var(--aegis-ink-rgb) / 0.03)",
+                background: CREAM,
                 border: `1px solid ${BORDER}`,
                 color: MUTED,
+                lineHeight: 1.5,
               }}
             >
               Unlock the vault to run a health scan.
@@ -316,7 +322,7 @@ export function HealthSheet({
           {unlocked && loading && (
             <div className="flex flex-col items-center gap-3 py-10">
               <Loader2 className="h-5 w-5 animate-spin" style={{ color: MUTED }} />
-              <div className="text-[12.5px]" style={{ color: MUTED }}>
+              <div className="text-[13px]" style={{ color: MUTED }}>
                 Hashing secrets in memory…
               </div>
             </div>
@@ -325,41 +331,43 @@ export function HealthSheet({
           {unlocked && !loading && errorMsg && (
             <div
               role="alert"
-              className="rounded-[16px] px-4 py-6 text-center text-[13px]"
+              className="rounded-[12px] px-4 py-6 text-center text-[13px]"
               style={{
-                background: "rgb(var(--aegis-ink-rgb) / 0.03)",
+                background: CREAM,
                 border: `1px solid ${BORDER}`,
                 color: CHARCOAL,
+                lineHeight: 1.5,
               }}
             >
               <div style={{ fontWeight: 600 }}>Vault health scan failed</div>
-              <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+              <div className="mt-1 text-[13px]" style={{ color: MUTED }}>
                 {errorMsg}
               </div>
               <button
                 type="button"
                 onClick={onRescan}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] uppercase"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-[6px] px-4 py-2 text-[14px]"
                 style={{
                   background: CHARCOAL,
                   color: CREAM_SOFT,
-                  letterSpacing: "0.12em",
-                  fontWeight: 600,
+                  fontWeight: 400,
+                  boxShadow:
+                    "rgba(255,255,255,0.2) 0 0.5px 0 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset, rgba(0,0,0,0.05) 0 1px 2px 0",
                 }}
               >
-                <RefreshCw className="h-3 w-3" strokeWidth={2} />
+                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
                 Try again
               </button>
             </div>
           )}
 
           {unlocked && !loading && !errorMsg && report && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Score card */}
               <div
-                className="rounded-[16px] px-4 py-4"
+                className="rounded-[12px] px-4 py-5"
                 style={{
-                  background: "rgb(var(--aegis-ink-rgb) / 0.03)",
+                  background: CREAM,
                   border: `1px solid ${BORDER}`,
                 }}
                 aria-label={`Vault health score ${report.score} out of 100, ${tone.label}`}
@@ -367,39 +375,40 @@ export function HealthSheet({
                 <div className="flex items-baseline justify-between">
                   <div
                     className="text-[10.5px] uppercase"
-                    style={{ color: MUTED, letterSpacing: "0.14em", fontWeight: 600 }}
+                    style={{ color: MUTED, letterSpacing: "0.18em", fontWeight: 600 }}
                   >
                     Score
                   </div>
                   <div
-                    className="text-[11px] uppercase"
-                    style={{ color: tone.color, letterSpacing: "0.12em", fontWeight: 700 }}
+                    className="text-[10.5px] uppercase"
+                    style={{ color: tone.color, letterSpacing: "0.18em", fontWeight: 600 }}
                   >
                     {tone.label}
                   </div>
                 </div>
-                <div className="mt-1 flex items-baseline gap-2">
+                <div className="mt-2 flex items-baseline gap-2">
                   <span
-                    className="text-[36px]"
                     style={{
                       color: CHARCOAL,
                       fontFamily: "'Playfair Display', serif",
                       fontWeight: 600,
+                      fontSize: 56,
+                      letterSpacing: "-1.5px",
                       lineHeight: 1,
                     }}
                   >
                     {report.score}
                   </span>
-                  <span className="text-[13px]" style={{ color: MUTED }}>
+                  <span className="text-[14px]" style={{ color: MUTED }}>
                     / 100
                   </span>
-                  <span className="ml-auto text-[12px]" style={{ color: MUTED }}>
+                  <span className="ml-auto text-[13px]" style={{ color: MUTED }}>
                     {report.totalAccounts}{" "}
                     {report.totalAccounts === 1 ? "account" : "accounts"}
                   </span>
                 </div>
                 <div
-                  className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+                  className="mt-4 h-[3px] w-full overflow-hidden rounded-full"
                   style={{ background: "rgb(var(--aegis-ink-rgb) / 0.08)" }}
                 >
                   <motion.div
@@ -413,16 +422,22 @@ export function HealthSheet({
                 <button
                   type="button"
                   onClick={onRescan}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10.5px] uppercase"
-                  style={{ color: MUTED, letterSpacing: "0.12em", fontWeight: 600 }}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px]"
+                  style={{
+                    background: "transparent",
+                    border: `1px solid rgb(var(--aegis-ink-rgb) / 0.4)`,
+                    color: CHARCOAL,
+                    fontWeight: 400,
+                  }}
                 >
-                  <RefreshCw className="h-3 w-3" strokeWidth={2} />
+                  <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.8} />
                   Rescan
                 </button>
               </div>
 
               {/* Duplicates */}
               <Category
+
                 icon={<Copy className="h-3.5 w-3.5" strokeWidth={2} />}
                 title="Duplicate secrets"
                 emptyText="No duplicate TOTP secrets — every account has a unique key."
@@ -434,7 +449,7 @@ export function HealthSheet({
                     key={d.groupId}
                     className="rounded-[12px] px-3 py-2.5"
                     style={{
-                      background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+                      background: CREAM,
                       border: `1px solid ${BORDER}`,
                     }}
                   >
@@ -475,7 +490,7 @@ export function HealthSheet({
                     key={w.accountId}
                     className="flex items-start gap-3 rounded-[12px] px-3 py-2.5"
                     style={{
-                      background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+                      background: CREAM,
                       border: `1px solid ${BORDER}`,
                     }}
                   >
@@ -511,7 +526,7 @@ export function HealthSheet({
                     key={m.accountId}
                     className="flex items-center gap-3 rounded-[12px] px-3 py-2"
                     style={{
-                      background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+                      background: CREAM,
                       border: `1px solid ${BORDER}`,
                     }}
                   >
@@ -549,7 +564,7 @@ export function HealthSheet({
                         key={issuer}
                         className="flex items-center justify-between gap-3 rounded-[12px] px-3 py-2"
                         style={{
-                          background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+                          background: CREAM,
                           border: `1px solid ${BORDER}`,
                         }}
                       >
@@ -575,16 +590,17 @@ export function HealthSheet({
                           type="button"
                           onClick={() => void runHibp(issuer)}
                           disabled={r === "loading"}
-                          className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] uppercase disabled:opacity-50"
+                          className="shrink-0 rounded-[6px] px-3 py-1.5 text-[13px] disabled:opacity-50"
                           style={{
-                            background: "rgb(var(--aegis-ink-rgb) / 0.06)",
+                            background: "transparent",
+                            border: `1px solid rgb(var(--aegis-ink-rgb) / 0.4)`,
                             color: CHARCOAL,
-                            letterSpacing: "0.12em",
-                            fontWeight: 600,
+                            fontWeight: 400,
                           }}
                         >
                           {r === "loading" ? "…" : r ? "Recheck" : "Check"}
                         </button>
+
                       </div>
                     );
                   })}
@@ -626,12 +642,12 @@ function Category({
     <section aria-label={title} className="space-y-2">
       <header className="flex items-center gap-2">
         <span
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] uppercase"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10.5px] uppercase"
           style={{
-            background: "rgb(var(--aegis-ink-rgb) / 0.05)",
+            background: CREAM,
             color: severity === "warn" ? DANGER : MUTED,
             border: `1px solid ${BORDER}`,
-            letterSpacing: "0.14em",
+            letterSpacing: "0.16em",
             fontWeight: 600,
           }}
         >
@@ -645,16 +661,17 @@ function Category({
           {title}
         </span>
         {count >= 0 && (
-          <span className="text-[11px]" style={{ color: MUTED }}>
+          <span className="text-[12px]" style={{ color: MUTED }}>
             {count === 0 ? "0" : count}
           </span>
         )}
       </header>
+
       {isEmpty ? (
         <div
           className="rounded-[12px] px-3 py-2.5 text-[12px]"
           style={{
-            background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+            background: CREAM,
             border: `1px solid ${BORDER}`,
             color: MUTED,
           }}

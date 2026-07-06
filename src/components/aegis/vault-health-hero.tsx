@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck, Lock } from "lucide-react";
 
-import { BORDER, CHARCOAL, CREAM_SOFT, DANGER, MUTED, soft } from "@/components/aegis/chrome";
+import { BORDER, CHARCOAL, CREAM, DANGER, MUTED, soft } from "@/components/aegis/chrome";
 import { getVaultKey, useVaultUnlocked } from "@/lib/vault-session";
 import { listAccounts } from "@/lib/vault-accounts";
 import { computeVaultHealth, type VaultHealthReport } from "@/lib/vault-health";
 import { HealthSheet } from "@/components/aegis/vault-health-section";
+
 
 /**
  * Vault health hero — a clean semi-circular gauge (Apple-style) that lives
@@ -120,13 +121,12 @@ export function VaultHealthHero() {
             ? `Vault health score ${report!.score} of 100, ${tone.label}. Tap to view details.`
             : "Open vault health"
         }
-        className="relative flex w-full flex-col items-center overflow-hidden rounded-[22px] px-4 pb-5 pt-6 focus-visible:outline-none focus-visible:ring-2"
+        className="relative flex w-full flex-col items-center overflow-hidden rounded-[16px] px-4 pb-5 pt-6 focus-visible:outline-none focus-visible:ring-2"
         style={{
-          background: CREAM_SOFT,
+          background: CREAM,
           border: `1px solid ${BORDER}`,
-          boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.7), 0 10px 30px -22px rgba(0,0,0,0.35)",
         }}
+
       >
         {/* Section label */}
         <div className="mb-1 flex items-center gap-1.5">
@@ -234,7 +234,7 @@ export function VaultHealthHero() {
                   cx={indicator.x}
                   cy={indicator.y}
                   r={7}
-                  fill={CREAM_SOFT}
+                  fill={CREAM}
                   stroke={tone.color}
                   strokeWidth={2}
                 />
@@ -286,22 +286,23 @@ export function VaultHealthHero() {
                     color: CHARCOAL,
                     fontFamily: "'Playfair Display', serif",
                     fontWeight: 600,
-                    fontSize: 44,
-                    letterSpacing: "-0.02em",
+                    fontSize: 48,
+                    letterSpacing: "-1.2px",
                   }}
                 >
                   {report.score}
                 </motion.span>
                 <span
-                  className="mt-1 text-[10px] uppercase"
+                  className="mt-1.5 text-[10.5px] uppercase"
                   style={{
                     color: tone.color,
                     letterSpacing: "0.18em",
-                    fontWeight: 700,
+                    fontWeight: 600,
                   }}
                 >
                   {tone.label}
                 </span>
+
               </>
             )}
           </div>
