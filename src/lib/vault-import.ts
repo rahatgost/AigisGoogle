@@ -101,6 +101,7 @@ interface OtpParams {
   algorithm?: number;
   digits?: number;
   type?: number; // 1=HOTP, 2=TOTP
+  counter?: number; // field 7 in google's proto (only meaningful for HOTP)
 }
 
 function decodeOtpParameters(reader: PbReader, end: number): OtpParams {
@@ -121,6 +122,7 @@ function decodeOtpParameters(reader: PbReader, end: number): OtpParams {
       if (field === 4) out.algorithm = v;
       else if (field === 5) out.digits = v;
       else if (field === 6) out.type = v;
+      else if (field === 7) out.counter = v;
     } else {
       reader.skip(wire);
     }
