@@ -50,6 +50,7 @@ function acc(overrides: Partial<DecryptedAccount> = {}): DecryptedAccount {
     is_favorite: false,
     tags: [],
     secret: "JBSWY3DPEHPK3PXP",
+    otp_type: "totp",
     ...overrides,
   };
 }
