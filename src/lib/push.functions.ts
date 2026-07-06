@@ -133,7 +133,7 @@ export const requestApproval = createServerFn({ method: "POST" })
       .insert({
         user_id: userId,
         action: data.action,
-        payload: data.payload,
+        payload: data.payload as Record<string, unknown> as never,
         signature: "pending",
         expires_at: expiresAtIso,
       })
