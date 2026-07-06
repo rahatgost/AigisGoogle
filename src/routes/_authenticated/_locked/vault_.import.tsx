@@ -35,6 +35,9 @@ import {
   MUTED,
   Notice,
   PrimaryButton,
+  SCANNER_BG,
+  SUCCESS,
+  WARNING,
   soft,
 } from "@/components/aegis/chrome";
 import { typeBody, typeDisplay, typeMonoInline } from "@/components/aegis/typography";
