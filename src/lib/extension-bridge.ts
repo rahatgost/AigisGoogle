@@ -76,7 +76,8 @@ export async function syncVaultToExtension(params: {
   const runtime = getRuntime();
   if (!runtime) return { ok: false, reason: "no_extension" };
 
-  const ids = params.extensionIds ?? AEGIS_EXTENSION_IDS;
+  const discovered = discoverExtensionId();
+  const ids = params.extensionIds ?? (discovered ? [discovered] : []);
   if (ids.length === 0) return { ok: false, reason: "no_id" };
 
   const totp = params.accounts
