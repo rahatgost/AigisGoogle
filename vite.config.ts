@@ -116,6 +116,9 @@ export default defineConfig({
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
+          // Load the WebPush push/notificationclick handlers alongside
+          // the generated Workbox SW. See public/aegis-push.js.
+          importScripts: ["/aegis-push.js"],
           runtimeCaching: [
             {
               // HTML shell — network-first so a new deploy takes effect on the

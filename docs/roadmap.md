@@ -216,8 +216,8 @@ revoke any of them, see their sign-in history, and get a one-glance
 - [x] Copy-to-clipboard fallback with 30s auto-clear
 
 ### 10.3 Cross-device push `[P2]`
-- [ ] WebPush from extension to web app for "approve on this device" flows
-- [ ] Signed payload + short-lived nonce table
+- [x] WebPush from extension to web app for "approve on this device" flows
+- [x] Signed payload + short-lived nonce table
 
 **Exit criteria:** Chrome + Firefox extensions in their stores, autofill
 works on the top 20 sites we test against.
