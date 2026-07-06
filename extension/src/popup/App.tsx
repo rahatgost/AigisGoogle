@@ -77,10 +77,6 @@ export function App() {
         <span className={`dot ${bio ? "" : "warn"}`} />
         Biometric unlock {bio === null ? "…" : bio ? "available" : "unavailable"}
       </div>
-      <div className="status">
-        <span className={`dot ${cachedCount && cachedCount > 0 ? "" : "warn"}`} />
-        Cached accounts: {cachedCount ?? "…"}
-      </div>
 
       <div className="divider" />
 
