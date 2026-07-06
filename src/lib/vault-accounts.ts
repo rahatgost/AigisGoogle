@@ -23,6 +23,13 @@ import {
   enqueueTagUpdate,
   flushQueuedTagUpdates,
 } from "@/lib/vault-tag-queue";
+import {
+  dequeueOutbox,
+  enqueueDelete,
+  enqueueUpdateDetails,
+  flushOutbox,
+  outboxSize,
+} from "@/lib/vault-outbox";
 
 const ACCOUNT_SELECT =
   "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, tags, secret_ciphertext, secret_iv, updated_at";
