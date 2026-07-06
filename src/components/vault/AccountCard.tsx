@@ -1041,14 +1041,9 @@ export function AccountCard({
                             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                             exit={{ opacity: 0, y: -6, filter: "blur(8px)" }}
                             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center text-[32px] leading-none tabular-nums"
-                            style={{
-                              color: warn ? DANGER : CHARCOAL,
-                              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                              fontFeatureSettings: "'tnum'",
-                              fontWeight: 600,
-                              letterSpacing: "0.08em",
-                            }}
+                            className="flex items-center tabular-nums"
+                            style={{ ...typeCodeLg, color: warn ? DANGER : CHARCOAL }}
+
                           >
                             {formatCode(code)
                               .split("")
