@@ -10,6 +10,8 @@ import {
 import {
   deleteAccount,
   flushPendingTagUpdates,
+  flushPendingOutbox,
+  pendingOutboxCount,
   readCachedAccountsOnly,
   setAccountFavorite,
   setAccountTags,
@@ -70,11 +72,15 @@ function VaultPage() {
   const [pendingTagCount, setPendingTagCount] = useState<number>(
     () => (typeof window === "undefined" ? 0 : listQueuedTagUpdates().length),
   );
+  const [pendingOutbox, setPendingOutbox] = useState<number>(
+    () => (typeof window === "undefined" ? 0 : pendingOutboxCount()),
+  );
   const [syncingTags, setSyncingTags] = useState(false);
   const online = useOnlineStatus();
 
   const refreshPendingCount = useCallback(() => {
     setPendingTagCount(listQueuedTagUpdates().length);
+    setPendingOutbox(pendingOutboxCount());
   }, []);
 
   const allTags = useMemo(() => {
@@ -144,8 +150,21 @@ function VaultPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteAccount(id);
+    // Optimistic remove — deleteAccount patches the cache too, and when
+    // offline it queues the DELETE for reconnect.
     setAccounts((prev) => (prev ? prev.filter((a) => a.id !== id) : prev));
+    try {
+      const { queued } = await deleteAccount(id);
+      if (queued) {
+        setPendingOutbox(pendingOutboxCount());
+        toast("Deletion queued — will sync when you're back online.");
+      }
+    } catch (err) {
+      // Server rejected the delete for a non-network reason — surface it
+      // and force a reload so the UI matches the server.
+      setError(err instanceof Error ? err.message : "Could not delete.");
+      setReloadKey((k) => k + 1);
+    }
   };
 
   useEffect(() => {
@@ -230,6 +249,30 @@ function VaultPage() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
+
+  // Auto-flush the offline outbox (delete + edit) when the network comes
+  // back. Runs on mount too so pending items from a previous session get
+  // replayed as soon as the vault opens.
+  useEffect(() => {
+    if (!online) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const n = await flushPendingOutbox();
+        if (cancelled) return;
+        setPendingOutbox(pendingOutboxCount());
+        if (n > 0) {
+          toast.success(`Synced ${n} pending change${n === 1 ? "" : "s"}`);
+          setReloadKey((k) => k + 1);
+        }
+      } catch {
+        // best-effort; try again on next reconnect
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
 
   const retry = useCallback(() => {
     setRetrying(true);
@@ -332,7 +375,9 @@ function VaultPage() {
           <span className="flex-1 truncate">
             {online
               ? "Reconnecting — showing cached codes."
-              : "You're offline — showing cached codes. Add or edit is disabled."}
+              : pendingOutbox > 0
+                ? `You're offline — ${pendingOutbox} change${pendingOutbox === 1 ? "" : "s"} queued for sync.`
+                : "You're offline — showing cached codes. Add is disabled."}
           </span>
           <button
             type="button"

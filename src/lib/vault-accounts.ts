@@ -23,6 +23,13 @@ import {
   enqueueTagUpdate,
   flushQueuedTagUpdates,
 } from "@/lib/vault-tag-queue";
+import {
+  dequeueOutbox,
+  enqueueDelete,
+  enqueueUpdateDetails,
+  flushOutbox,
+  outboxSize,
+} from "@/lib/vault-outbox";
 
 const ACCOUNT_SELECT =
   "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, tags, secret_ciphertext, secret_iv, updated_at";
@@ -148,10 +155,36 @@ export async function addAccount(
   if (data) void upsertVaultCache(data as VaultAccountRecord);
 }
 
-export async function deleteAccount(id: string): Promise<void> {
-  const { error } = await supabase.from("vault_accounts").delete().eq("id", id);
-  if (error) throw error;
-  void removeFromVaultCache(id);
+/**
+ * Delete an account row. Queued to the offline outbox when offline (or when
+ * a network write fails) — the local cache row is removed immediately so
+ * the UI reflects the intent, and the server DELETE runs on reconnect.
+ */
+export async function deleteAccount(id: string): Promise<{ queued: boolean }> {
+  const attempt = async () => {
+    const { error } = await supabase.from("vault_accounts").delete().eq("id", id);
+    if (error) throw error;
+  };
+
+  if (isOffline()) {
+    enqueueDelete(id);
+    void removeFromVaultCache(id);
+    return { queued: true };
+  }
+
+  try {
+    await attempt();
+    dequeueOutbox(id);
+    void removeFromVaultCache(id);
+    return { queued: false };
+  } catch (err) {
+    if (isLikelyNetworkError(err)) {
+      enqueueDelete(id);
+      void removeFromVaultCache(id);
+      return { queued: true };
+    }
+    throw err;
+  }
 }
 
 export async function setAccountFavorite(id: string, isFavorite: boolean): Promise<void> {
@@ -176,23 +209,60 @@ export async function setAccountFavorite(id: string, isFavorite: boolean): Promi
   }
 }
 
-/** Update the editable account metadata (issuer + label). */
+/**
+ * Update the editable account metadata (issuer + label). Queued to the
+ * offline outbox when offline; the cached row is patched immediately.
+ */
 export async function updateAccountDetails(
   id: string,
   input: { issuer: string; label: string },
-): Promise<{ issuer: string; label: string }> {
+): Promise<{ issuer: string; label: string; queued: boolean }> {
   const issuer = input.issuer.trim();
   const label = input.label.trim();
   if (!issuer) throw new Error("Service name can't be empty.");
-  const { data, error } = await supabase
-    .from("vault_accounts")
-    .update({ issuer, label })
-    .eq("id", id)
-    .select(ACCOUNT_SELECT)
-    .single();
-  if (error) throw error;
-  if (data) void upsertVaultCache(data as VaultAccountRecord);
-  return { issuer, label };
+
+  const attempt = async () => {
+    const { data, error } = await supabase
+      .from("vault_accounts")
+      .update({ issuer, label })
+      .eq("id", id)
+      .select(ACCOUNT_SELECT)
+      .single();
+    if (error) throw error;
+    if (data) void upsertVaultCache(data as VaultAccountRecord);
+  };
+
+  if (isOffline()) {
+    enqueueUpdateDetails(id, issuer, label);
+    await patchCachedDetails(id, issuer, label);
+    return { issuer, label, queued: true };
+  }
+
+  try {
+    await attempt();
+    dequeueOutbox(id);
+    return { issuer, label, queued: false };
+  } catch (err) {
+    if (isLikelyNetworkError(err)) {
+      enqueueUpdateDetails(id, issuer, label);
+      await patchCachedDetails(id, issuer, label);
+      return { issuer, label, queued: true };
+    }
+    throw err;
+  }
+}
+
+async function patchCachedDetails(id: string, issuer: string, label: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const rows = await readVaultCache(user.id);
+    const row = rows?.find((r) => r.id === id);
+    if (!row) return;
+    await upsertVaultCache({ ...row, issuer, label });
+  } catch {
+    // best-effort
+  }
 }
 
 /**
@@ -284,6 +354,37 @@ export async function flushPendingTagUpdates(): Promise<number> {
     if (data) void upsertVaultCache(data as VaultAccountRecord);
   });
   return synced.length;
+}
+
+/**
+ * Flush queued delete + edit mutations against the server. Returns the
+ * count that reached the server. Safe to call repeatedly; missing-row
+ * errors are treated as success (intent satisfied).
+ */
+export async function flushPendingOutbox(): Promise<number> {
+  if (isOffline()) return 0;
+  const flushed = await flushOutbox({
+    delete: async (id) => {
+      const { error } = await supabase.from("vault_accounts").delete().eq("id", id);
+      if (error) throw error;
+      void removeFromVaultCache(id);
+    },
+    updateDetails: async (id, issuer, label) => {
+      const { data, error } = await supabase
+        .from("vault_accounts")
+        .update({ issuer, label })
+        .eq("id", id)
+        .select(ACCOUNT_SELECT)
+        .single();
+      if (error) throw error;
+      if (data) void upsertVaultCache(data as VaultAccountRecord);
+    },
+  });
+  return flushed.length;
+}
+
+export function pendingOutboxCount(): number {
+  return outboxSize();
 }
 
 async function decryptRows(
