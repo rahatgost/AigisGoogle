@@ -30,7 +30,6 @@ interface SwStatus {
 export function App() {
   const [sw, setSw] = useState<SwStatus | null>(null);
   const [bio, setBio] = useState<boolean | null>(null);
-  const [cachedCount, setCachedCount] = useState<number | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -44,17 +43,9 @@ export function App() {
       }
     })();
 
-    void isBiometricAvailable().then((v) => {
+    void isBiometricSupported().then((v) => {
       if (alive) setBio(v);
     });
-
-    void readVaultCache()
-      .then((rows) => {
-        if (alive) setCachedCount(Array.isArray(rows) ? rows.length : 0);
-      })
-      .catch(() => {
-        if (alive) setCachedCount(0);
-      });
 
     return () => {
       alive = false;
