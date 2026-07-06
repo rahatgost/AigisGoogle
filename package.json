@@ -13,7 +13,10 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/e2e/a11y-axe.spec.ts",
-    "build:ext": "vite build --config extension/vite.config.ts"
+    "build:ext": "vite build --config extension/vite.config.ts",
+    "build:ext:firefox": "TARGET=firefox vite build --config extension/vite.config.ts",
+    "package:ext:chrome": "bun run build:ext && cd dist-ext && nix run nixpkgs#zip -- -r ../public/aegis-extension-chrome.zip .",
+    "package:ext:firefox": "bun run build:ext:firefox && cd dist-ext-firefox && nix run nixpkgs#zip -- -r ../public/aegis-extension-firefox.zip ."
   },
   "dependencies": {
     "@block65/webcrypto-web-push": "^1.0.2",
