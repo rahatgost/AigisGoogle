@@ -930,12 +930,14 @@ function TagFilterRow({
   onToggle,
   onClear,
   onManage,
+  onSelect,
 }: {
   tags: { tag: string; count: number }[];
   active: Set<string>;
   onToggle: (tag: string) => void;
   onClear: () => void;
   onManage: () => void;
+  onSelect?: () => void;
 }) {
   const activeCount = active.size;
   // Sort so active filters lead — user always sees what's on first.
@@ -991,6 +993,18 @@ function TagFilterRow({
               Clear
             </button>
           )}
+          {onSelect && (
+            <button
+              type="button"
+              onClick={onSelect}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-black/5"
+              style={{ color: MUTED, fontWeight: 500 }}
+              aria-label="Select multiple accounts"
+            >
+              <CheckSquare className="h-2.5 w-2.5" strokeWidth={2.2} />
+              Select
+            </button>
+          )}
           <button
             type="button"
             onClick={onManage}
@@ -1003,6 +1017,7 @@ function TagFilterRow({
           </button>
         </div>
       </div>
+
 
       {/* Scrollable chip strip with edge-fade masks */}
       <div
