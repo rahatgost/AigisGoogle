@@ -885,23 +885,15 @@ export function AccountCard({
                           </div>
                         ) : (
                           <>
-                            <div
-                              id={detailsTitleId}
-                              className="truncate text-[17px]"
-                              style={{
-                                fontFamily: "'Playfair Display', serif",
-                                fontWeight: 600,
-                                letterSpacing: "-0.01em",
-                                color: CHARCOAL,
-                              }}
-                            >
+                            <div id={detailsTitleId} className="truncate" style={typeSheetTitle}>
                               {account.issuer || "Untitled"}
                             </div>
                             {account.label && (
-                              <div className="truncate text-[11.5px]" style={{ color: MUTED }}>
+                              <div className="truncate" style={typeSubLabel}>
                                 {account.label}
                               </div>
                             )}
+
                           </>
                         )}
                       </div>
