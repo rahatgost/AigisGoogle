@@ -14,10 +14,12 @@ matters*.
 **Legend:** `[P0]` blocker for GA · `[P1]` fast-follow · `[P2]` polish /
 post-launch. Tick `- [x]` as each task lands.
 
-**Progress:** Phase 0–5 complete. **Phase 6.1 shipped** (PWA manifest,
-service worker, guarded registration, protocol handler, share target,
-install prompt behind `feature_flags.pwa_install_prompt`). Currently on
-**Phase 6.2 — encrypted offline vault mirror**.
+**Progress:** Phase 0–5 complete. **Phase 6.1 + 6.2 shipped** (PWA
+manifest, service worker, guarded registration, protocol handler, share
+target, install prompt behind `feature_flags.pwa_install_prompt`,
+encrypted IndexedDB vault mirror with cache-first paint, delta sync,
+optimistic favorite window, focus/visibility invalidation). Currently
+on **Phase 6.3 — route-level code splitting**.
 
 ---
 
@@ -82,10 +84,14 @@ app every time.
 - [x] Guarded registration wrapper (`src/lib/pwa-register.ts`) refusing dev, iframe, Lovable preview hosts, and `?sw=off`; unregisters stale `/sw.js` in refused contexts
 - [x] Install prompt on the vault screen after the third successful visit (behind `feature_flags.pwa_install_prompt`, disabled by default)
 
-### 6.2 Encrypted offline vault mirror `[P0]`
-- [ ] IndexedDB `vault_cache` holding ciphertext rows (never sees plaintext)
-- [ ] Diff sync on next auth (`updated_at > last_sync`), reconcile deletions; server-wins on `updated_at` ties, client-wins on optimistic favorite toggles from last 60s
-- [ ] Loader in `_authenticated/_tabs/vault.tsx` reads cache first, hydrates from server in background, invalidates on `focus`
+### 6.2 Encrypted offline vault mirror `[P0]` `[done]`
+- [x] IndexedDB `vault_cache` holds only ciphertext + IV — decryption is still in-memory after unlock (`src/lib/vault-cache.ts`)
+- [x] Owner rotation clears prior user's ciphertext on write; per-user reads return `null` on mismatch (no cross-user leakage)
+- [x] Cache-first loader in `_authenticated/_tabs/vault.tsx` — paints from IndexedDB immediately, then hydrates from server
+- [x] `syncAccountsFromServer` diff sync: fetches full row set, writes `last_sync` per user, updates cache mirror
+- [x] Merge rule: server-wins on ties, client-wins on `is_favorite` toggles from the last 60 s (`mergeAccountRows` + `recordFavoriteToggle`)
+- [x] Focus + `visibilitychange` invalidate — returning to the tab kicks a fresh sync
+- [x] Offline mutations mirror into cache (add/update/delete/favorite/tags); queued tag edits flush on reconnect
 
 ### 6.3 Route-level code splitting `[P1]`
 Baseline biggest chunks (from `perf/baseline.json`):
