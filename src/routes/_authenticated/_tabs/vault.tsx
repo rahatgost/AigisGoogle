@@ -599,12 +599,30 @@ function VaultPage() {
         </div>
       )}
 
+      {accounts && accounts.length > 0 && !selectionMode && (
+        <SearchField value={query} onChange={setQuery} />
+      )}
 
+      {accounts && accounts.length > 0 && !selectionMode && (
+        <div className="mb-1 mt-1 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => enterSelection()}
+            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] transition-colors"
+            style={{
+              background: "rgba(28,28,28,0.06)",
+              color: CHARCOAL,
+              fontWeight: 600,
+            }}
+            aria-label="Select multiple accounts"
+          >
+            <CheckSquare className="h-3.5 w-3.5" strokeWidth={1.8} />
+            Select
+          </button>
+        </div>
+      )}
 
-
-      {accounts && accounts.length > 0 && <SearchField value={query} onChange={setQuery} />}
-
-      {accounts && allTags.length > 0 && (
+      {accounts && allTags.length > 0 && !selectionMode && (
         <TagFilterRow
           tags={allTags}
           active={activeTags}
@@ -638,8 +656,11 @@ function VaultPage() {
             onTagsChanged={handleTagsChanged}
             onDetailsChanged={handleDetailsChanged}
             tagSuggestions={tagNames}
-            dndEnabled={online && !query.trim() && activeTags.size === 0}
+            dndEnabled={online && !query.trim() && activeTags.size === 0 && !selectionMode}
             onReorder={handleReorder}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onSelectToggle={toggleSelect}
           />
         )}
 
