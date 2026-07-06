@@ -316,25 +316,107 @@ function HistorySheet({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-1">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-1" aria-busy={loading}>
           {loading && (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-5 w-5 animate-spin" style={{ color: MUTED }} />
-            </div>
+            <ol className="space-y-2" aria-label="Loading sign-in history">
+              {[0, 1, 2, 3].map((i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 rounded-[14px] px-3 py-3"
+                  style={{
+                    background: "rgb(var(--aegis-ink-rgb) / 0.025)",
+                    border: `1px solid ${BORDER}`,
+                  }}
+                >
+                  <div
+                    className="h-9 w-9 shrink-0 animate-pulse rounded-full"
+                    style={{ background: "rgb(var(--aegis-ink-rgb) / 0.08)" }}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div
+                      className="h-3 w-2/5 animate-pulse rounded-full"
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.09)" }}
+                      aria-hidden
+                    />
+                    <div
+                      className="h-2.5 w-3/5 animate-pulse rounded-full"
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
+                      aria-hidden
+                    />
+                    <div
+                      className="h-2.5 w-1/3 animate-pulse rounded-full"
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
+                      aria-hidden
+                    />
+                  </div>
+                </li>
+              ))}
+              <span className="sr-only">Loading sign-in history…</span>
+            </ol>
           )}
 
-          {!loading && events && events.length === 0 && (
+          {!loading && errorMsg && (
             <div
-              className="rounded-[16px] px-4 py-8 text-center text-[13px]"
+              role="alert"
+              className="rounded-[16px] px-4 py-6 text-center text-[13px]"
               style={{
                 background: "rgb(var(--aegis-ink-rgb) / 0.03)",
                 border: `1px solid ${BORDER}`,
-                color: MUTED,
+                color: CHARCOAL,
               }}
             >
-              No sign-ins recorded yet. New sign-ins will appear here.
+              <div style={{ fontWeight: 600 }}>Couldn't load sign-in history</div>
+              <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+                {errorMsg}
+              </div>
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={refreshing}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] uppercase disabled:opacity-50"
+                style={{
+                  background: CHARCOAL,
+                  color: CREAM_SOFT,
+                  letterSpacing: "0.12em",
+                  fontWeight: 600,
+                }}
+              >
+                <RefreshCw
+                  className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
+                  strokeWidth={2}
+                />
+                Try again
+              </button>
             </div>
           )}
+
+          {!loading && !errorMsg && events && events.length === 0 && (
+            <div
+              className="flex flex-col items-center gap-3 rounded-[16px] px-4 py-10 text-center"
+              style={{
+                background: "rgb(var(--aegis-ink-rgb) / 0.03)",
+                border: `1px solid ${BORDER}`,
+              }}
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-full"
+                style={{ background: "rgb(var(--aegis-ink-rgb) / 0.08)", color: CHARCOAL }}
+                aria-hidden
+              >
+                <History className="h-5 w-5" strokeWidth={1.7} />
+              </div>
+              <div>
+                <div className="text-[13.5px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
+                  No sign-ins recorded yet
+                </div>
+                <div className="mt-1 text-[12px]" style={{ color: MUTED }}>
+                  New sign-ins will appear here for 90 days.
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {!loading && events && events.length > 0 && (
             <ol className="space-y-2">
