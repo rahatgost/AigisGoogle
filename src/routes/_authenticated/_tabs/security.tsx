@@ -278,6 +278,11 @@ function SecurityPage() {
           />
         </SettingsGroup>
 
+        <SectionLabel>{t("security.section.health", "Health")}</SectionLabel>
+        <VaultHealthSection heading={t("security.vaultHealth", "Vault health")} />
+
+
+
         <SectionLabel>{t("security.section.signIn", "Sign-in")}</SectionLabel>
         <SettingsGroup>
           <SettingsRow
