@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CRACK_TIME_KEYS,
   evaluatePassphrase,
   mapCrackTimesDisplay,
   mapCrackTimesSeconds,
@@ -7,12 +8,7 @@ import {
   type CrackTimeKey,
 } from "@/lib/zxcvbn";
 
-const KEYS: readonly CrackTimeKey[] = [
-  "onlineThrottling100PerHour",
-  "onlineNoThrottling10PerSecond",
-  "offlineSlowHashing1e4PerSecond",
-  "offlineFastHashing1e10PerSecond",
-];
+const KEYS: readonly CrackTimeKey[] = CRACK_TIME_KEYS;
 
 describe("scoreToSegments", () => {
   it("fills exactly N of 4 segments for scores 0..4", () => {
@@ -29,7 +25,7 @@ describe("scoreToSegments", () => {
     expect(scoreToSegments(2.9)).toEqual([true, true, false, false]);
   });
 
-  it("returns a tuple of length 4", () => {
+  it("returns a length-4 tuple of booleans", () => {
     const s = scoreToSegments(3);
     expect(s).toHaveLength(4);
     expect(s.every((v) => typeof v === "boolean")).toBe(true);
@@ -37,68 +33,72 @@ describe("scoreToSegments", () => {
 });
 
 describe("mapCrackTimesSeconds", () => {
-  it("maps every canonical key as a number", () => {
+  it("extracts a number from each canonical entry", () => {
     const out = mapCrackTimesSeconds({
-      onlineThrottling100PerHour: 12,
-      onlineNoThrottling10PerSecond: 0.5,
-      offlineSlowHashing1e4PerSecond: 1000,
-      offlineFastHashing1e10PerSecond: 1e-6,
+      onlineThrottlingXPerHour: { seconds: 12, display: "a" },
+      onlineNoThrottlingXPerSecond: { seconds: 0.5, display: "b" },
+      offlineSlowHashingXPerSecond: { seconds: 1000, display: "c" },
+      offlineFastHashingXPerSecond: { seconds: 1e-6, display: "d" },
     });
     for (const k of KEYS) expect(typeof out[k]).toBe("number");
-    expect(out.onlineThrottling100PerHour).toBe(12);
-    expect(out.offlineFastHashing1e10PerSecond).toBeCloseTo(1e-6);
+    expect(out.onlineThrottlingXPerHour).toBe(12);
+    expect(out.offlineFastHashingXPerSecond).toBeCloseTo(1e-6);
   });
 
-  it("coerces string numerics and treats 'Infinity' / non-finite as +Infinity", () => {
+  it("coerces string numerics and treats 'Infinity'/NaN as +Infinity", () => {
     const out = mapCrackTimesSeconds({
-      onlineThrottling100PerHour: "42",
-      onlineNoThrottling10PerSecond: "Infinity",
-      offlineSlowHashing1e4PerSecond: Number.POSITIVE_INFINITY,
-      offlineFastHashing1e10PerSecond: "not-a-number",
+      onlineThrottlingXPerHour: { seconds: "42" },
+      onlineNoThrottlingXPerSecond: { seconds: "Infinity" },
+      offlineSlowHashingXPerSecond: { seconds: Number.POSITIVE_INFINITY },
+      offlineFastHashingXPerSecond: { seconds: "not-a-number" },
     });
-    expect(out.onlineThrottling100PerHour).toBe(42);
-    expect(out.onlineNoThrottling10PerSecond).toBe(Number.POSITIVE_INFINITY);
-    expect(out.offlineSlowHashing1e4PerSecond).toBe(Number.POSITIVE_INFINITY);
-    expect(out.offlineFastHashing1e10PerSecond).toBe(Number.POSITIVE_INFINITY);
+    expect(out.onlineThrottlingXPerHour).toBe(42);
+    expect(out.onlineNoThrottlingXPerSecond).toBe(Number.POSITIVE_INFINITY);
+    expect(out.offlineSlowHashingXPerSecond).toBe(Number.POSITIVE_INFINITY);
+    expect(out.offlineFastHashingXPerSecond).toBe(Number.POSITIVE_INFINITY);
   });
 
   it("defaults missing keys to 0 and tolerates null/undefined input", () => {
     expect(mapCrackTimesSeconds(null)).toEqual({
-      onlineThrottling100PerHour: 0,
-      onlineNoThrottling10PerSecond: 0,
-      offlineSlowHashing1e4PerSecond: 0,
-      offlineFastHashing1e10PerSecond: 0,
+      onlineThrottlingXPerHour: 0,
+      onlineNoThrottlingXPerSecond: 0,
+      offlineSlowHashingXPerSecond: 0,
+      offlineFastHashingXPerSecond: 0,
     });
     expect(mapCrackTimesSeconds(undefined)).toEqual(mapCrackTimesSeconds(null));
-    const partial = mapCrackTimesSeconds({ onlineThrottling100PerHour: 7 });
-    expect(partial.onlineThrottling100PerHour).toBe(7);
-    expect(partial.offlineFastHashing1e10PerSecond).toBe(0);
+    const partial = mapCrackTimesSeconds({
+      onlineThrottlingXPerHour: { seconds: 7 },
+    });
+    expect(partial.onlineThrottlingXPerHour).toBe(7);
+    expect(partial.offlineFastHashingXPerSecond).toBe(0);
   });
 });
 
 describe("mapCrackTimesDisplay", () => {
-  it("passes through string labels for every key", () => {
+  it("passes through the display string for every canonical key", () => {
     const out = mapCrackTimesDisplay({
-      onlineThrottling100PerHour: "centuries",
-      onlineNoThrottling10PerSecond: "3 hours",
-      offlineSlowHashing1e4PerSecond: "12 minutes",
-      offlineFastHashing1e10PerSecond: "less than a second",
+      onlineThrottlingXPerHour: { display: "centuries" },
+      onlineNoThrottlingXPerSecond: { display: "3 hours" },
+      offlineSlowHashingXPerSecond: { display: "12 minutes" },
+      offlineFastHashingXPerSecond: { display: "less than a second" },
     });
-    expect(out.onlineThrottling100PerHour).toBe("centuries");
-    expect(out.offlineFastHashing1e10PerSecond).toBe("less than a second");
+    expect(out.onlineThrottlingXPerHour).toBe("centuries");
+    expect(out.offlineFastHashingXPerSecond).toBe("less than a second");
     for (const k of KEYS) expect(typeof out[k]).toBe("string");
   });
 
-  it("stringifies non-string values and handles missing input", () => {
-    const out = mapCrackTimesDisplay({ onlineThrottling100PerHour: 5 });
-    expect(out.onlineThrottling100PerHour).toBe("5");
-    expect(out.offlineSlowHashing1e4PerSecond).toBe("");
-    expect(mapCrackTimesDisplay(null).offlineFastHashing1e10PerSecond).toBe("");
+  it("stringifies non-string display values and defaults missing entries", () => {
+    const out = mapCrackTimesDisplay({
+      onlineThrottlingXPerHour: { display: 5 as unknown as string },
+    });
+    expect(out.onlineThrottlingXPerHour).toBe("5");
+    expect(out.offlineSlowHashingXPerSecond).toBe("");
+    expect(mapCrackTimesDisplay(null).offlineFastHashingXPerSecond).toBe("");
   });
 });
 
 describe("evaluatePassphrase", () => {
-  it("returns a zeroed shape for the empty string without loading zxcvbn", async () => {
+  it("returns a fully-populated zeroed shape for the empty string", async () => {
     const r = await evaluatePassphrase("");
     expect(r.score).toBe(0);
     expect(r.warning).toBe("");
@@ -116,11 +116,9 @@ describe("evaluatePassphrase", () => {
     );
     expect(weak.score).toBeLessThanOrEqual(1);
     expect(strong.score).toBeGreaterThanOrEqual(3);
-    // Strong passphrase must take strictly longer to crack than a dictionary word
-    // under the same attack scenario.
-    expect(strong.crackTimesSeconds.offlineFastHashing1e10PerSecond).toBeGreaterThan(
-      weak.crackTimesSeconds.offlineFastHashing1e10PerSecond,
-    );
+    expect(
+      strong.crackTimesSeconds.offlineFastHashingXPerSecond,
+    ).toBeGreaterThan(weak.crackTimesSeconds.offlineFastHashingXPerSecond);
   }, 15_000);
 
   it("populates every canonical crack-time key with the correct type", async () => {

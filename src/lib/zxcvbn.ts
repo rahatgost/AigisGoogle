@@ -2,12 +2,12 @@
 // keep it out of the initial bundle and load it on demand the first time a
 // passphrase field asks for a score.
 
-/** The four attack scenarios zxcvbn models. Keys are stable across versions. */
+/** The four attack scenarios zxcvbn-ts models. Keys are stable across v3+. */
 export type CrackTimeKey =
-  | "onlineThrottling100PerHour"
-  | "onlineNoThrottling10PerSecond"
-  | "offlineSlowHashing1e4PerSecond"
-  | "offlineFastHashing1e10PerSecond";
+  | "onlineThrottlingXPerHour"
+  | "onlineNoThrottlingXPerSecond"
+  | "offlineSlowHashingXPerSecond"
+  | "offlineFastHashingXPerSecond";
 
 export type CrackTimesSeconds = Record<CrackTimeKey, number>;
 export type CrackTimesDisplay = Record<CrackTimeKey, string>;
@@ -21,7 +21,7 @@ export interface PassphraseScore {
   crackTimesDisplay: CrackTimesDisplay;
 }
 
-/** The number of filled segments (out of 4) for a given score. */
+/** Filled state for the four-segment strength bar. */
 export type StrengthSegments = readonly [boolean, boolean, boolean, boolean];
 
 /** Derive the four-segment strength bar from a numeric score. */
@@ -30,16 +30,16 @@ export function scoreToSegments(score: number): StrengthSegments {
   return [0, 1, 2, 3].map((i) => i < s) as unknown as StrengthSegments;
 }
 
-const CRACK_KEYS: readonly CrackTimeKey[] = [
-  "onlineThrottling100PerHour",
-  "onlineNoThrottling10PerSecond",
-  "offlineSlowHashing1e4PerSecond",
-  "offlineFastHashing1e10PerSecond",
+export const CRACK_TIME_KEYS: readonly CrackTimeKey[] = [
+  "onlineThrottlingXPerHour",
+  "onlineNoThrottlingXPerSecond",
+  "offlineSlowHashingXPerSecond",
+  "offlineFastHashingXPerSecond",
 ];
 
-// zxcvbn-ts types crack-time seconds as `number | string` (returns the string
-// "Infinity" for astronomical values). Coerce to a finite number so downstream
-// code has a single type to reason about.
+// zxcvbn-ts reports crack-time seconds as a number, but historically also as
+// the string "Infinity" for astronomical values. Coerce to a finite number
+// (or +Infinity) so downstream code has a single type to reason about.
 function toSeconds(v: unknown): number {
   if (typeof v === "number") return Number.isFinite(v) ? v : Number.POSITIVE_INFINITY;
   if (typeof v === "string") {
@@ -49,25 +49,38 @@ function toSeconds(v: unknown): number {
   return 0;
 }
 
-export function mapCrackTimesSeconds(raw: Record<string, unknown> | undefined | null): CrackTimesSeconds {
+interface RawCrackTimeEntry {
+  seconds?: unknown;
+  display?: unknown;
+}
+
+/** Map the raw `crackTimes` object into a flat `{ key -> seconds }` record. */
+export function mapCrackTimesSeconds(
+  raw: Partial<Record<string, RawCrackTimeEntry>> | undefined | null,
+): CrackTimesSeconds {
   const src = raw ?? {};
   const out = {} as CrackTimesSeconds;
-  for (const k of CRACK_KEYS) out[k] = toSeconds(src[k]);
+  for (const k of CRACK_TIME_KEYS) out[k] = toSeconds(src[k]?.seconds);
   return out;
 }
 
-export function mapCrackTimesDisplay(raw: Record<string, unknown> | undefined | null): CrackTimesDisplay {
+/** Map the raw `crackTimes` object into a flat `{ key -> display }` record. */
+export function mapCrackTimesDisplay(
+  raw: Partial<Record<string, RawCrackTimeEntry>> | undefined | null,
+): CrackTimesDisplay {
   const src = raw ?? {};
   const out = {} as CrackTimesDisplay;
-  for (const k of CRACK_KEYS) out[k] = typeof src[k] === "string" ? (src[k] as string) : String(src[k] ?? "");
+  for (const k of CRACK_TIME_KEYS) {
+    const d = src[k]?.display;
+    out[k] = typeof d === "string" ? d : d == null ? "" : String(d);
+  }
   return out;
 }
 
 interface RawCheckResult {
   score: number;
   feedback: { warning?: string | null; suggestions?: string[] };
-  crackTimesSeconds?: Record<string, unknown>;
-  crackTimesDisplay?: Record<string, unknown>;
+  crackTimes?: Partial<Record<string, RawCrackTimeEntry>>;
 }
 
 let factoryPromise: Promise<{ check: (pw: string) => RawCheckResult }> | null = null;
@@ -98,16 +111,16 @@ export function preloadZxcvbn() {
 }
 
 const EMPTY_CRACK_SECONDS: CrackTimesSeconds = {
-  onlineThrottling100PerHour: 0,
-  onlineNoThrottling10PerSecond: 0,
-  offlineSlowHashing1e4PerSecond: 0,
-  offlineFastHashing1e10PerSecond: 0,
+  onlineThrottlingXPerHour: 0,
+  onlineNoThrottlingXPerSecond: 0,
+  offlineSlowHashingXPerSecond: 0,
+  offlineFastHashingXPerSecond: 0,
 };
 const EMPTY_CRACK_DISPLAY: CrackTimesDisplay = {
-  onlineThrottling100PerHour: "less than a second",
-  onlineNoThrottling10PerSecond: "less than a second",
-  offlineSlowHashing1e4PerSecond: "less than a second",
-  offlineFastHashing1e10PerSecond: "less than a second",
+  onlineThrottlingXPerHour: "less than a second",
+  onlineNoThrottlingXPerSecond: "less than a second",
+  offlineSlowHashingXPerSecond: "less than a second",
+  offlineFastHashingXPerSecond: "less than a second",
 };
 
 export async function evaluatePassphrase(pw: string): Promise<PassphraseScore> {
@@ -126,7 +139,7 @@ export async function evaluatePassphrase(pw: string): Promise<PassphraseScore> {
     score: Math.max(0, Math.min(4, result.score)) as 0 | 1 | 2 | 3 | 4,
     warning: result.feedback.warning ?? "",
     suggestions: result.feedback.suggestions ?? [],
-    crackTimesSeconds: mapCrackTimesSeconds(result.crackTimesSeconds),
-    crackTimesDisplay: mapCrackTimesDisplay(result.crackTimesDisplay),
+    crackTimesSeconds: mapCrackTimesSeconds(result.crackTimes),
+    crackTimesDisplay: mapCrackTimesDisplay(result.crackTimes),
   };
 }
