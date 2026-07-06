@@ -603,7 +603,7 @@ function VaultPage() {
         <SearchField value={query} onChange={setQuery} />
       )}
 
-      {accounts && accounts.length > 0 && !selectionMode && (
+      {accounts && accounts.length > 0 && allTags.length === 0 && !selectionMode && (
         <div className="mb-1 mt-1 flex items-center justify-end">
           <button
             type="button"
@@ -629,6 +629,7 @@ function VaultPage() {
           onToggle={toggleTagFilter}
           onClear={() => setActiveTags(new Set())}
           onManage={() => setTagManagerOpen(true)}
+          onSelect={() => enterSelection()}
         />
       )}
 
