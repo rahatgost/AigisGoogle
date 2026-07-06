@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { DevicesSection } from "@/components/aegis/devices-section";
+import { SignInHistorySection } from "@/components/aegis/signin-history-section";
 
 import { Switch } from "@/components/ui/switch";
 import { setHideCodes, useHideCodes } from "@/lib/vault-privacy";
