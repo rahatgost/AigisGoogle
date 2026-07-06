@@ -361,18 +361,20 @@ export function AccountCard({
   const confirmTitleId = `acc-confirm-${account.id}`;
   const confirmDescId = `acc-confirm-desc-${account.id}`;
 
-  // Reduced-motion: honor the OS-level pref by collapsing edit-mode
-  // transitions to instant swaps. AnimatePresence still runs so state
-  // stays correct — only durations shrink to zero.
+  // Reduced-motion: honor the OS pref by removing translation and layout
+  // easing, but keep a short opacity crossfade so state changes are still
+  // perceivable (WCAG 2.3.3 allows non-essential fades). Height/margin
+  // snap instantly to avoid parallax-style movement.
   const prefersReducedMotion = useReducedMotion();
   const zero = { duration: 0 } as const;
+  const rmFade = { duration: 0.12, ease: "linear" } as const;
   const expandT = prefersReducedMotion
-    ? { height: zero, opacity: zero, y: zero, marginBottom: zero }
+    ? { height: zero, marginBottom: zero, y: zero, opacity: rmFade }
     : EDIT_EXPAND;
   const collapseT = prefersReducedMotion
-    ? { height: zero, opacity: zero, y: zero, marginBottom: zero }
+    ? { height: zero, marginBottom: zero, y: zero, opacity: rmFade }
     : EDIT_COLLAPSE;
-  const actionSwapT = prefersReducedMotion ? zero : ACTION_SWAP;
+  const actionSwapT = prefersReducedMotion ? rmFade : ACTION_SWAP;
 
   // Keyboard focus management: entering edit mode moves focus to the
   // first editable field; leaving edit mode (Save/Cancel/Esc via close)
