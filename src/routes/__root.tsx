@@ -8,10 +8,18 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { I18nProvider } from "@lingui/react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { THEME_INIT_SCRIPT, initTheme, setThemePref, type ThemePref } from "@/lib/theme";
+import {
+  LOCALE_INIT_SCRIPT,
+  i18n,
+  initLocale,
+  setLocalePref,
+  type LocalePref,
+} from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
