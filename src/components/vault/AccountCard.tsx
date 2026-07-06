@@ -1676,28 +1676,11 @@ function MetaCell({ label, value }: { label: string; value: string }) {
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
       }}
     >
-      <span
-        className="text-[9.5px] uppercase"
-        style={{
-          color: MUTED,
-          fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.22em",
-        }}
-      >
-        {label}
-      </span>
-      <span
-        className="text-[13.5px] tabular-nums"
-        style={{
-          color: CHARCOAL,
-          fontFamily: "'JetBrains Mono', monospace",
-          fontFeatureSettings: "'tnum'",
-          fontWeight: 600,
-          letterSpacing: "0.02em",
-        }}
-      >
+      <span style={typeMetaLabel}>{label}</span>
+      <span className="tabular-nums" style={typeMetaValue}>
         {value}
       </span>
+
     </div>
   );
 }
