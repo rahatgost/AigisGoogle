@@ -870,7 +870,12 @@ export function AccountCard({
                         </div>
 
                         {editing ? (
-                          <div className="mt-1 flex flex-col gap-1.5">
+                          <div
+                            className="mt-1 flex flex-col gap-1.5"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
                             <input
                               id={detailsTitleId}
                               ref={firstEditFieldRef}
