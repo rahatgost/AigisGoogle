@@ -44,6 +44,10 @@ export interface CreatePayload {
   is_favorite: boolean;
   secret_ciphertext_hex: string;
   secret_iv_hex: string;
+  // Phase 7.4: optional so pre-existing queued creates stay valid.
+  otp_type?: "totp" | "hotp" | "steam";
+  counter_ciphertext_hex?: string | null;
+  counter_iv_hex?: string | null;
 }
 
 export type OutboxEntry =
