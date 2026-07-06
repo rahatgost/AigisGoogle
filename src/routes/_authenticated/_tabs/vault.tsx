@@ -1052,9 +1052,9 @@ function SortableAccountRow({
           <span
             className="flex h-6 w-6 items-center justify-center rounded-full"
             style={{
-              background: selected ? CHARCOAL : "rgba(255,255,255,0.9)",
+              background: selected ? CHARCOAL : CREAM_SOFT,
               border: `1px solid ${selected ? CHARCOAL : BORDER}`,
-              color: selected ? "#f7f4ed" : "transparent",
+              color: selected ? CREAM : "transparent",
             }}
           >
             <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
