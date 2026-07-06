@@ -286,13 +286,15 @@ export function AccountCard({
     ]);
 
     let queuedTags = false;
+    let queuedDetails = false;
     const errors: string[] = [];
 
     if (detailsResult.status === "fulfilled" && detailsResult.value) {
       const saved = detailsResult.value;
-      onDetailsChanged?.(account.id, saved);
+      onDetailsChanged?.(account.id, { issuer: saved.issuer, label: saved.label });
       setIssuerDraft(saved.issuer);
       setLabelDraft(saved.label);
+      queuedDetails = saved.queued;
     } else if (detailsResult.status === "rejected") {
       const msg =
         detailsResult.reason instanceof Error
@@ -319,8 +321,9 @@ export function AccountCard({
     setDetailsSaving(false);
 
     if (errors.length === 0) {
+      const anyQueued = queuedTags || queuedDetails;
       toast.success(
-        queuedTags ? "Changes saved · tags will sync when back online" : "Changes saved",
+        anyQueued ? "Changes saved · will sync when back online" : "Changes saved",
       );
       setEditing(false);
       return;
