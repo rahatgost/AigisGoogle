@@ -78,6 +78,11 @@ function autoLockLabel(ms: number | null): string {
 function SecurityPage() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   const autoLockMs = useAutoLockMs();
   const hideCodes = useHideCodes();
   const [hint, setHint] = useState<string | null>(null);
