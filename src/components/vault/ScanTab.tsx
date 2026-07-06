@@ -189,7 +189,7 @@ export function ScanTab({ onDetected, onError, saving, switchToManual }: ScanTab
       >
         <span
           className="inline-flex h-1.5 w-1.5 rounded-full"
-          style={{ background: starting ? "#c9a24a" : "#4a8f5a" }}
+          style={{ background: starting ? WARNING : SUCCESS }}
         />
         <span>
           {starting
