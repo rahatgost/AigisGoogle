@@ -75,16 +75,40 @@ function ProfilePage() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [themeSheet, setThemeSheet] = useState(false);
+  const [localeSheet, setLocaleSheet] = useState(false);
 
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [themePref, setThemePrefState] = useState<ThemePref>(() => getThemePref());
+  const [localePref, setLocalePrefState] = useState<LocalePref>(() => getLocalePref());
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
 
   const chooseTheme = async (pref: ThemePref) => {
     setThemePrefState(pref);
     setThemePref(pref);
     try {
       await supabase.from("profiles").upsert({ id: user.id, theme_pref: pref }, { onConflict: "id" });
+    } catch {
+      // Local change already applied; sync will retry next sign-in.
+    }
+  };
+
+  const chooseLocale = async (pref: LocalePref) => {
+    setLocalePrefState(pref);
+    setLocalePref(pref);
+    try {
+      // "system" is stored locally only — the server column tracks explicit
+      // locales so a fresh device without localStorage falls back to browser
+      // detection, matching the same "system" behaviour.
+      const localeValue = pref === "system" ? null : pref;
+      await supabase.from("profiles").upsert(
+        { id: user.id, locale: localeValue },
+        { onConflict: "id" },
+      );
     } catch {
       // Local change already applied; sync will retry next sign-in.
     }
