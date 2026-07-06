@@ -286,6 +286,11 @@ function SecurityPage() {
         <DevicesSection heading={t("security.devices", "Devices")} />
         <SignInHistorySection heading={t("security.signInHistory", "Sign-in history")} />
 
+        <SectionLabel>Browser extension</SectionLabel>
+        <ExtensionSyncSection />
+
+
+
 
         <SectionLabel>{t("security.section.privacy", "Privacy")}</SectionLabel>
         <SettingsGroup>
