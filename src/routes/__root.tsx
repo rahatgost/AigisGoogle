@@ -185,6 +185,12 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    // Idempotent locale re-apply once React is mounted — the pre-hydration
+    // script already set <html lang> so this just aligns the `i18n` runtime.
+    initLocale();
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     Promise.all([
       import("@/integrations/supabase/client"),
