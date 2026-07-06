@@ -630,32 +630,34 @@ export function AccountCard({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="truncate" style={typeCardTitle}>
-              {account.issuer || "Untitled"}
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="truncate" style={typeCardTitle}>
+                {account.issuer || "Untitled"}
+              </div>
+              {account.tags && account.tags.length > 0 && (
+                <div className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
+                  {account.tags.slice(0, 2).map((t) => (
+                    <TagChip key={t} tag={t} size="sm" />
+                  ))}
+                  {account.tags.length > 2 && (
+                    <span
+                      className="inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5"
+                      style={{
+                        ...typeBadge,
+                        color: MUTED,
+                        background: "rgb(var(--aegis-ink-rgb) / 0.06)",
+                        fontSize: 10,
+                      }}
+                    >
+                      +{account.tags.length - 2}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             {account.label && (
               <div className="truncate" style={typeSubLabel}>
                 {account.label}
-              </div>
-            )}
-            {account.tags && account.tags.length > 0 && (
-              <div className="mt-1 flex flex-wrap items-center gap-1 overflow-hidden">
-                {account.tags.slice(0, 3).map((t) => (
-                  <TagChip key={t} tag={t} size="sm" />
-                ))}
-                {account.tags.length > 3 && (
-                  <span
-                    className="inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5"
-                    style={{
-                      ...typeBadge,
-                      color: MUTED,
-                      background: "rgb(var(--aegis-ink-rgb) / 0.06)",
-                      fontSize: 10,
-                    }}
-                  >
-                    +{account.tags.length - 3}
-                  </span>
-                )}
               </div>
             )}
           </div>
