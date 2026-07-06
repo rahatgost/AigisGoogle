@@ -273,3 +273,31 @@
   from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(2px); }
   to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
+
+/*
+ * Accessibility: honour `prefers-reduced-motion` at the CSS layer.
+ *
+ * Framer Motion components already read `useReducedMotion()` where the
+ * animation is essential to the UI (scanner sweep, onboarding slides,
+ * account-card flip). This block is the safety net for third-party CSS
+ * animations, Tailwind `animate-*` utilities, and any component that
+ * forgets to opt into reduced motion. It cuts durations to ~0 without
+ * removing the animation entirely (some code inspects animation events).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scroll-fade-out,
+  .scroll-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}

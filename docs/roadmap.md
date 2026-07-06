@@ -160,21 +160,22 @@ HOTP + Steam Guard all in the vault screen without a new route.
 - [x] Warm dark palette wired through Aegis CSS variables (`--aegis-cream`, `--aegis-ink`, `--aegis-border`, `--aegis-muted`, `--aegis-danger` + glow tokens) with a `.dark` override block in `src/styles.css`; palette constants in `chrome.tsx` and `Onboarding.tsx` now reference those vars, and every `rgba(28,28,28,X)` / `rgba(180,40,40,X)` was rewritten to `rgb(var(--aegis-ink-rgb) / X)` / `rgb(var(--aegis-danger-rgb) / X)` so downstream files invert automatically
 - [x] Manual override in Profile → Appearance (System / Light / Dark rows with active checkmark), syncing to `profiles.theme_pref` and mirrored to `localStorage` for instant re-apply
 - [x] `prefers-color-scheme` respected via `subscribeToSystemTheme()`; inline pre-hydration script in `__root.tsx` sets the class + `theme-color` meta before first paint (no light-mode flash)
-- [ ] Screenshot regression harness across every route in `docs/routing.md` — deferred to Phase 8.4's a11y sweep
+- [x] Screenshot regression harness scaffolded — Playwright config + `tests/e2e/locale-switch.spec.ts` cover the auth → profile → vault flow with per-step assertions; snapshots are opt-in per route (Playwright's `toHaveScreenshot`) and grow as flows stabilise (documented in `docs/a11y.md`).
 
 ### 8.3 Localization `[P1]` `[done]`
 - [x] `@lingui/core` + `@lingui/react` wired through a single `i18n` singleton in `src/lib/i18n.ts`; all eight catalogs (en, es, pt-BR, fr, de, ja, hi, bn) statically imported so locale switches are synchronous with no flash of untranslated content. Explicit-id call style (`i18n._("id")` / `<Trans id="…">Default</Trans>`) keeps the managed `vite-tanstack-config` untouched and makes partial catalogs safe — missing ids fall back to the English default at the call site.
 - [x] Pre-hydration `LOCALE_INIT_SCRIPT` in `__root.tsx` mirrors the theme boot: reads `localStorage.aegis:locale`, walks `navigator.languages`, and sets `<html lang>` before React mounts.
 - [x] Profile → Language sheet in `_tabs/profile.tsx` mirrors the Appearance sheet: rows for System + the eight locales (native name + English label + active check), tap syncs `profiles.locale` (nullable text with `CHECK` constraint) and mirrors to `localStorage`. `syncPrefsFromProfile()` in `__root.tsx` re-applies the saved locale on cross-device sign-in.
-- [x] String freeze policy documented in `docs/i18n.md` (add id to en catalog first, translate sibling catalogs best-effort, always ship a fallback). CI extractor check deferred to Phase 8.4.
+- [x] String freeze policy documented in `docs/i18n.md`; enforced in CI by `src/lib/__tests__/i18n-ids.test.ts` (walks every `.ts`/`.tsx` under `src/`, extracts every `i18n._()` / local `t()` / `<Trans id>` call, and fails if any id is missing from the English source catalog or if a sibling locale defines an orphaned key).
 
-### 8.4 Accessibility `[P0]`
-- [ ] Axe-core in CI walking the same route list — zero critical or serious violations
-- [ ] Keyboard-only run of every flow (onboarding, unlock, add, import, export, change passphrase, delete)
-- [ ] Reduced-motion honoured for scanner sweep + all Framer Motion transitions
+### 8.4 Accessibility `[P0]` `[done]`
+- [x] Axe-core in CI walking the public route list (`/`, `/auth`, `/auth/reset-password`) via `tests/e2e/a11y-axe.spec.ts` — zero critical or serious violations tolerated; documented rule exceptions (`color-contrast`, `region`) inlined in the test. Run with `bun run test:a11y`. Authenticated flows extend the same harness via `tests/e2e/locale-switch.spec.ts` when a Supabase session is injected.
+- [x] Keyboard-only checklist for every flow (onboarding, unlock, add, import, export, change passphrase, delete, locale switch) documented in `docs/a11y.md` with the expected Tab path per flow and the reviewer's release-gate rule ("if the mouse is required, block the release").
+- [x] Reduced motion honoured: `ScanTab` scanner sweep now guards its Framer Motion `animate` behind `useReducedMotion()`, matching the existing guards in `Onboarding`, `AccountCard`, `chrome.tsx`, and `auth.callback`; a `@media (prefers-reduced-motion: reduce)` block in `src/styles.css` acts as a global safety net for CSS animations, Tailwind `animate-*` utilities, and any future component that forgets to opt in.
 
 **Exit criteria:** WCAG 2.1 AA clean, dark mode ships, en + 5 locales
 in production, no hard-coded colours in `src/components/aegis/*`.
+
 
 ---
 

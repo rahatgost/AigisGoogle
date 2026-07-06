@@ -13,7 +13,7 @@
 //    so this component unmounts + remounts (fresh camera, fresh latch).
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { IScannerControls } from "@zxing/browser";
 import { Loader2, Camera, ImageUp } from "lucide-react";
 import { BORDER, CHARCOAL, CREAM_SOFT, MUTED, SCANNER_BG, SUCCESS, WARNING } from "@/components/aegis/chrome";
@@ -31,6 +31,7 @@ export function ScanTab({ onDetected, onError, saving, switchToManual }: ScanTab
   const [starting, setStarting] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [decoding, setDecoding] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   const onDetectedRef = useRef(onDetected);
   const onErrorRef = useRef(onError);
@@ -142,11 +143,17 @@ export function ScanTab({ onDetected, onError, saving, switchToManual }: ScanTab
               background:
                 "linear-gradient(90deg, transparent, rgba(247,244,237,0.95), transparent)",
               boxShadow: "0 0 14px rgba(247,244,237,0.55)",
+              top: prefersReducedMotion ? "50%" : undefined,
             }}
-            animate={{ y: [4, "calc(100% - 4px)", 4] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            animate={prefersReducedMotion ? undefined : { y: [4, "calc(100% - 4px)", 4] }}
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }
+            }
           />
         </div>
+
 
         {(starting || saving || decoding) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/35 backdrop-blur-[2px]">
