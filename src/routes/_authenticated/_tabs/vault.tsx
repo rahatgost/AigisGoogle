@@ -117,6 +117,7 @@ function VaultPage() {
   const [bulkTagOpen, setBulkTagOpen] = useState(false);
   const [bulkExportOpen, setBulkExportOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [pendingTagCount, setPendingTagCount] = useState<number>(
     () => (typeof window === "undefined" ? 0 : listQueuedTagUpdates().length),
   );
