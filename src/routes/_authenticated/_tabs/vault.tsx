@@ -1054,7 +1054,7 @@ function SortableAccountRow({
             style={{
               background: selected ? CHARCOAL : CREAM_SOFT,
               border: `1px solid ${selected ? CHARCOAL : BORDER}`,
-              color: selected ? CREAM : "transparent",
+              color: selected ? CREAM_SOFT : "transparent",
             }}
           >
             <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
