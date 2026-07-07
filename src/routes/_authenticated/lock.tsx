@@ -288,9 +288,41 @@ function LockPage() {
     }
   };
 
-  // Auto-prompt biometric on entering unlock mode if enrolled.
+  const handlePinComplete = async (pin: string) => {
+    if (pinBusy) return;
+    setNotice(null);
+    setPinBusy(true);
+    try {
+      const dek = await unlockWithPin(user.id, pin);
+      setVaultKey(dek);
+      routeAfterUnlock();
+    } catch (err) {
+      if (err instanceof PinUnlockError) {
+        setPinShake(true);
+        window.setTimeout(() => setPinShake(false), 500);
+        setPinValue("");
+        if (err.code === "locked-out") {
+          setPinEnrolled(false);
+          setUnlockMethod("passphrase");
+        }
+        setNotice({ kind: "error", text: err.message });
+      } else {
+        setNotice({
+          kind: "error",
+          text: err instanceof Error ? err.message : "PIN unlock failed.",
+        });
+      }
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
+  // Auto-prompt biometric on entering unlock mode if enrolled — but skip
+  // when the user prefers PIN (typing 4-6 digits is often faster than
+  // waiting for a Face ID prompt).
   useEffect(() => {
     if (mode !== "unlock" || !bioAvailable || !bioEnrolled || bioAutoTried) return;
+    if (unlockMethod === "pin" && pinEnrolled) return;
     setBioAutoTried(true);
     // Small delay so the page paints before the OS prompt appears.
     const t = window.setTimeout(() => {
@@ -298,7 +330,7 @@ function LockPage() {
     }, 250);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, bioAvailable, bioEnrolled, bioAutoTried]);
+  }, [mode, bioAvailable, bioEnrolled, bioAutoTried, unlockMethod, pinEnrolled]);
 
   if (mode === "loading") {
     return (
