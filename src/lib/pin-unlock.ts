@@ -139,6 +139,17 @@ export function assessPinWeakness(pin: string): string | null {
   return null;
 }
 
+/* ---------------- KDF ---------------- */
+
+async function deriveWrapKey(pin: string, salt: Uint8Array): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(pin.normalize("NFKC")),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
@@ -160,14 +171,8 @@ export async function enrollPin(params: {
   pin: string;
   dek: CryptoKey;
 }): Promise<void> {
-  if (!isValidPin(params.pin)) {
-    throw new Error("PIN must be 4–6 digits.");
-  }
-  // Cheap reject-list for the worst PINs.
-  const trivial = new Set(["0000", "1111", "1234", "123456", "000000", "111111", "654321"]);
-  if (trivial.has(params.pin)) {
-    throw new Error("That PIN is too easy to guess. Please choose another.");
-  }
+  const weakness = assessPinWeakness(params.pin);
+  if (weakness) throw new Error(weakness);
 
   const salt = randomBytes(16);
   const iv = randomBytes(12);
