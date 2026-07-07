@@ -481,31 +481,44 @@ function LockPage() {
 
         {/* PIN quick-unlock: preferred on this device when enrolled. */}
         {!isCreate && unlockMethod === "pin" && pinEnrolled && (
-          <div className="flex flex-col items-center gap-4">
-            <PinPad
-              value={pinValue}
-              onChange={setPinValue}
-              onComplete={handlePinComplete}
-              shake={pinShake}
-              disabled={pinBusy}
-            />
-            {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
-            <div className="flex w-full flex-col gap-2 pt-1">
-              <MethodCard
-                variant="passphrase"
+          <div className="flex flex-col gap-4">
+            {/* Back to passphrase — sits at the top so the PIN section has
+                a clear "escape hatch" and no competing option below the pad. */}
+            <div className="flex items-center">
+              <motion.button
+                type="button"
                 onClick={() => {
                   setNotice(null);
                   setPinValue("");
                   setUnlockMethod("passphrase");
                 }}
                 disabled={pinBusy}
+                whileTap={{ scale: 0.97 }}
+                transition={soft}
+                className="inline-flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-[12.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.05)] disabled:opacity-50"
+                style={{ color: MUTED }}
+                aria-label="Back to passphrase unlock"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+                <span>Passphrase</span>
+              </motion.button>
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+              <PinPad
+                value={pinValue}
+                onChange={setPinValue}
+                onComplete={handlePinComplete}
+                shake={pinShake}
+                disabled={pinBusy}
               />
+              {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
               {bioEnrolled && bioAvailable && (
                 <button
                   type="button"
                   onClick={handleBiometricUnlock}
                   disabled={bioBusy}
-                  className="mx-auto flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100 disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100 disabled:opacity-50"
                   style={{ color: MUTED, opacity: 0.85 }}
                 >
                   <Fingerprint className="h-3.5 w-3.5" strokeWidth={1.6} />
