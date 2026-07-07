@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/lock")({
         property: "og:description",
         content: "Passphrase gate that unlocks your Aegis vault on this device.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/lock" },
+      { property: "og:url", content: "https://aegis-syed.lovable.app/lock" },
     ],
   }),
   component: LockPage,
@@ -205,6 +205,10 @@ function LockPage() {
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotice(null);
+    if (!passphrase) {
+      setNotice({ kind: "error", text: "Enter your passphrase." });
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -216,22 +220,35 @@ function LockPage() {
       if (data.kdf_algorithm !== KDF_ALGORITHM) {
         throw new Error("Vault was created with a different key algorithm.");
       }
-      const dek = await unwrapVaultKey(
-        passphrase,
-        toBytes(data.kdf_salt),
-        toBytes(data.recovery_wrapped_key),
-        toBytes(data.recovery_wrapped_key_iv),
-      );
-      setVaultKey(dek);
-      await maybeEnrollBiometric(dek);
-      routeAfterUnlock();
+      try {
+        const dek = await unwrapVaultKey(
+          passphrase,
+          toBytes(data.kdf_salt),
+          toBytes(data.recovery_wrapped_key),
+          toBytes(data.recovery_wrapped_key_iv),
+        );
+        setVaultKey(dek);
+        await maybeEnrollBiometric(dek);
+        routeAfterUnlock();
+      } catch (cryptoErr) {
+        // WebCrypto throws OperationError with an empty message in Chrome
+        // for a wrong key. Any unwrap/decrypt failure here means the
+        // passphrase didn't match — treat it uniformly.
+        const raw = cryptoErr instanceof Error ? cryptoErr.message : "";
+        const name = (cryptoErr as { name?: string })?.name ?? "";
+        if (
+          !raw ||
+          /OperationError|InvalidAccess|decrypt|unwrap|operation-specific/i.test(raw) ||
+          /OperationError|InvalidAccessError/i.test(name)
+        ) {
+          throw new Error("That passphrase didn't match.");
+        }
+        throw cryptoErr;
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not unlock.";
       setNotice({
         kind: "error",
-        text: /operation-specific reason|OperationError|decrypt/i.test(msg)
-          ? "That passphrase didn't match."
-          : msg,
+        text: err instanceof Error && err.message ? err.message : "Could not unlock.",
       });
     } finally {
       setLoading(false);
@@ -437,12 +454,23 @@ function LockPage() {
                 setLoading(true);
                 setNotice(null);
                 try {
-                  await supabase.from("vault_accounts").delete().eq("user_id", user.id);
-                  await supabase.from("vault_meta").delete().eq("user_id", user.id);
+                  const acctRes = await supabase
+                    .from("vault_accounts")
+                    .delete()
+                    .eq("user_id", user.id);
+                  if (acctRes.error) throw acctRes.error;
+                  const metaRes = await supabase
+                    .from("vault_meta")
+                    .delete()
+                    .eq("user_id", user.id);
+                  if (metaRes.error) throw metaRes.error;
                   disableBiometric(user.id);
                   setBioEnrolled(false);
                   setPassphrase("");
+                  setConfirmPass("");
+                  setHint("");
                   setPassphraseHint(null);
+                  setBioAutoTried(false);
                   setMode("create");
                 } catch (err) {
                   setNotice({
