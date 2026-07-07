@@ -15,6 +15,10 @@ import {
   EyeOff,
   Fingerprint,
   Download,
+  Cloud,
+  CloudUpload,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 
 import { DevicesSection } from "@/components/aegis/devices-section";
