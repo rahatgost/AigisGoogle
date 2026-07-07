@@ -97,7 +97,7 @@ export function PinPad({
               disabled={disabled}
               whileTap={{ scale: 0.9, backgroundColor: "rgb(var(--aegis-ink-rgb) / 0.08)" }}
               transition={soft}
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full text-[26px] disabled:opacity-40"
+              className="flex h-[52px] w-[52px] items-center justify-center rounded-full text-[22px] disabled:opacity-40 sm:h-[60px] sm:w-[60px] sm:text-[26px]"
               style={{
                 color: CHARCOAL,
                 fontWeight: 300,
