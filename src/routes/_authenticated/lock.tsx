@@ -19,7 +19,9 @@ import {
   isBiometricSupported,
   unlockWithBiometric,
 } from "@/lib/biometric";
-import { Lock, KeyRound, Sparkles, Fingerprint, LogOut } from "lucide-react";
+import { Lock, KeyRound, Sparkles, Fingerprint, LogOut, KeySquare } from "lucide-react";
+import { isPinEnabled, unlockWithPin, PinUnlockError, disablePin } from "@/lib/pin-unlock";
+import { PinPad } from "@/components/aegis/PinPad";
 import {
   AegisScreen,
   BrandBar,
