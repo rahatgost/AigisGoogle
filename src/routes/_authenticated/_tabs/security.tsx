@@ -51,6 +51,7 @@ import {
   AUTO_LOCK_OPTIONS,
   getAutoLockMs,
   getVaultKey,
+  getVaultRawKey,
   isVaultUnlocked,
   lockVault,
   setAutoLockMs,
@@ -155,9 +156,10 @@ function SecurityPage() {
     setNotice(null);
     try {
       if (next) {
-        const dek = getVaultKey();
-        if (!dek) throw new Error("Vault is locked. Unlock first to enable biometrics.");
-        await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dek });
+        const dekBytes = getVaultRawKey();
+        if (!dekBytes) throw new Error("Vault is locked. Unlock first to enable biometrics.");
+        await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dekBytes });
+
         setBioEnrolled(true);
         setNotice({ kind: "info", text: "Biometric unlock enabled on this device." });
       } else {
@@ -549,8 +551,9 @@ function ChangePassphraseSheet({
         .eq("user_id", userId);
       if (upErr) throw upErr;
       // Re-unlock with the new passphrase so the in-memory DEK stays valid.
-      const freshDek = await unwrapVaultKey(next, salt, wrappedKey, wrappedKeyIv);
-      setVaultKey(freshDek);
+      const { dek: freshDek, rawDek: freshRaw } = await unwrapVaultKey(next, salt, wrappedKey, wrappedKeyIv);
+      setVaultKey(freshDek, freshRaw);
+
       onSaved(trimmedHint);
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : "Could not change passphrase.");
@@ -967,15 +970,16 @@ function PinSetupSheet({
       shakeAndClear("PINs don't match. Try again.");
       return;
     }
-    const dek = getVaultKey();
-    if (!dek) {
+    const dekBytes = getVaultRawKey();
+    if (!dekBytes) {
       setErr("Vault is locked. Unlock first, then try again.");
       return;
     }
     setBusy(true);
     setErr(null);
     try {
-      await enrollPin({ userId, pin: value, dek });
+      await enrollPin({ userId, pin: value, dekBytes });
+
       onDone();
     } catch (e) {
       // Fall the user all the way back to step 1 — a save failure means the

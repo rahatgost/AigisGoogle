@@ -173,27 +173,38 @@ async function deriveWrapKey(pin: string, salt: Uint8Array): Promise<CryptoKey> 
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
-    ["wrapKey", "unwrapKey"],
+    ["encrypt", "decrypt"],
   );
 }
 
 /* ---------------- enroll ---------------- */
 
+/**
+ * Enroll a PIN by wrapping the raw DEK bytes under a PIN-derived key.
+ * `dekBytes` is the 32-byte raw DEK held in memory by `vault-session`;
+ * they never touch storage in plaintext. AES-GCM.encrypt over raw bytes
+ * is byte-identical to AES-GCM.wrapKey("raw", …) so upgrading later is
+ * seamless.
+ */
 export async function enrollPin(params: {
   userId: string;
   pin: string;
-  dek: CryptoKey;
+  dekBytes: Uint8Array;
 }): Promise<void> {
   const weakness = assessPinWeakness(params.pin);
   if (weakness) throw new Error(weakness);
+  if (params.dekBytes.byteLength !== 32) {
+    throw new Error("Invalid vault key — please re-unlock and try again.");
+  }
 
   const salt = randomBytes(16);
   const iv = randomBytes(12);
   const wrapKey = await deriveWrapKey(params.pin, salt);
-  const wrapped = await crypto.subtle.wrapKey("raw", params.dek, wrapKey, {
-    name: "AES-GCM",
-    iv: iv as unknown as BufferSource,
-  });
+  const wrapped = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    wrapKey,
+    params.dekBytes as unknown as BufferSource,
+  );
 
   const blob: StoredPin = {
     v: 1,
@@ -222,7 +233,10 @@ export class PinUnlockError extends Error {
   }
 }
 
-export async function unlockWithPin(userId: string, pin: string): Promise<CryptoKey> {
+export async function unlockWithPin(
+  userId: string,
+  pin: string,
+): Promise<{ dek: CryptoKey; rawDek: Uint8Array }> {
   const blob = readBlob(userId);
   if (!blob) {
     throw new PinUnlockError("not-enrolled", "PIN unlock isn't set up on this device.", 0);
@@ -234,11 +248,16 @@ export async function unlockWithPin(userId: string, pin: string): Promise<Crypto
 
   try {
     const wrapKey = await deriveWrapKey(pin, salt);
-    const dek = await crypto.subtle.unwrapKey(
+    const rawDek = new Uint8Array(
+      await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv as unknown as BufferSource },
+        wrapKey,
+        wrapped as unknown as BufferSource,
+      ),
+    );
+    const dek = await crypto.subtle.importKey(
       "raw",
-      wrapped as unknown as BufferSource,
-      wrapKey,
-      { name: "AES-GCM", iv: iv as unknown as BufferSource },
+      rawDek as unknown as BufferSource,
       { name: "AES-GCM", length: 256 },
       false,
       ["encrypt", "decrypt"],
@@ -247,8 +266,9 @@ export async function unlockWithPin(userId: string, pin: string): Promise<Crypto
     if (blob.attempts !== 0) {
       writeBlob(userId, { ...blob, attempts: 0 });
     }
-    return dek;
-  } catch {
+    return { dek, rawDek };
+  } catch (err) {
+    if (err instanceof PinUnlockError) throw err;
     // Wrong PIN. Increment counter; wipe if we hit the ceiling.
     const nextAttempts = blob.attempts + 1;
     if (nextAttempts >= MAX_ATTEMPTS) {
@@ -268,3 +288,4 @@ export async function unlockWithPin(userId: string, pin: string): Promise<Crypto
     );
   }
 }
+

@@ -139,9 +139,10 @@ async function wrapKeyFromPrf(prfOutput: ArrayBuffer): Promise<CryptoKey> {
     ikm,
     { name: "AES-GCM", length: 256 },
     false,
-    ["wrapKey", "unwrapKey"],
+    ["encrypt", "decrypt"],
   );
 }
+
 
 interface PrfExtensionResults {
   prf?: { results?: { first?: ArrayBuffer } };
@@ -159,10 +160,13 @@ function readPrfFirst(cred: PublicKeyCredential | null): ArrayBuffer | null {
 export async function enrollBiometric(params: {
   userId: string;
   userEmail: string;
-  dek: CryptoKey;
+  dekBytes: Uint8Array;
 }): Promise<void> {
   if (!(await isBiometricSupported())) {
     throw new Error("Biometric authentication isn't available on this device.");
+  }
+  if (params.dekBytes.byteLength !== 32) {
+    throw new Error("Invalid vault key — please re-unlock and try again.");
   }
 
   const challenge = randomBytes(32);
@@ -234,13 +238,14 @@ export async function enrollBiometric(params: {
     );
   }
 
-  // 3. Derive wrap key from PRF output and wrap the DEK.
+  // 3. Derive wrap key from PRF output and encrypt the raw DEK bytes.
   const wrapKey = await wrapKeyFromPrf(prfOutput);
   const iv = randomBytes(12);
-  const wrapped = await crypto.subtle.wrapKey("raw", params.dek, wrapKey, {
-    name: "AES-GCM",
-    iv: iv as unknown as BufferSource,
-  });
+  const wrapped = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    wrapKey,
+    params.dekBytes as unknown as BufferSource,
+  );
 
   const stored: StoredCredential = {
     v: 2,
@@ -256,9 +261,12 @@ export async function enrollBiometric(params: {
   clearBiometricPending();
 }
 
+
 /* ---------------- unlock ---------------- */
 
-export async function unlockWithBiometric(userId: string): Promise<CryptoKey> {
+export async function unlockWithBiometric(
+  userId: string,
+): Promise<{ dek: CryptoKey; rawDek: Uint8Array }> {
   const raw = window.localStorage.getItem(BIO_STORAGE_PREFIX + userId);
   if (!raw) {
     // Legacy v1 blobs are intentionally not honored — they leaked the wrap
@@ -311,16 +319,23 @@ export async function unlockWithBiometric(userId: string): Promise<CryptoKey> {
 
   const wrapKey = await wrapKeyFromPrf(prfOutput);
   const iv = b64ToBytes(stored.wrappedDekIv);
-  return crypto.subtle.unwrapKey(
+  const rawDek = new Uint8Array(
+    await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv as unknown as BufferSource },
+      wrapKey,
+      b64ToBytes(stored.wrappedDek) as unknown as BufferSource,
+    ),
+  );
+  const dek = await crypto.subtle.importKey(
     "raw",
-    b64ToBytes(stored.wrappedDek) as unknown as BufferSource,
-    wrapKey,
-    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    rawDek as unknown as BufferSource,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"],
   );
+  return { dek, rawDek };
 }
+
 
 /* ---------------- disable / reset ---------------- */
 

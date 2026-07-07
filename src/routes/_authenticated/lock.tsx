@@ -144,16 +144,17 @@ function LockPage() {
     };
   }, [user.id]);
 
-  const maybeEnrollBiometric = async (dek: CryptoKey) => {
+  const maybeEnrollBiometric = async (dekBytes: Uint8Array) => {
     if (!isBiometricPending()) return;
     if (!(await isBiometricSupported())) return;
     try {
-      await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dek });
+      await enrollBiometric({ userId: user.id, userEmail: user.email ?? user.id, dekBytes });
       setBioEnrolled(true);
     } catch {
       // Silent: they can enable it later from Security settings.
     }
   };
+
 
   const consumeImportIntent = () => {
     try {
@@ -188,7 +189,7 @@ function LockPage() {
     }
     setLoading(true);
     try {
-      const { salt, wrappedKey, wrappedKeyIv, dek, kdfAlgorithm } =
+      const { salt, wrappedKey, wrappedKeyIv, dek, rawDek, kdfAlgorithm } =
         await createNewVaultKey(passphrase);
       const { error } = await supabase.from("vault_meta").insert({
         user_id: user.id,
@@ -199,9 +200,10 @@ function LockPage() {
         passphrase_hint: hint.trim() ? hint.trim() : null,
       });
       if (error) throw error;
-      setVaultKey(dek);
-      await maybeEnrollBiometric(dek);
+      setVaultKey(dek, rawDek);
+      await maybeEnrollBiometric(rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       setNotice({
         kind: "error",
@@ -231,15 +233,16 @@ function LockPage() {
         throw new Error("Vault was created with a different key algorithm.");
       }
       try {
-        const dek = await unwrapVaultKey(
+        const { dek, rawDek } = await unwrapVaultKey(
           passphrase,
           toBytes(data.kdf_salt),
           toBytes(data.recovery_wrapped_key),
           toBytes(data.recovery_wrapped_key_iv),
         );
-        setVaultKey(dek);
-        await maybeEnrollBiometric(dek);
+        setVaultKey(dek, rawDek);
+        await maybeEnrollBiometric(rawDek);
         routeAfterUnlock();
+
       } catch (cryptoErr) {
         // WebCrypto throws OperationError with an empty message in Chrome
         // for a wrong key. Any unwrap/decrypt failure here means the
@@ -269,9 +272,10 @@ function LockPage() {
     setNotice(null);
     setBioBusy(true);
     try {
-      const dek = await unlockWithBiometric(user.id);
-      setVaultKey(dek);
+      const { dek, rawDek } = await unlockWithBiometric(user.id);
+      setVaultKey(dek, rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Biometric unlock failed.";
       // If the stored blob is broken (e.g. cleared), drop it so user isn't stuck.
@@ -293,9 +297,10 @@ function LockPage() {
     setNotice(null);
     setPinBusy(true);
     try {
-      const dek = await unlockWithPin(user.id, pin);
-      setVaultKey(dek);
+      const { dek, rawDek } = await unlockWithPin(user.id, pin);
+      setVaultKey(dek, rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       if (err instanceof PinUnlockError) {
         setPinShake(true);

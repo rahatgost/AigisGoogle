@@ -71,42 +71,39 @@ export async function createNewVaultKey(passphrase: string): Promise<{
   wrappedKey: Uint8Array;
   wrappedKeyIv: Uint8Array;
   dek: CryptoKey;
+  rawDek: Uint8Array;
   kdfAlgorithm: string;
 }> {
   const salt = randomBytes(16);
   const kek = await deriveKekFromPassphrase(passphrase, salt);
 
-  const dek = await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
-    true, // extractable so we can wrap it
-    ["encrypt", "decrypt"],
-  );
-
+  // Generate the DEK as raw random bytes so we can keep a copy in memory
+  // for downstream device-local wrapping (PIN / biometric) without ever
+  // marking the imported CryptoKey `extractable`. AES-GCM.wrapKey with a
+  // "raw" format is byte-identical to encrypting the raw key material, so
+  // the on-disk format is unchanged.
+  const rawDek = randomBytes(32);
   const iv = randomBytes(12);
-  const wrapped = await crypto.subtle.wrapKey("raw", dek, kek, {
-    name: "AES-GCM",
-    iv: iv as unknown as BufferSource,
-  });
-
-  // Re-import DEK for runtime use. Kept extractable so we can re-wrap it
-  // under a PIN/biometric wrap key (WebCrypto's wrapKey requires the wrapped
-  // key to be extractable). This does not weaken the at-rest guarantee — the
-  // DEK only exists in memory while the vault is unlocked.
-  const rawDek = await crypto.subtle.exportKey("raw", dek);
-  const runtimeDek = await crypto.subtle.importKey(
-    "raw",
-    rawDek,
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"],
+  const wrapped = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    kek,
+    rawDek as unknown as BufferSource,
   );
 
+  const dek = await crypto.subtle.importKey(
+    "raw",
+    rawDek as unknown as BufferSource,
+    { name: "AES-GCM", length: 256 },
+    false, // non-extractable — raw bytes are held separately in memory
+    ["encrypt", "decrypt"],
+  );
 
   return {
     salt,
     wrappedKey: new Uint8Array(wrapped),
     wrappedKeyIv: iv,
-    dek: runtimeDek,
+    dek,
+    rawDek,
     kdfAlgorithm: KDF_ALGO,
   };
 }
@@ -116,18 +113,27 @@ export async function unwrapVaultKey(
   salt: Uint8Array,
   wrappedKey: Uint8Array,
   wrappedKeyIv: Uint8Array,
-): Promise<CryptoKey> {
+): Promise<{ dek: CryptoKey; rawDek: Uint8Array }> {
   const kek = await deriveKekFromPassphrase(passphrase, salt);
-  return crypto.subtle.unwrapKey(
+  // Decrypt to raw bytes rather than unwrapping to a CryptoKey, so we can
+  // (a) hand the caller a non-extractable DEK CryptoKey, and (b) keep the
+  // raw bytes in memory for device-local re-wrapping under a PIN /
+  // biometric key. Ciphertext is identical to AES-GCM.wrapKey("raw", …).
+  const plaintext = new Uint8Array(
+    await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: wrappedKeyIv as unknown as BufferSource },
+      kek,
+      wrappedKey as unknown as BufferSource,
+    ),
+  );
+  const dek = await crypto.subtle.importKey(
     "raw",
-    wrappedKey as unknown as BufferSource,
-    kek,
-    { name: "AES-GCM", iv: wrappedKeyIv as unknown as BufferSource },
+    plaintext as unknown as BufferSource,
     { name: "AES-GCM", length: 256 },
-    true, // extractable — PIN/biometric enrollment re-wraps this key
+    false,
     ["encrypt", "decrypt"],
   );
-
+  return { dek, rawDek: plaintext };
 }
 
 // Rotate the master passphrase without changing the DEK itself. The DEK
@@ -147,23 +153,23 @@ export async function rewrapVaultKey(
   kdfAlgorithm: string;
 }> {
   const oldKek = await deriveKekFromPassphrase(currentPassphrase, currentSalt);
-  // Unwrap DEK as extractable so we can re-wrap it under the new KEK.
-  const dek = await crypto.subtle.unwrapKey(
-    "raw",
-    currentWrappedKey as unknown as BufferSource,
-    oldKek,
-    { name: "AES-GCM", iv: currentWrappedKeyIv as unknown as BufferSource },
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"],
+  const rawDek = new Uint8Array(
+    await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: currentWrappedKeyIv as unknown as BufferSource },
+      oldKek,
+      currentWrappedKey as unknown as BufferSource,
+    ),
   );
   const newSalt = randomBytes(16);
   const newKek = await deriveKekFromPassphrase(newPassphrase, newSalt);
   const newIv = randomBytes(12);
-  const wrapped = await crypto.subtle.wrapKey("raw", dek, newKek, {
-    name: "AES-GCM",
-    iv: newIv as unknown as BufferSource,
-  });
+  const wrapped = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: newIv as unknown as BufferSource },
+    newKek,
+    rawDek as unknown as BufferSource,
+  );
+  // Best-effort scrub of the transient plaintext copy.
+  rawDek.fill(0);
   return {
     salt: newSalt,
     wrappedKey: new Uint8Array(wrapped),
@@ -171,6 +177,7 @@ export async function rewrapVaultKey(
     kdfAlgorithm: KDF_ALGO,
   };
 }
+
 
 export async function encryptSecret(
   dek: CryptoKey,
