@@ -597,16 +597,16 @@ function LockPage() {
             </div>
 
             {!isCreate && pinEnrolled && (
-              <div className="flex justify-center pt-1">
-                <TextLink
+              <div className="pt-2">
+                <MethodCard
+                  variant="pin"
                   onClick={() => {
                     setNotice(null);
                     setPassphrase("");
                     setUnlockMethod("pin");
                   }}
-                >
-                  Use PIN instead
-                </TextLink>
+                  disabled={loading}
+                />
               </div>
             )}
 
