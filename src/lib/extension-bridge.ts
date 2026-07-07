@@ -18,17 +18,115 @@
 
 import type { DecryptedAccount } from "@/lib/vault-accounts";
 
+/* ------------------------------------------------------------------ */
+/*  Trusted-extension allowlist                                       */
+/* ------------------------------------------------------------------ */
+//
+// Security invariant (fix for `ext_bridge_spoof`):
+// The web app must NEVER send decrypted vault secrets to an arbitrary
+// browser extension. Extension IDs advertised via DOM attributes are
+// attacker-controlled — any installed extension with a content script
+// on this origin can stamp `data-aegis-extension-id` on <html> and
+// pretend to be Aegis. Chrome/Firefox both guarantee that a given
+// extension ID can only be installed if signed by the corresponding
+// store key, so pinning to an allowlist of published IDs is a strong
+// defence: an attacker cannot ship an extension under our ID.
+//
+// The allowlist is populated at build time from the (comma-separated)
+// `VITE_EXT_TRUSTED_IDS` env var, plus the hardcoded published IDs
+// below (add real Chrome Web Store / Firefox Add-ons IDs here as
+// listings go live). Unpacked/dev builds have unpredictable IDs, so
+// developers must set `VITE_EXT_ALLOW_UNPACKED=true` to opt in; this
+// logs a loud warning and MUST NEVER be enabled in production builds.
+
+const PUBLISHED_EXTENSION_IDS: readonly string[] = [
+  // Populate with the real CWS + AMO IDs once the extension is
+  // published. Example shape (Chrome IDs are 32 lowercase letters;
+  // Firefox IDs are UUID-style or an email-like slug):
+  //   "abcdefghijklmnopabcdefghijklmnop",  // Chrome Web Store
+  //   "aegis@lovable.dev",                 // Firefox Add-ons
+];
+
+function envRaw(name: string): string | undefined {
+  try {
+    const viteEnv = (import.meta as { env?: Record<string, string | undefined> }).env;
+    const v = viteEnv?.[name];
+    if (v !== undefined && v !== "") return v;
+  } catch {
+    /* import.meta.env unavailable */
+  }
+  try {
+    // Fallback for node/test runtimes where import.meta.env isn't a proxy
+    // over process.env (vitest stubs process.env, not import.meta.env, on
+    // the node pool).
+    const g = globalThis as { process?: { env?: Record<string, string | undefined> } };
+    const v = g.process?.env?.[name];
+    if (v !== undefined && v !== "") return v;
+  } catch {
+    /* no process */
+  }
+  return undefined;
+}
+
+function envList(name: string): string[] {
+  const raw = envRaw(name);
+  if (!raw) return [];
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function envFlag(name: string): boolean {
+  const raw = envRaw(name);
+  return raw === "true" || raw === "1";
+}
+
+const TRUSTED_EXTENSION_IDS: ReadonlySet<string> = new Set([
+  ...PUBLISHED_EXTENSION_IDS,
+  ...envList("VITE_EXT_TRUSTED_IDS"),
+]);
+
+const ALLOW_UNPACKED = envFlag("VITE_EXT_ALLOW_UNPACKED");
+
+let warnedUnpacked = false;
+let warnedUntrusted = false;
+
 /**
- * Read the extension's runtime ID from the DOM. The Aegis extension's
- * `announce.js` content script stamps `data-aegis-extension-id` on
- * <html> at document_start when it's installed, so any user who has
- * the extension gets auto-detected — no hardcoded ID, no config.
+ * Read the extension's runtime ID from the DOM and verify it is a
+ * *trusted* Aegis extension before returning it. Any ID that isn't in
+ * the published allowlist is refused — the caller sees "no extension
+ * installed" and never sends vault data to the impersonator. Dev builds
+ * can opt in via `VITE_EXT_ALLOW_UNPACKED=true`.
  */
 function discoverExtensionId(): string | null {
   if (typeof document === "undefined") return null;
   const id = document.documentElement?.dataset?.aegisExtensionId;
-  return id && id.length > 0 ? id : null;
+  if (!id || id.length === 0) return null;
+  if (TRUSTED_EXTENSION_IDS.has(id)) return id;
+  if (ALLOW_UNPACKED) {
+    if (!warnedUnpacked && typeof console !== "undefined") {
+      warnedUnpacked = true;
+      console.warn(
+        `[aegis] Trusting unpacked/dev extension id="${id}" because ` +
+          `VITE_EXT_ALLOW_UNPACKED=true. Never enable this flag in production builds.`,
+      );
+    }
+    return id;
+  }
+  if (!warnedUntrusted && typeof console !== "undefined") {
+    warnedUntrusted = true;
+    console.warn(
+      `[aegis] Refusing to sync vault to extension id="${id}": not in the ` +
+        `trusted allowlist. If this is your own build, set VITE_EXT_TRUSTED_IDS ` +
+        `to include it (or VITE_EXT_ALLOW_UNPACKED=true for local development).`,
+    );
+  }
+  return null;
 }
+
+/** Test-only escape hatch so unit tests can inspect / reset warning state. */
+export const __testing = {
+  isTrusted: (id: string) => TRUSTED_EXTENSION_IDS.has(id),
+  allowUnpacked: () => ALLOW_UNPACKED,
+};
 
 export function isExtensionInstalled(): boolean {
   return discoverExtensionId() !== null;
