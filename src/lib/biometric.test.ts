@@ -66,7 +66,7 @@ function installWebAuthnMock() {
       const salt = saltBuf ? new Uint8Array(saltBuf as ArrayBuffer) : new Uint8Array();
       const prfOut = await prfEval(credId, salt);
       return {
-        rawId: credId.buffer.slice(credId.byteOffset, credId.byteOffset + credId.byteLength),
+        rawId: new Uint8Array(credId).buffer as ArrayBuffer,
         getClientExtensionResults: () => ({ prf: { results: { first: prfOut } } }),
       };
     },
