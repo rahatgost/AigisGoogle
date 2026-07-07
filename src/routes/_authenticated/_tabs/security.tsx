@@ -970,15 +970,16 @@ function PinSetupSheet({
       shakeAndClear("PINs don't match. Try again.");
       return;
     }
-    const dek = getVaultKey();
-    if (!dek) {
+    const dekBytes = getVaultRawKey();
+    if (!dekBytes) {
       setErr("Vault is locked. Unlock first, then try again.");
       return;
     }
     setBusy(true);
     setErr(null);
     try {
-      await enrollPin({ userId, pin: value, dek });
+      await enrollPin({ userId, pin: value, dekBytes });
+
       onDone();
     } catch (e) {
       // Fall the user all the way back to step 1 — a save failure means the
