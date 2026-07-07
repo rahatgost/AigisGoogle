@@ -160,10 +160,13 @@ function readPrfFirst(cred: PublicKeyCredential | null): ArrayBuffer | null {
 export async function enrollBiometric(params: {
   userId: string;
   userEmail: string;
-  dek: CryptoKey;
+  dekBytes: Uint8Array;
 }): Promise<void> {
   if (!(await isBiometricSupported())) {
     throw new Error("Biometric authentication isn't available on this device.");
+  }
+  if (params.dekBytes.byteLength !== 32) {
+    throw new Error("Invalid vault key — please re-unlock and try again.");
   }
 
   const challenge = randomBytes(32);
@@ -235,13 +238,14 @@ export async function enrollBiometric(params: {
     );
   }
 
-  // 3. Derive wrap key from PRF output and wrap the DEK.
+  // 3. Derive wrap key from PRF output and encrypt the raw DEK bytes.
   const wrapKey = await wrapKeyFromPrf(prfOutput);
   const iv = randomBytes(12);
-  const wrapped = await crypto.subtle.wrapKey("raw", params.dek, wrapKey, {
-    name: "AES-GCM",
-    iv: iv as unknown as BufferSource,
-  });
+  const wrapped = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    wrapKey,
+    params.dekBytes as unknown as BufferSource,
+  );
 
   const stored: StoredCredential = {
     v: 2,
@@ -256,6 +260,7 @@ export async function enrollBiometric(params: {
   clearLegacyBiometric(params.userId);
   clearBiometricPending();
 }
+
 
 /* ---------------- unlock ---------------- */
 
