@@ -49,7 +49,7 @@ import {
   useAutoLockMs,
 } from "@/lib/vault-session";
 import {
-  KDF_ALGORITHM,
+
   rewrapVaultKey,
   toBytes,
   toByteaHex,
