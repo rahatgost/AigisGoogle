@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -19,21 +19,29 @@ import {
   isBiometricSupported,
   unlockWithBiometric,
 } from "@/lib/biometric";
+import { Lock, KeyRound, Sparkles, Fingerprint, LogOut } from "lucide-react";
+import { isPinEnabled, unlockWithPin, PinUnlockError, disablePin } from "@/lib/pin-unlock";
+import { PinPad } from "@/components/aegis/PinPad";
 import {
-  ArrowRight,
-  Delete,
-  Fingerprint,
-  Loader2,
-  LogOut,
-  Power,
-  Wifi,
-} from "lucide-react";
-import {
-  isPinEnabled,
-  unlockWithPin,
-  PinUnlockError,
-  disablePin,
-} from "@/lib/pin-unlock";
+  AegisScreen,
+  BrandBar,
+  CHARCOAL,
+  CREAM_SOFT,
+  Display,
+  Eyebrow,
+  Field,
+  HeroIcon,
+  Lede,
+  MUTED,
+  Notice,
+  PrimaryButton,
+  TextLink,
+  inputClass,
+  inputStyle,
+  soft,
+} from "@/components/aegis/chrome";
+import { PasswordField, StrengthMeter, scoreStrength } from "@/components/aegis/password-field";
+import { Loader2 } from "lucide-react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -58,12 +66,11 @@ export const Route = createFileRoute("/_authenticated/lock")({
   }),
   component: LockPage,
   errorComponent: ({ error }) => (
-    <div className="flex min-h-screen items-center justify-center bg-[#0b1a3a] p-6 text-sm text-white/90">
-      {error.message}
-    </div>
+    <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
   ),
   notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
 });
+
 
 type Mode = "loading" | "create" | "unlock";
 type UnlockMethod = "pin" | "passphrase";
@@ -73,119 +80,6 @@ function safeRedirect(target: string | undefined): string {
   if (target.startsWith("/") && !target.startsWith("//")) return target;
   return "/vault";
 }
-
-// -------------------------------------------------------------
-// Windows 11 style backdrop — deep blue, bloom orbs, subtle grain
-// -------------------------------------------------------------
-function Win11Backdrop() {
-  return (
-    <>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0a2456] via-[#123974] to-[#050e26]" />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(60% 45% at 15% 20%, rgba(120,170,255,0.32), transparent 60%),
-            radial-gradient(70% 50% at 85% 25%, rgba(180,130,255,0.24), transparent 65%),
-            radial-gradient(80% 60% at 50% 100%, rgba(60,120,220,0.32), transparent 60%)
-          `,
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "3px 3px",
-        }}
-      />
-    </>
-  );
-}
-
-function Win11PinPad({
-  value,
-  onChange,
-  onComplete,
-  disabled,
-  shake,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onComplete: (v: string) => void;
-  disabled?: boolean;
-  shake?: boolean;
-}) {
-  const dots = Array.from({ length: 6 }, (_, i) => i < value.length);
-  const press = (d: string) => {
-    if (disabled || value.length >= 6) return;
-    const n = value + d;
-    onChange(n);
-    if (n.length === 6) onComplete(n);
-  };
-  const back = () => {
-    if (disabled || !value.length) return;
-    onChange(value.slice(0, -1));
-  };
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"];
-  return (
-    <div className="flex w-full flex-col items-center gap-5">
-      <motion.div
-        animate={shake ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-        transition={{ duration: 0.45 }}
-        className="flex items-center gap-2.5"
-        aria-hidden
-      >
-        {dots.map((f, i) => (
-          <div
-            key={i}
-            className="h-2.5 w-2.5 rounded-full transition-colors"
-            style={{
-              background: f ? "#fff" : "transparent",
-              border: `1.5px solid ${f ? "#fff" : "rgba(255,255,255,0.45)"}`,
-            }}
-          />
-        ))}
-      </motion.div>
-      <div className="grid w-full max-w-[248px] grid-cols-3 gap-2">
-        {keys.map((k, i) => {
-          if (k === "") return <div key={i} />;
-          if (k === "back") {
-            return (
-              <motion.button
-                key={i}
-                type="button"
-                onClick={back}
-                disabled={disabled || !value.length}
-                whileTap={{ scale: 0.94 }}
-                className="flex h-[54px] items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/85 backdrop-blur transition-colors hover:bg-white/10 disabled:opacity-40"
-                aria-label="Delete last digit"
-              >
-                <Delete className="h-[18px] w-[18px]" strokeWidth={1.5} />
-              </motion.button>
-            );
-          }
-          return (
-            <motion.button
-              key={i}
-              type="button"
-              onClick={() => press(k)}
-              disabled={disabled}
-              whileTap={{ scale: 0.92 }}
-              className="flex h-[54px] items-center justify-center rounded-full border border-white/10 bg-white/5 text-[22px] font-light text-white backdrop-blur transition-colors hover:bg-white/10 disabled:opacity-40"
-              aria-label={`Digit ${k}`}
-            >
-              {k}
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-const glassInput =
-  "w-full rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-[15px] text-white placeholder:text-white/50 outline-none transition-colors focus:border-white/50 focus:bg-white/15";
 
 function LockPage() {
   const navigate = useNavigate();
@@ -210,12 +104,6 @@ function LockPage() {
   const [unlockMethod, setUnlockMethod] = useState<UnlockMethod>(() =>
     isPinEnabled(user.id) ? "pin" : "passphrase",
   );
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(new Date()), 20_000);
-    return () => window.clearInterval(t);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -267,6 +155,7 @@ function LockPage() {
     }
   };
 
+
   const consumeImportIntent = () => {
     try {
       const intent = window.localStorage.getItem("aegis.onboarding.intent");
@@ -314,6 +203,7 @@ function LockPage() {
       setVaultKey(dek, rawDek);
       await maybeEnrollBiometric(rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       setNotice({
         kind: "error",
@@ -352,7 +242,11 @@ function LockPage() {
         setVaultKey(dek, rawDek);
         await maybeEnrollBiometric(rawDek);
         routeAfterUnlock();
+
       } catch (cryptoErr) {
+        // WebCrypto throws OperationError with an empty message in Chrome
+        // for a wrong key. Any unwrap/decrypt failure here means the
+        // passphrase didn't match — treat it uniformly.
         const raw = cryptoErr instanceof Error ? cryptoErr.message : "";
         const name = (cryptoErr as { name?: string })?.name ?? "";
         if (
@@ -381,12 +275,15 @@ function LockPage() {
       const { dek, rawDek } = await unlockWithBiometric(user.id);
       setVaultKey(dek, rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Biometric unlock failed.";
+      // If the stored blob is broken (e.g. cleared), drop it so user isn't stuck.
       if (/isn't set up|InvalidState/i.test(msg)) {
         disableBiometric(user.id);
         setBioEnrolled(false);
       }
+      // Silently swallow user-cancelled prompts — they can retry or use passphrase.
       if (!/NotAllowed|cancell?ed|aborted/i.test(msg)) {
         setNotice({ kind: "error", text: msg });
       }
@@ -403,6 +300,7 @@ function LockPage() {
       const { dek, rawDek } = await unlockWithPin(user.id, pin);
       setVaultKey(dek, rawDek);
       routeAfterUnlock();
+
     } catch (err) {
       if (err instanceof PinUnlockError) {
         setPinShake(true);
@@ -424,10 +322,14 @@ function LockPage() {
     }
   };
 
+  // Auto-prompt biometric on entering unlock mode if enrolled — but skip
+  // when the user prefers PIN (typing 4-6 digits is often faster than
+  // waiting for a Face ID prompt).
   useEffect(() => {
     if (mode !== "unlock" || !bioAvailable || !bioEnrolled || bioAutoTried) return;
     if (unlockMethod === "pin" && pinEnrolled) return;
     setBioAutoTried(true);
+    // Small delay so the page paints before the OS prompt appears.
     const t = window.setTimeout(() => {
       void handleBiometricUnlock();
     }, 250);
@@ -435,303 +337,280 @@ function LockPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, bioAvailable, bioEnrolled, bioAutoTried, unlockMethod, pinEnrolled]);
 
-  const displayName = useMemo(() => {
-    const email = user.email ?? "";
-    const local = email.split("@")[0] ?? "";
-    if (!local) return "You";
-    return local.charAt(0).toUpperCase() + local.slice(1);
-  }, [user.email]);
-  const initials = useMemo(() => {
-    const parts = displayName.split(/[\s._-]+/).filter(Boolean);
-    const chars = parts.slice(0, 2).map((p: string) => p.charAt(0).toUpperCase());
-    return chars.join("") || "A";
-  }, [displayName]);
-
-  const timeStr = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const dateStr = now.toLocaleDateString([], {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   if (mode === "loading") {
     return (
-      <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#0b1a3a]">
-        <Win11Backdrop />
-        <Loader2 className="relative z-10 h-6 w-6 animate-spin text-white/80" />
-      </div>
+      <AegisScreen>
+        <BrandBar />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin opacity-60" />
+        </div>
+      </AegisScreen>
     );
   }
 
   const isCreate = mode === "create";
 
-  const cycleSignIn = () => {
-    setNotice(null);
-    setPassphrase("");
-    setPinValue("");
-    setUnlockMethod((m) => (m === "pin" ? "passphrase" : "pin"));
-  };
-
-  const doReset = async () => {
-    const ok = window.confirm(
-      "Reset your vault?\n\nThis erases your saved passphrase and every stored code. Only do this if you've lost access.",
-    );
-    if (!ok) return;
-    setLoading(true);
-    setNotice(null);
-    try {
-      const acctRes = await supabase.from("vault_accounts").delete().eq("user_id", user.id);
-      if (acctRes.error) throw acctRes.error;
-      const metaRes = await supabase.from("vault_meta").delete().eq("user_id", user.id);
-      if (metaRes.error) throw metaRes.error;
-      disableBiometric(user.id);
-      disablePin(user.id);
-      setBioEnrolled(false);
-      setPinEnrolled(false);
-      setPinValue("");
-      setUnlockMethod("passphrase");
-      setPassphrase("");
-      setConfirmPass("");
-      setHint("");
-      setPassphraseHint(null);
-      setBioAutoTried(false);
-      setMode("create");
-    } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Reset failed.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const doSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  };
-
-  const showPin = !isCreate && unlockMethod === "pin" && pinEnrolled;
-
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#0b1a3a] text-white">
-      <Win11Backdrop />
-
-      {/* Top-left clock (Windows 11 style) */}
-      <div className="pointer-events-none absolute left-6 top-6 z-10 sm:left-14 sm:top-12">
-        <div
-          className="text-[64px] font-extralight leading-none tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.35)] sm:text-[96px]"
-          style={{ fontFeatureSettings: '"tnum"' }}
-        >
-          {timeStr}
-        </div>
-        <div className="mt-2 text-[15px] font-light text-white/85 sm:text-[19px]">
-          {dateStr}
-        </div>
-      </div>
-
-      {/* Center sign-in card */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-end px-5 pb-28 pt-44 sm:justify-center sm:pb-16 sm:pt-24">
-        <div className="flex w-full max-w-[380px] flex-col items-center gap-6 rounded-[28px] border border-white/10 bg-white/[0.06] px-6 py-7 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:px-8 sm:py-8">
-          {/* Avatar */}
-          <div className="flex h-[96px] w-[96px] items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-white/30 to-white/5 text-[30px] font-light shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-            {initials}
+    <AegisScreen>
+      <BrandBar />
+      <div className="flex flex-1 flex-col justify-center gap-4 py-4 sm:gap-6 sm:pt-2">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <HeroIcon Icon={isCreate ? Sparkles : Lock} />
+          <div className="flex flex-col items-center gap-3">
+            <Eyebrow>{isCreate ? "One-time setup" : "Locked vault"}</Eyebrow>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={soft}
+                className="flex flex-col items-center gap-2"
+              >
+                <Display>
+                  {isCreate
+                    ? "Set your master passphrase."
+                    : unlockMethod === "pin"
+                      ? "Enter your PIN."
+                      : "Welcome back."}
+                </Display>
+                <Lede>
+                  {isCreate
+                    ? "This key never leaves your device. Aegis can't recover it — remember it well."
+                    : unlockMethod === "pin"
+                      ? "Quick unlock with your device PIN."
+                      : "Enter your master passphrase to unlock your codes."}
+                </Lede>
+              </motion.div>
+            </AnimatePresence>
+            {!isCreate && passphraseHint && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="text-[12.5px]"
+                style={{ color: MUTED }}
+              >
+                Hint: <span style={{ color: CHARCOAL }}>{passphraseHint}</span>
+              </motion.p>
+            )}
           </div>
+        </div>
 
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-[20px] font-normal tracking-tight">{displayName}</div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/60">
-              {isCreate
-                ? "Set up your vault"
-                : showPin
-                  ? "Enter PIN"
-                  : "Enter passphrase"}
+        {/* PIN quick-unlock: preferred on this device when enrolled. */}
+        {!isCreate && unlockMethod === "pin" && pinEnrolled && (
+          <div className="flex flex-col items-center gap-4">
+            <PinPad
+              value={pinValue}
+              onChange={setPinValue}
+              onComplete={handlePinComplete}
+              shake={pinShake}
+              disabled={pinBusy}
+            />
+            {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+            <div className="flex flex-col items-center gap-2 pt-1">
+              <TextLink
+                onClick={() => {
+                  setNotice(null);
+                  setPinValue("");
+                  setUnlockMethod("passphrase");
+                }}
+              >
+                Use passphrase instead
+              </TextLink>
+              {bioEnrolled && bioAvailable && (
+                <button
+                  type="button"
+                  onClick={handleBiometricUnlock}
+                  disabled={bioBusy}
+                  className="flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100 disabled:opacity-50"
+                  style={{ color: MUTED, opacity: 0.85 }}
+                >
+                  <Fingerprint className="h-3.5 w-3.5" strokeWidth={1.6} />
+                  <span>Unlock with biometrics</span>
+                </button>
+              )}
             </div>
-            {!isCreate && passphraseHint && !showPin && (
-              <p className="mt-1 text-[12px] text-white/60">
-                Hint: <span className="text-white/85">{passphraseHint}</span>
+          </div>
+        )}
+
+        {/* Biometric FIRST when enrolled (passphrase path) — that's the fast path. */}
+        {!isCreate && unlockMethod === "passphrase" && bioEnrolled && bioAvailable && (
+          <motion.button
+            type="button"
+            onClick={handleBiometricUnlock}
+            disabled={bioBusy || loading}
+            whileTap={{ scale: 0.985, opacity: 0.9 }}
+            transition={soft}
+            className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] text-[15px] disabled:opacity-60"
+            style={{
+              background: CHARCOAL,
+              color: CREAM_SOFT,
+              fontWeight: 500,
+              letterSpacing: "-0.005em",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
+            {bioBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Fingerprint className="h-[17px] w-[17px]" strokeWidth={1.8} />
+                <span>Unlock with biometrics</span>
+              </>
+            )}
+          </motion.button>
+        )}
+
+        {!isCreate && unlockMethod === "passphrase" && bioEnrolled && bioAvailable && (
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
+            <span className="text-[11px] uppercase tracking-[0.14em]" style={{ color: MUTED }}>
+              or use passphrase
+            </span>
+            <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
+          </div>
+        )}
+
+        {(isCreate || unlockMethod === "passphrase") && (
+          <form onSubmit={isCreate ? handleCreate : handleUnlock} className="flex flex-col gap-2.5">
+            <PasswordField
+              value={passphrase}
+              onChange={setPassphrase}
+              autoComplete={isCreate ? "new-password" : "current-password"}
+              autoFocus={!bioEnrolled}
+              minLength={isCreate ? 10 : 1}
+              placeholder={isCreate ? "Create a memorable passphrase" : "Master passphrase"}
+              delay={0.05}
+            />
+
+            {isCreate && (
+              <>
+                <StrengthMeter value={passphrase} />
+                <PasswordField
+                  value={confirmPass}
+                  onChange={setConfirmPass}
+                  autoComplete="new-password"
+                  minLength={10}
+                  placeholder="Confirm passphrase"
+                  delay={0.1}
+                />
+                <Field icon={<KeyRound className="h-4 w-4" strokeWidth={1.6} />} delay={0.15}>
+                  <input
+                    type="text"
+                    placeholder="Optional hint (never the passphrase)"
+                    value={hint}
+                    onChange={(e) => setHint(e.target.value)}
+                    className={inputClass}
+                    style={inputStyle}
+                    maxLength={80}
+                  />
+                </Field>
+              </>
+            )}
+
+            {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+
+            <div className="pt-1">
+              <PrimaryButton
+                type="submit"
+                loading={loading}
+                disabled={
+                  !passphrase ||
+                  (isCreate && (scoreStrength(passphrase) < 2 || passphrase !== confirmPass))
+                }
+              >
+                {isCreate ? "Create vault" : "Unlock"}
+              </PrimaryButton>
+            </div>
+
+            {!isCreate && pinEnrolled && (
+              <div className="flex justify-center pt-1">
+                <TextLink
+                  onClick={() => {
+                    setNotice(null);
+                    setPassphrase("");
+                    setUnlockMethod("pin");
+                  }}
+                >
+                  Use PIN instead
+                </TextLink>
+              </div>
+            )}
+
+            {isCreate && bioAvailable && isBiometricPending() && (
+              <p className="pt-1 text-center text-[11.5px]" style={{ color: MUTED }}>
+                We'll set up Face ID / fingerprint right after your vault is created.
               </p>
             )}
-          </div>
-
-          <AnimatePresence mode="wait" initial={false}>
-            {showPin ? (
-              <motion.div
-                key="pin"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
-                className="w-full"
-              >
-                <Win11PinPad
-                  value={pinValue}
-                  onChange={setPinValue}
-                  onComplete={handlePinComplete}
-                  disabled={pinBusy}
-                  shake={pinShake}
-                />
-              </motion.div>
-            ) : (
-              <motion.form
-                key={isCreate ? "create" : "pass"}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
-                onSubmit={isCreate ? handleCreate : handleUnlock}
-                className="flex w-full flex-col gap-3"
-              >
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={passphrase}
-                    onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder={isCreate ? "Create a memorable passphrase" : "Passphrase"}
-                    autoComplete={isCreate ? "new-password" : "current-password"}
-                    autoFocus={!bioEnrolled}
-                    minLength={isCreate ? 10 : 1}
-                    className={glassInput + " pr-12"}
-                  />
-                  {!isCreate && (
-                    <button
-                      type="submit"
-                      disabled={loading || !passphrase}
-                      aria-label="Unlock"
-                      className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md bg-white/90 text-[#0b1a3a] transition-colors hover:bg-white disabled:opacity-40"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-4 w-4" strokeWidth={2} />
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                {isCreate && (
-                  <>
-                    <input
-                      type="password"
-                      value={confirmPass}
-                      onChange={(e) => setConfirmPass(e.target.value)}
-                      placeholder="Confirm passphrase"
-                      autoComplete="new-password"
-                      minLength={10}
-                      className={glassInput}
-                    />
-                    <input
-                      type="text"
-                      value={hint}
-                      onChange={(e) => setHint(e.target.value)}
-                      placeholder="Optional hint (never the passphrase)"
-                      maxLength={80}
-                      className={glassInput}
-                    />
-                    <button
-                      type="submit"
-                      disabled={loading || !passphrase || passphrase !== confirmPass}
-                      className="mt-1 flex h-11 items-center justify-center gap-2 rounded-lg bg-white/95 text-[14px] font-medium text-[#0b1a3a] transition-colors hover:bg-white disabled:opacity-50"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>Create vault</>
-                      )}
-                    </button>
-                  </>
-                )}
-              </motion.form>
-            )}
-          </AnimatePresence>
-
-          {notice && (
-            <div
-              role="alert"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-[12.5px] text-white/90"
-            >
-              {notice.text}
-            </div>
-          )}
-
-          {!isCreate && bioEnrolled && bioAvailable && (
-            <button
-              type="button"
-              onClick={handleBiometricUnlock}
-              disabled={bioBusy}
-              className="flex items-center gap-1.5 text-[12.5px] text-white/70 transition-colors hover:text-white disabled:opacity-50"
-            >
-              {bioBusy ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Fingerprint className="h-3.5 w-3.5" strokeWidth={1.6} />
-              )}
-              <span>Use biometrics</span>
-            </button>
-          )}
-        </div>
-
-        {isCreate && (
-          <p className="mt-5 max-w-[380px] text-center text-[11.5px] leading-snug text-white/60">
-            Your passphrase never leaves this device. If you forget it, your codes cannot be recovered.
-          </p>
+          </form>
         )}
-      </div>
 
-      {/* Bottom bar — sign-in options (left) + system icons (right) */}
-      <div className="relative z-10 flex items-end justify-between gap-3 px-5 pb-5 sm:px-12 sm:pb-8">
-        <div className="flex flex-col gap-2">
-          {!isCreate && pinEnrolled && (
-            <button
-              type="button"
-              onClick={cycleSignIn}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[12.5px] text-white/85 backdrop-blur transition-colors hover:bg-white/10"
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/70" />
-              Sign-in options
-            </button>
-          )}
-          {!isCreate && (
-            <button
-              type="button"
-              onClick={doReset}
-              className="text-left text-[11.5px] text-white/50 transition-colors hover:text-white/80"
+        {isCreate ? (
+          <p className="text-center text-[11.5px] leading-snug" style={{ color: MUTED }}>
+            If you forget this passphrase, your codes cannot be recovered.
+            <br />A printable recovery sheet is coming in a later step.
+          </p>
+        ) : (
+          <div className="flex flex-col items-center gap-2 pt-1">
+            <TextLink
+              onClick={async () => {
+                const ok = window.confirm(
+                  "Reset your vault?\n\nThis erases your saved passphrase and every stored code. Only do this if you've lost access.",
+                );
+                if (!ok) return;
+                setLoading(true);
+                setNotice(null);
+                try {
+                  const acctRes = await supabase
+                    .from("vault_accounts")
+                    .delete()
+                    .eq("user_id", user.id);
+                  if (acctRes.error) throw acctRes.error;
+                  const metaRes = await supabase
+                    .from("vault_meta")
+                    .delete()
+                    .eq("user_id", user.id);
+                  if (metaRes.error) throw metaRes.error;
+                  disableBiometric(user.id);
+                  disablePin(user.id);
+                  setBioEnrolled(false);
+                  setPinEnrolled(false);
+                  setPinValue("");
+                  setUnlockMethod("passphrase");
+                  setPassphrase("");
+                  setConfirmPass("");
+                  setHint("");
+                  setPassphraseHint(null);
+                  setBioAutoTried(false);
+                  setMode("create");
+                } catch (err) {
+                  setNotice({
+                    kind: "error",
+                    text: err instanceof Error ? err.message : "Reset failed.",
+                  });
+                } finally {
+                  setLoading(false);
+                }
+              }}
             >
               Forgot passphrase? Reset vault
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div
-            aria-hidden
-            className="hidden h-9 w-9 items-center justify-center rounded-full text-white/70 sm:flex"
-          >
-            <Wifi className="h-4 w-4" strokeWidth={1.6} />
-          </div>
-          {!isCreate && (
+            </TextLink>
             <button
               type="button"
-              onClick={doSignOut}
-              aria-label="Sign out"
-              title="Sign out"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/85 backdrop-blur transition-colors hover:bg-white/10"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+              className="flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100"
+              style={{ color: MUTED, opacity: 0.75 }}
             >
-              <LogOut className="h-4 w-4" strokeWidth={1.6} />
+              <LogOut className="h-3.5 w-3.5" strokeWidth={1.6} />
+              <span>Sign out</span>
             </button>
-          )}
-          <div
-            aria-hidden
-            className="hidden h-9 w-9 items-center justify-center rounded-full text-white/70 sm:flex"
-          >
-            <Power className="h-4 w-4" strokeWidth={1.6} />
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </AegisScreen>
   );
 }
