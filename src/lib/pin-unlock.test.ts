@@ -199,3 +199,102 @@ describe("lock → unlock → enroll (integration)", () => {
     });
   });
 });
+
+describe("concurrency: double PIN entry/unlock requests", () => {
+  // Mirrors the UI's `busy` guard in PinSetupSheet / lock.tsx: a boolean
+  // latch that drops re-entrant calls while the previous promise is still
+  // in flight. If the guard works, only ONE underlying call executes.
+  function makeBusyGuard<TArgs extends unknown[], TRes>(
+    fn: (...args: TArgs) => Promise<TRes>,
+  ) {
+    let busy = false;
+    let calls = 0;
+    const wrapped = async (...args: TArgs): Promise<TRes | "dropped"> => {
+      if (busy) return "dropped";
+      busy = true;
+      calls++;
+      try {
+        return await fn(...args);
+      } finally {
+        busy = false;
+      }
+    };
+    return { wrapped, getCalls: () => calls };
+  }
+
+  it("busy guard drops the second concurrent enrollPin, only one enroll runs", async () => {
+    const { rawDek } = await createNewVaultKey(PASSPHRASE);
+    const guard = makeBusyGuard(enrollPin);
+
+    const [a, b] = await Promise.all([
+      guard.wrapped({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek }),
+      guard.wrapped({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek }),
+    ]);
+
+    // Exactly one call passed the guard; the other was dropped.
+    expect(guard.getCalls()).toBe(1);
+    expect([a, b].filter((r) => r === "dropped")).toHaveLength(1);
+
+    // And the single enrollment is usable.
+    expect(isPinEnabled(USER_ID)).toBe(true);
+    const unlocked = await unlockWithPin(USER_ID, GOOD_PIN);
+    expect(bytesEqual(unlocked.rawDek, rawDek)).toBe(true);
+  });
+
+  it("busy guard drops the second concurrent unlockWithPin", async () => {
+    const { rawDek } = await createNewVaultKey(PASSPHRASE);
+    await enrollPin({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek });
+
+    const guard = makeBusyGuard(unlockWithPin);
+    const [a, b] = await Promise.all([
+      guard.wrapped(USER_ID, GOOD_PIN),
+      guard.wrapped(USER_ID, GOOD_PIN),
+    ]);
+
+    expect(guard.getCalls()).toBe(1);
+    const winners = [a, b].filter((r) => r !== "dropped");
+    const dropped = [a, b].filter((r) => r === "dropped");
+    expect(winners).toHaveLength(1);
+    expect(dropped).toHaveLength(1);
+
+    const winner = winners[0] as { dek: CryptoKey; rawDek: Uint8Array };
+    expect(bytesEqual(winner.rawDek, rawDek)).toBe(true);
+    // A single successful unlock does NOT consume attempts.
+    expect(getPinAttemptsRemaining(USER_ID)).toBe(5);
+  });
+
+  it("without a guard, concurrent enrollPin calls still converge to a usable single blob", async () => {
+    // Even if the UI guard were bypassed, the storage layer is last-write-wins
+    // on a single key — we must never end up in a half-written state where
+    // unlockWithPin fails. Fire N concurrent enrolls and confirm one PIN unlock
+    // recovers the exact DEK.
+    const { rawDek } = await createNewVaultKey(PASSPHRASE);
+
+    await Promise.all(
+      Array.from({ length: 5 }, () =>
+        enrollPin({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek }),
+      ),
+    );
+
+    expect(isPinEnabled(USER_ID)).toBe(true);
+    const unlocked = await unlockWithPin(USER_ID, GOOD_PIN);
+    expect(bytesEqual(unlocked.rawDek, rawDek)).toBe(true);
+    expect(getPinAttemptsRemaining(USER_ID)).toBe(5);
+  });
+
+  it("busy guard drops a re-entrant call fired from inside the first (double-submit)", async () => {
+    // Simulates a user tapping "Confirm" twice in the same tick: the second
+    // handler fires while the first is still awaiting enrollPin.
+    const { rawDek } = await createNewVaultKey(PASSPHRASE);
+    const guard = makeBusyGuard(enrollPin);
+
+    const first = guard.wrapped({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek });
+    // Fire the second synchronously, before `first` has a chance to resolve.
+    const second = guard.wrapped({ userId: USER_ID, pin: GOOD_PIN, dekBytes: rawDek });
+
+    const [r1, r2] = await Promise.all([first, second]);
+    expect(guard.getCalls()).toBe(1);
+    expect([r1, r2]).toContain("dropped");
+    expect(isPinEnabled(USER_ID)).toBe(true);
+  });
+});
