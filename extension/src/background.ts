@@ -307,9 +307,35 @@ async function verifySyncSig(
 /*  TOTP                                                                 */
 /* --------------------------------------------------------------------- */
 
+const STEAM_ALPHABET = "23456789BCDFGHJKMNPQRTVWXY";
+const STEAM_PERIOD = 30;
+
+function generateSteamCode(secretBase32: string, at: number): string {
+  // Steam Guard = HOTP over T=floor(now/30) with a 26-char alphabet mapping.
+  // Mirror src/lib/vault-accounts.ts so extension and web produce identical
+  // codes for `otp_type === "steam"` accounts.
+  const hotp = new OTPAuth.HOTP({
+    algorithm: "SHA1",
+    digits: 10,
+    secret: OTPAuth.Secret.fromBase32(secretBase32),
+  });
+  const T = Math.floor(at / 1000 / STEAM_PERIOD);
+  let value = Number.parseInt(hotp.generate({ counter: T }), 10);
+  let out = "";
+  for (let i = 0; i < 5; i++) {
+    out += STEAM_ALPHABET[value % STEAM_ALPHABET.length];
+    value = Math.floor(value / STEAM_ALPHABET.length);
+  }
+  return out;
+}
+
 function generateCode(account: ExtAccount): string {
   if (account.otp_type === "hotp") {
     throw new Error("HOTP not supported in extension");
+  }
+  const clean = account.secret.replace(/\s+/g, "");
+  if (account.otp_type === "steam") {
+    return generateSteamCode(clean, Date.now());
   }
   const totp = new OTPAuth.TOTP({
     issuer: account.issuer,
@@ -317,7 +343,7 @@ function generateCode(account: ExtAccount): string {
     algorithm: account.algorithm,
     digits: account.digits,
     period: account.period,
-    secret: OTPAuth.Secret.fromBase32(account.secret),
+    secret: OTPAuth.Secret.fromBase32(clean),
   });
   return totp.generate();
 }
