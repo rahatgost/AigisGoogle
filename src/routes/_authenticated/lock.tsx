@@ -73,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/lock")({
 
 
 type Mode = "loading" | "create" | "unlock";
+type UnlockMethod = "pin" | "passphrase";
 
 function safeRedirect(target: string | undefined): string {
   if (!target) return "/vault";
