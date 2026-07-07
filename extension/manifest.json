@@ -27,12 +27,28 @@
     "storage",
     "activeTab",
     "scripting",
-    "alarms"
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [],
   "optional_host_permissions": [
     "https://*/*"
   ],
+  "commands": {
+    "fill-otp": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Aegis: autofill matched OTP into the focused field"
+    },
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      }
+    }
+  },
   "content_scripts": [
     {
       "matches": [

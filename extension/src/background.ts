@@ -107,6 +107,7 @@ function isUnlocked(): boolean {
   if (!unlocked) return false;
   if (Date.now() > unlocked.expiresAt) {
     unlocked = null;
+    void updateBadge();
     return false;
   }
   return true;
@@ -114,6 +115,28 @@ function isUnlocked(): boolean {
 
 function touch() {
   if (unlocked) unlocked.expiresAt = Date.now() + IDLE_LOCK_MS;
+}
+
+/* --------------------------------------------------------------------- */
+/*  Toolbar badge / title reflects lock state                            */
+/* --------------------------------------------------------------------- */
+
+async function updateBadge(): Promise<void> {
+  try {
+    if (isUnlocked() && unlocked) {
+      await chrome.action.setBadgeBackgroundColor({ color: "#3c8c5a" });
+      await chrome.action.setBadgeText({ text: String(unlocked.accounts.length) });
+      await chrome.action.setTitle({
+        title: `Aegis · ${unlocked.accounts.length} account${unlocked.accounts.length === 1 ? "" : "s"} unlocked`,
+      });
+    } else {
+      await chrome.action.setBadgeBackgroundColor({ color: "#b47a2d" });
+      await chrome.action.setBadgeText({ text: "" });
+      await chrome.action.setTitle({ title: "Aegis · locked" });
+    }
+  } catch {
+    /* action API may be unavailable during SW startup on Firefox */
+  }
 }
 
 /* --------------------------------------------------------------------- */
