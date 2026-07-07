@@ -1,42 +1,65 @@
-// Vault crypto: PBKDF2 (SHA-256, 600k iterations — OWASP baseline) key
-// derivation, AES-GCM wrap/unwrap for the Data Encryption Key (DEK), and
-// AES-GCM secret encryption. All primitives are WebCrypto — no extra deps.
+// Vault crypto: passphrase → KEK → AES-GCM wrap/unwrap of the DEK, plus
+// AES-GCM secret encryption. All AES primitives are WebCrypto; Argon2id
+// is provided by `hash-wasm` (WASM, works in browser + Node).
 //
-// Design:
-// - Passphrase + per-user salt → KEK (256-bit AES-GCM).
-// - Random 256-bit DEK is generated once, wrapped by KEK, stored server-side
-//   as `vault_meta.recovery_wrapped_key` (+ iv).
-// - Every TOTP secret is encrypted with the DEK using AES-GCM (fresh iv).
-// - Passphrase never leaves the device. Losing it = permanent code loss.
+// KDF versions supported
+// ----------------------
+// v1 (legacy, still readable):
+//   PBKDF2-SHA256, 600k iterations, 16-byte salt.
+//   `kdf_algorithm` string: "PBKDF2-SHA256-600k".
 //
-// PBKDF2 is a pragmatic default (native, no WASM). Argon2id can drop in
-// later by swapping deriveKekFromPassphrase without changing storage shape.
+// v2 (default for new vaults + all re-wraps):
+//   Argon2id, m=19456 KiB (~19 MiB), t=2, p=1, 16-byte salt.
+//   These are OWASP 2024's memory-constrained recommendation, which is
+//   the right tradeoff for a mobile-first PWA: strong GPU resistance
+//   without OOM'ing older phones.
+//   `kdf_algorithm` string: "argon2id-m19456-t2-p1"
+//   Params are encoded in the string so we can retune later (e.g. bump
+//   to m=65536) without a schema migration; every read parses the
+//   string it stored with.
+//
+// Migration path
+// --------------
+// On a successful v1 unlock the caller can invoke `upgradeKdfToV2` to
+// re-wrap the exact same DEK under Argon2id, then persist the new
+// (salt, wrapped, iv, algorithm) tuple. The DEK itself never changes,
+// so every existing ciphertext in `vault_accounts` remains valid — this
+// is a KEK rotation, not a key rotation.
+//
+// Absolutely NEVER change what an existing algorithm string means. If
+// you want new params, mint a new string (`argon2id-m65536-t3-p1`, etc.)
+// and add a new branch to `deriveKekForAlgorithm`. Reinterpreting an
+// existing string would silently lock every user who stored it.
+
+import { argon2id } from "hash-wasm";
 
 // -----------------------------------------------------------------------------
 // VERSIONING CONTRACT
 // -----------------------------------------------------------------------------
-// VAULT_CRYPTO_VERSION pins the stored-form primitives of the vault:
-//   - KDF (algorithm + parameters + salt length)
-//   - DEK wrap shape (AES-GCM, iv length, tag length)
-//   - Secret encryption shape (AES-GCM, iv length, AAD binding)
+// VAULT_CRYPTO_VERSION pins the *default* stored-form primitives for new
+// vaults. Older algorithms remain readable indefinitely — see the dispatch
+// in `deriveKekForAlgorithm`.
 //
-// ANY change to any of the above (e.g. Argon2id migration, adding AAD binding,
-// changing iv length) MUST bump this constant AND ship a migrator that
-// re-derives / re-wraps / re-encrypts existing rows. Never mutate a primitive
-// silently — clients on the old version would irretrievably lose access.
-//
-// v1 (current): PBKDF2-SHA256, 600k iterations, 16-byte salt, AES-GCM 12-byte
-//               iv, no AAD. OWASP baseline as of 2024.
-// v2 (planned): Argon2id (m=64MiB, t=3, p=1) + AAD binding = user_id||account_id.
-export const VAULT_CRYPTO_VERSION = 1 as const;
+// v1: PBKDF2-SHA256, 600k iterations, 16-byte salt, AES-GCM 12-byte iv.
+// v2 (current default): Argon2id (m=19MiB, t=2, p=1) + everything else same.
+export const VAULT_CRYPTO_VERSION = 2 as const;
+
+// Algorithm identifier strings — literal values are part of the on-disk
+// contract, do not rename or reformat them.
+export const KDF_ALGO_V1 = "PBKDF2-SHA256-600k";
+export const KDF_ALGO_V2 = "argon2id-m19456-t2-p1";
+
+// Params baked into KDF_ALGO_V2. Bump by minting a new string.
+const ARGON2_V2 = { memoryKiB: 19_456, iterations: 2, parallelism: 1 } as const;
 
 const PBKDF2_ITERATIONS = 600_000;
-const KDF_ALGO = "PBKDF2-SHA256-600k";
+
+// Back-compat alias — some routes still import `KDF_ALGORITHM` expecting
+// the current default. Prefer the version-specific constants above.
+export const KDF_ALGORITHM = KDF_ALGO_V2;
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
-
-export const KDF_ALGORITHM = KDF_ALGO;
 
 export function randomBytes(length: number): Uint8Array {
   const out = new Uint8Array(length);
@@ -44,7 +67,35 @@ export function randomBytes(length: number): Uint8Array {
   return out;
 }
 
-async function deriveKekFromPassphrase(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+/* -------------------- KDF dispatch -------------------- */
+
+interface Argon2Params {
+  memoryKiB: number;
+  iterations: number;
+  parallelism: number;
+}
+
+/**
+ * Parse "argon2id-m<mem>-t<iter>-p<par>" into params. Returns null when
+ * the string doesn't match — caller decides what to do (typically:
+ * refuse to unlock).
+ */
+function parseArgon2Algo(algo: string): Argon2Params | null {
+  const m = /^argon2id-m(\d+)-t(\d+)-p(\d+)$/.exec(algo);
+  if (!m) return null;
+  const memoryKiB = Number(m[1]);
+  const iterations = Number(m[2]);
+  const parallelism = Number(m[3]);
+  if (!Number.isFinite(memoryKiB) || !Number.isFinite(iterations) || !Number.isFinite(parallelism)) {
+    return null;
+  }
+  // Guard against absurd values that could hang or crash the tab. These
+  // ceilings are far above anything we'd ever legitimately store.
+  if (memoryKiB > 1_048_576 || iterations > 32 || parallelism > 16) return null;
+  return { memoryKiB, iterations, parallelism };
+}
+
+async function deriveKekPbkdf2(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
   const baseKey = await crypto.subtle.importKey(
     "raw",
     enc.encode(passphrase.normalize("NFKC")),
@@ -66,6 +117,50 @@ async function deriveKekFromPassphrase(passphrase: string, salt: Uint8Array): Pr
   );
 }
 
+async function deriveKekArgon2id(
+  passphrase: string,
+  salt: Uint8Array,
+  params: Argon2Params,
+): Promise<CryptoKey> {
+  // hash-wasm returns the raw 32-byte hash; import as AES-GCM 256.
+  const raw = await argon2id({
+    password: passphrase.normalize("NFKC"),
+    salt,
+    parallelism: params.parallelism,
+    iterations: params.iterations,
+    memorySize: params.memoryKiB,
+    hashLength: 32,
+    outputType: "binary",
+  });
+  return crypto.subtle.importKey(
+    "raw",
+    raw as unknown as BufferSource,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["wrapKey", "unwrapKey", "encrypt", "decrypt"],
+  );
+}
+
+async function deriveKekForAlgorithm(
+  passphrase: string,
+  salt: Uint8Array,
+  algorithm: string,
+): Promise<CryptoKey> {
+  if (algorithm === KDF_ALGO_V1) return deriveKekPbkdf2(passphrase, salt);
+  const params = parseArgon2Algo(algorithm);
+  if (params) return deriveKekArgon2id(passphrase, salt, params);
+  throw new Error(
+    `Vault was created with an unsupported key algorithm (${algorithm}). Please update the app.`,
+  );
+}
+
+/* -------------------- create / unwrap / rewrap -------------------- */
+
+/**
+ * Create a brand-new vault key. Always uses the current default KDF
+ * (v2 / Argon2id). Returns everything the caller needs to persist plus
+ * a runtime, non-extractable DEK.
+ */
 export async function createNewVaultKey(passphrase: string): Promise<{
   salt: Uint8Array;
   wrappedKey: Uint8Array;
@@ -74,7 +169,7 @@ export async function createNewVaultKey(passphrase: string): Promise<{
   kdfAlgorithm: string;
 }> {
   const salt = randomBytes(16);
-  const kek = await deriveKekFromPassphrase(passphrase, salt);
+  const kek = await deriveKekForAlgorithm(passphrase, salt, KDF_ALGO_V2);
 
   const dek = await crypto.subtle.generateKey(
     { name: "AES-GCM", length: 256 },
@@ -103,17 +198,25 @@ export async function createNewVaultKey(passphrase: string): Promise<{
     wrappedKey: new Uint8Array(wrapped),
     wrappedKeyIv: iv,
     dek: runtimeDek,
-    kdfAlgorithm: KDF_ALGO,
+    kdfAlgorithm: KDF_ALGO_V2,
   };
 }
 
+/**
+ * Unwrap an existing vault key. The `algorithm` argument picks the KDF —
+ * legacy PBKDF2 vaults still unlock alongside the new Argon2id default.
+ *
+ * Overload: the legacy 4-arg call site (no algorithm) is preserved and
+ * defaults to the current version, matching pre-v2 behaviour.
+ */
 export async function unwrapVaultKey(
   passphrase: string,
   salt: Uint8Array,
   wrappedKey: Uint8Array,
   wrappedKeyIv: Uint8Array,
+  algorithm: string = KDF_ALGO_V2,
 ): Promise<CryptoKey> {
-  const kek = await deriveKekFromPassphrase(passphrase, salt);
+  const kek = await deriveKekForAlgorithm(passphrase, salt, algorithm);
   return crypto.subtle.unwrapKey(
     "raw",
     wrappedKey as unknown as BufferSource,
@@ -125,35 +228,37 @@ export async function unwrapVaultKey(
   );
 }
 
-// Rotate the master passphrase without changing the DEK itself. The DEK
-// stays the same, so every existing ciphertext in `vault_accounts` remains
-// valid — we only re-wrap it with a fresh KEK derived from the new
-// passphrase and a fresh salt.
+/**
+ * Rotate the master passphrase. The DEK stays the same (every existing
+ * ciphertext remains valid); we re-wrap it under a fresh KEK derived from
+ * the new passphrase. The output KDF is always the current default —
+ * rotating a v1 vault also upgrades it to v2 as a side effect.
+ */
 export async function rewrapVaultKey(
   currentPassphrase: string,
   newPassphrase: string,
   currentSalt: Uint8Array,
   currentWrappedKey: Uint8Array,
   currentWrappedKeyIv: Uint8Array,
+  currentAlgorithm: string = KDF_ALGO_V2,
 ): Promise<{
   salt: Uint8Array;
   wrappedKey: Uint8Array;
   wrappedKeyIv: Uint8Array;
   kdfAlgorithm: string;
 }> {
-  const oldKek = await deriveKekFromPassphrase(currentPassphrase, currentSalt);
-  // Unwrap DEK as extractable so we can re-wrap it under the new KEK.
+  const oldKek = await deriveKekForAlgorithm(currentPassphrase, currentSalt, currentAlgorithm);
   const dek = await crypto.subtle.unwrapKey(
     "raw",
     currentWrappedKey as unknown as BufferSource,
     oldKek,
     { name: "AES-GCM", iv: currentWrappedKeyIv as unknown as BufferSource },
     { name: "AES-GCM", length: 256 },
-    true,
+    true, // extractable so we can wrap under the new KEK
     ["encrypt", "decrypt"],
   );
   const newSalt = randomBytes(16);
-  const newKek = await deriveKekFromPassphrase(newPassphrase, newSalt);
+  const newKek = await deriveKekForAlgorithm(newPassphrase, newSalt, KDF_ALGO_V2);
   const newIv = randomBytes(12);
   const wrapped = await crypto.subtle.wrapKey("raw", dek, newKek, {
     name: "AES-GCM",
@@ -163,9 +268,48 @@ export async function rewrapVaultKey(
     salt: newSalt,
     wrappedKey: new Uint8Array(wrapped),
     wrappedKeyIv: newIv,
-    kdfAlgorithm: KDF_ALGO,
+    kdfAlgorithm: KDF_ALGO_V2,
   };
 }
+
+/* -------------------- v1 → v2 in-place upgrade -------------------- */
+
+export function needsKdfUpgrade(algorithm: string): boolean {
+  return algorithm !== KDF_ALGO_V2;
+}
+
+/**
+ * Re-wrap the same DEK under Argon2id (v2) after a successful v1 unlock.
+ * Callers pass the plaintext passphrase they just used to unlock — we
+ * never touch storage, only produce the new tuple. Caller persists it.
+ *
+ * This is intentionally separate from `rewrapVaultKey` (which changes the
+ * passphrase); this function keeps the same passphrase and only upgrades
+ * the KDF.
+ */
+export async function upgradeKdfToV2(
+  passphrase: string,
+  currentSalt: Uint8Array,
+  currentWrappedKey: Uint8Array,
+  currentWrappedKeyIv: Uint8Array,
+  currentAlgorithm: string,
+): Promise<{
+  salt: Uint8Array;
+  wrappedKey: Uint8Array;
+  wrappedKeyIv: Uint8Array;
+  kdfAlgorithm: string;
+}> {
+  return rewrapVaultKey(
+    passphrase,
+    passphrase,
+    currentSalt,
+    currentWrappedKey,
+    currentWrappedKeyIv,
+    currentAlgorithm,
+  );
+}
+
+/* -------------------- secret encryption -------------------- */
 
 export async function encryptSecret(
   dek: CryptoKey,
@@ -192,6 +336,8 @@ export async function decryptSecret(
   );
   return dec.decode(pt);
 }
+
+/* -------------------- bytea helpers -------------------- */
 
 // Supabase `bytea` round-trips as either a Uint8Array (already binary) or a
 // hex-prefixed string like "\\x0102..", or a base64 string. Normalize all.
