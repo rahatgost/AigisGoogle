@@ -75,9 +75,9 @@ export function Backdrop() {
 
 export function AegisScreen({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ color: CHARCOAL }}>
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden overflow-y-auto" style={{ color: CHARCOAL }}>
       <Backdrop />
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-[440px] flex-col px-6 pt-[max(28px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))]">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[440px] flex-col px-5 pt-[max(20px,env(safe-area-inset-top))] pb-[max(20px,env(safe-area-inset-bottom))] sm:px-6 sm:pt-[max(28px,env(safe-area-inset-top))] sm:pb-[max(24px,env(safe-area-inset-bottom))]">
         {children}
       </div>
     </div>

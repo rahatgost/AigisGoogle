@@ -353,7 +353,7 @@ function LockPage() {
   return (
     <AegisScreen>
       <BrandBar />
-      <div className="flex flex-1 flex-col justify-center gap-6 pt-2">
+      <div className="flex flex-1 flex-col justify-center gap-4 py-4 sm:gap-6 sm:pt-2">
         <div className="flex flex-col items-center gap-5 text-center">
           <HeroIcon Icon={isCreate ? Sparkles : Lock} />
           <div className="flex flex-col items-center gap-3">

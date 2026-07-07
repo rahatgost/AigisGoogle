@@ -44,10 +44,10 @@ export function PinPad({
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"];
 
   return (
-    <div className="flex flex-col items-center gap-8 select-none">
+    <div className="flex flex-col items-center gap-5 select-none sm:gap-8">
       {/* dots */}
       <motion.div
-        className="flex items-center gap-4"
+        className="flex items-center gap-3 sm:gap-4"
         animate={shake ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
         transition={{ duration: 0.45 }}
       >
@@ -81,7 +81,7 @@ export function PinPad({
                 disabled={disabled || value.length === 0}
                 whileTap={{ scale: 0.92, opacity: 0.7 }}
                 transition={soft}
-                className="flex h-[60px] w-[60px] items-center justify-center rounded-full disabled:opacity-40"
+                className="flex h-[52px] w-[52px] items-center justify-center rounded-full disabled:opacity-40 sm:h-[60px] sm:w-[60px]"
                 style={{ color: MUTED }}
                 aria-label="Delete last digit"
               >
@@ -97,7 +97,7 @@ export function PinPad({
               disabled={disabled}
               whileTap={{ scale: 0.9, backgroundColor: "rgb(var(--aegis-ink-rgb) / 0.08)" }}
               transition={soft}
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full text-[26px] disabled:opacity-40"
+              className="flex h-[52px] w-[52px] items-center justify-center rounded-full text-[22px] disabled:opacity-40 sm:h-[60px] sm:w-[60px] sm:text-[26px]"
               style={{
                 color: CHARCOAL,
                 fontWeight: 300,
