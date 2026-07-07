@@ -70,6 +70,7 @@ export type Message =
       sig?: string;
     }
   | { type: "MATCH_HOST"; host: string }
+  | { type: "LIST_ACCOUNTS"; query?: string }
   | { type: "GET_CODE"; accountId: string }
   | { type: "CLIPBOARD_ARMED"; tabId: number; accountId: string };
 
@@ -469,6 +470,31 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
           score: r.score,
         })),
       };
+    }
+
+    case "LIST_ACCOUNTS": {
+      if (!isUnlocked()) return { ok: false, error: "locked" };
+      touch();
+      const q = (msg.query ?? "").trim().toLowerCase();
+      const all = unlocked!.accounts.map((a) => ({
+        id: a.id,
+        issuer: a.issuer,
+        label: a.label,
+        period: a.period,
+        otp_type: a.otp_type,
+      }));
+      const filtered = q
+        ? all.filter(
+            (a) =>
+              a.issuer.toLowerCase().includes(q) ||
+              a.label.toLowerCase().includes(q),
+          )
+        : all;
+      // Deterministic sort: issuer, then label
+      filtered.sort((a, b) =>
+        a.issuer.localeCompare(b.issuer) || a.label.localeCompare(b.label),
+      );
+      return { ok: true, accounts: filtered.slice(0, 200) };
     }
 
     case "GET_CODE": {
