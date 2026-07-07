@@ -51,6 +51,7 @@ import {
   AUTO_LOCK_OPTIONS,
   getAutoLockMs,
   getVaultKey,
+  getVaultRawKey,
   isVaultUnlocked,
   lockVault,
   setAutoLockMs,
