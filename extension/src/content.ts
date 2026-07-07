@@ -203,30 +203,62 @@ class AegisAnchor {
   }
 
   private async fill(accountId: string) {
+    csLog("fill: request", { accountId, host: window.location.hostname });
     const res = await sendMessage({ type: "GET_CODE", accountId });
     if (!res.ok) {
+      csLog("fill: SW error", res.error);
       this.picker.innerHTML = `<div class="empty">Couldn't generate code (${res.error}).</div>`;
       return;
     }
     const code = res.code as string;
+    const period = res.period as number | undefined;
+    csLog("fill: SW ok", {
+      codeLen: code.length,
+      codeShape: /^\d+$/.test(code) ? "numeric" : "alphanum",
+      period,
+      target: describeInput(this.target),
+    });
     setInputValue(this.target, code);
+    const after = this.target.value;
+    csLog("fill: applied", {
+      matches: after === code,
+      afterLen: after.length,
+    });
     this.closePicker();
   }
 
   private async copy(accountId: string) {
+    csLog("copy: request", { accountId });
     const res = await sendMessage({ type: "GET_CODE", accountId });
-    if (!res.ok) return;
+    if (!res.ok) { csLog("copy: SW error", res.error); return; }
     const code = res.code as string;
     try {
       await navigator.clipboard.writeText(code);
-      // Ask the SW to arm the 30 s clear.
+      csLog("copy: clipboard ok", { codeLen: code.length });
       const tabIdReq = await sendMessage({ type: "CLIPBOARD_ARMED", tabId: 0, accountId });
       void tabIdReq;
-    } catch {
-      /* clipboard write refused (no user activation, insecure ctx) — silent */
+    } catch (e) {
+      csLog("copy: clipboard refused", e);
     }
     this.closePicker();
   }
+}
+
+const CS_DEBUG = true;
+function csLog(...args: unknown[]): void {
+  if (CS_DEBUG) console.log("[aegis-cs]", ...args);
+}
+
+function describeInput(el: HTMLInputElement) {
+  return {
+    name: el.name || undefined,
+    id: el.id || undefined,
+    type: el.type,
+    autocomplete: el.autocomplete || undefined,
+    maxLength: el.maxLength,
+    inputmode: el.getAttribute("inputmode") || undefined,
+    pattern: el.pattern || undefined,
+  };
 }
 
 function setInputValue(el: HTMLInputElement, value: string) {

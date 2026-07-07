@@ -472,14 +472,20 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
     }
 
     case "GET_CODE": {
-      if (!isUnlocked()) return { ok: false, error: "locked" };
+      if (!isUnlocked()) { swLog("GET_CODE reject: locked"); return { ok: false, error: "locked" }; }
       touch();
       const acct = unlocked!.accounts.find((a) => a.id === msg.accountId);
-      if (!acct) return { ok: false, error: "not_found" };
+      if (!acct) { swLog("GET_CODE reject: not_found", msg.accountId); return { ok: false, error: "not_found" }; }
       try {
         const code = generateCode(acct);
+        swLog("GET_CODE ok", {
+          id: acct.id, issuer: acct.issuer, otp_type: acct.otp_type,
+          algorithm: acct.algorithm, digits: acct.digits, period: acct.period,
+          codeLen: code.length, codePreview: code.replace(/./g, "•"),
+        });
         return { ok: true, code, period: acct.period };
       } catch (e) {
+        swLog("GET_CODE error", { id: acct.id, otp_type: acct.otp_type, err: e });
         return { ok: false, error: e instanceof Error ? e.message : "totp_error" };
       }
     }
