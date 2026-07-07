@@ -218,11 +218,33 @@ class AegisAnchor {
       period,
       target: describeInput(this.target),
     });
-    setInputValue(this.target, code);
+
+    // Segmented OTP inputs (one <input> per digit, common on banking &
+    // Steam Guard flows) — detect siblings that share the OTP shape and
+    // fill them char-by-char. Falls back to single-input fill.
+    const group = detectSegmentedGroup(this.target);
+    let filled = false;
+    if (group && group.length >= code.length) {
+      csLog("fill: segmented group detected", { size: group.length });
+      fillSegmented(group, code);
+      filled = true;
+    } else {
+      simulateTyping(this.target, code);
+      filled = true;
+    }
+
+    // Persistence guard: many SPA frameworks (React controlled inputs,
+    // Angular reactive forms, Vue v-model) may briefly overwrite our
+    // value on their next render tick. Re-apply for a short window so
+    // the user's code actually sticks. Give up after 1.5s or once the
+    // user starts typing to avoid clobbering intentional edits.
+    keepValueAlive(this.target, code, group);
+
     const after = this.target.value;
     csLog("fill: applied", {
-      matches: after === code,
+      matches: after === code || (group ? group.map((i) => i.value).join("") === code : false),
       afterLen: after.length,
+      filled,
     });
     this.closePicker();
   }
@@ -261,14 +283,151 @@ function describeInput(el: HTMLInputElement) {
   };
 }
 
-function setInputValue(el: HTMLInputElement, value: string) {
-  const proto = Object.getPrototypeOf(el);
-  const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+/**
+ * Use the React/Vue-safe native setter so controlled inputs actually
+ * pick up the new value (React tracks the last set via a "value tracker"
+ * descriptor; calling `el.value = x` directly is a no-op the next render).
+ */
+function nativeSetValue(el: HTMLInputElement, value: string): void {
+  const proto = Object.getPrototypeOf(el) as object;
+  const desc =
+    Object.getOwnPropertyDescriptor(proto, "value") ??
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+  const setter = desc?.set;
   if (setter) setter.call(el, value);
   else el.value = value;
+}
+
+/**
+ * Dispatch the full realistic event sequence for one character.
+ * Order matches what the browser actually emits when a user types:
+ * keydown → beforeinput → (value mutates) → input → keyup.
+ * Some libraries listen for `beforeinput.data`, others only for
+ * `input.data` — we send both with the right `inputType` payload.
+ */
+function typeChar(el: HTMLInputElement, ch: string, fullValueAfter: string): void {
+  const key = ch;
+  el.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  try {
+    el.dispatchEvent(
+      new InputEvent("beforeinput", {
+        data: ch, inputType: "insertText", bubbles: true, cancelable: true,
+      }),
+    );
+  } catch { /* older browsers */ }
+  nativeSetValue(el, fullValueAfter);
+  try {
+    el.dispatchEvent(
+      new InputEvent("input", { data: ch, inputType: "insertText", bubbles: true }),
+    );
+  } catch {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  el.dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+}
+
+/** Type a whole string into one input, char-by-char, then commit change. */
+function simulateTyping(el: HTMLInputElement, code: string): void {
+  // Respect maxLength — if the field only accepts 6 chars and the code is
+  // longer (shouldn't happen for TOTP, but Steam=5 vs 6-slot fields), we
+  // still stop at the field's cap rather than throwing.
+  const cap = el.maxLength > 0 ? el.maxLength : code.length;
+  const slice = code.slice(0, cap);
+  el.focus();
+  nativeSetValue(el, ""); // clear first so React sees a mutation
   el.dispatchEvent(new Event("input", { bubbles: true }));
+  let acc = "";
+  for (const ch of slice) {
+    acc += ch;
+    typeChar(el, ch, acc);
+  }
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
+
+/**
+ * Detect a "one input per digit" OTP field group. Rules:
+ *  - all siblings share the same parentElement
+ *  - each is an <input> with maxLength === 1 (or empty, if inputmode=numeric)
+ *  - at least 4 of them in a row
+ *  - the anchored `target` is one of them
+ */
+function detectSegmentedGroup(target: HTMLInputElement): HTMLInputElement[] | null {
+  const parent = target.parentElement;
+  if (!parent) return null;
+  const candidates = Array.from(parent.querySelectorAll("input")) as HTMLInputElement[];
+  const filtered = candidates.filter((i) => {
+    if (i === target) return true;
+    if (i.type && !OTP_ALLOWED_TYPES.has(i.type.toLowerCase())) return false;
+    return i.maxLength === 1 || (i.maxLength <= 0 && i.getAttribute("inputmode") === "numeric");
+  });
+  if (filtered.length < 4) return null;
+  if (!filtered.includes(target)) return null;
+  // Only accept if the target itself is single-char shaped OR the whole
+  // row is; otherwise the target is a regular full-length field.
+  if (target.maxLength !== 1) return null;
+  return filtered;
+}
+
+function fillSegmented(group: HTMLInputElement[], code: string): void {
+  for (let i = 0; i < group.length && i < code.length; i++) {
+    const el = group[i];
+    el.focus();
+    nativeSetValue(el, "");
+    typeChar(el, code[i], code[i]);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+/**
+ * SPA persistence guard. After we fill, watch the target for external
+ * mutations (React re-render clearing the value, Angular formControl
+ * resetting it) and re-apply the code up to 5 times over 1.5s. Aborts
+ * if the user starts typing (keydown that isn't ours) or the field
+ * loses focus permanently.
+ */
+function keepValueAlive(
+  target: HTMLInputElement,
+  code: string,
+  group: HTMLInputElement[] | null,
+): void {
+  const start = performance.now();
+  const DURATION_MS = 1500;
+  const MAX_REAPPLIES = 5;
+  let reapplied = 0;
+  let aborted = false;
+
+  const currentValue = () =>
+    group ? group.map((i) => i.value).join("") : target.value;
+
+  const abort = () => { aborted = true; cleanup(); };
+  const onUserKey = (e: KeyboardEvent) => {
+    // Ignore synthetic keys we dispatch (they have `isTrusted === false`).
+    if (e.isTrusted) abort();
+  };
+  target.addEventListener("keydown", onUserKey, true);
+
+  const cleanup = () => {
+    target.removeEventListener("keydown", onUserKey, true);
+  };
+
+  const check = () => {
+    if (aborted) return;
+    if (performance.now() - start > DURATION_MS) { cleanup(); return; }
+    if (reapplied >= MAX_REAPPLIES) { cleanup(); return; }
+    if (currentValue() === code) {
+      requestAnimationFrame(check);
+      return;
+    }
+    // Value drifted — page overwrote it. Reapply.
+    reapplied++;
+    csLog("fill: reapply", { reapplied, currentLen: currentValue().length });
+    if (group) fillSegmented(group, code);
+    else simulateTyping(target, code);
+    requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
+}
+
 
 function sendMessage(msg: unknown): Promise<{ ok: true; [k: string]: unknown } | { ok: false; error: string }> {
   return new Promise((resolve) => {
