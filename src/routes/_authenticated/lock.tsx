@@ -93,11 +93,22 @@ function MethodCard({
   onClick,
   disabled,
 }: {
-  variant: "pin" | "passphrase";
+  variant: "pin" | "pin-setup" | "passphrase";
   onClick: () => void;
   disabled?: boolean;
 }) {
-  const isPin = variant === "pin";
+  const isPin = variant === "pin" || variant === "pin-setup";
+  const isSetup = variant === "pin-setup";
+  const title = isSetup
+    ? "Set up a 6-digit PIN"
+    : isPin
+      ? "Unlock with 6-digit PIN"
+      : "Unlock with passphrase";
+  const subtitle = isSetup
+    ? "Faster next time — tap to enable in Security"
+    : isPin
+      ? "Faster on this device — tap to open the keypad"
+      : "Type your master passphrase";
   return (
     <motion.button
       type="button"
@@ -110,7 +121,7 @@ function MethodCard({
         borderColor: "rgb(var(--aegis-ink-rgb) / 0.14)",
         background: "rgb(var(--aegis-ink-rgb) / 0.02)",
       }}
-      aria-label={isPin ? "Switch to PIN unlock" : "Switch to passphrase unlock"}
+      aria-label={title}
     >
       <span
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px]"
@@ -118,7 +129,6 @@ function MethodCard({
         aria-hidden
       >
         {isPin ? (
-          // Mini 3×3 keypad glyph — reads instantly as "PIN".
           <span className="grid grid-cols-3 gap-[3px]">
             {Array.from({ length: 9 }).map((_, i) => (
               <span
@@ -137,10 +147,10 @@ function MethodCard({
           className="text-[13.5px] leading-tight"
           style={{ color: CHARCOAL, fontWeight: 500, letterSpacing: "-0.005em" }}
         >
-          {isPin ? "Unlock with 6-digit PIN" : "Unlock with passphrase"}
+          {title}
         </span>
         <span className="text-[11.5px] leading-tight" style={{ color: MUTED }}>
-          {isPin ? "Faster on this device — tap to open the keypad" : "Type your master passphrase"}
+          {subtitle}
         </span>
       </span>
       <ChevronRight
