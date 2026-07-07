@@ -17,7 +17,13 @@ import {
   Download,
   KeySquare,
 } from "lucide-react";
-import { isPinEnabled as isPinEnabledFn, enrollPin, disablePin } from "@/lib/pin-unlock";
+import {
+  isPinEnabled as isPinEnabledFn,
+  enrollPin,
+  disablePin,
+  assessPinWeakness,
+  PIN_LENGTH,
+} from "@/lib/pin-unlock";
 import { PinPad } from "@/components/aegis/PinPad";
 
 import { DevicesSection } from "@/components/aegis/devices-section";
