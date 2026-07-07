@@ -124,9 +124,10 @@ export async function unwrapVaultKey(
     kek,
     { name: "AES-GCM", iv: wrappedKeyIv as unknown as BufferSource },
     { name: "AES-GCM", length: 256 },
-    false,
+    true, // extractable — PIN/biometric enrollment re-wraps this key
     ["encrypt", "decrypt"],
   );
+
 }
 
 // Rotate the master passphrase without changing the DEK itself. The DEK
