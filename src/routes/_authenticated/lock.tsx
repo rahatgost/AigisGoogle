@@ -392,8 +392,45 @@ function LockPage() {
           </div>
         </div>
 
-        {/* Biometric FIRST when enrolled — that's the fast path. */}
-        {!isCreate && bioEnrolled && bioAvailable && (
+        {/* PIN quick-unlock: preferred on this device when enrolled. */}
+        {!isCreate && unlockMethod === "pin" && pinEnrolled && (
+          <div className="flex flex-col items-center gap-4">
+            <PinPad
+              value={pinValue}
+              onChange={setPinValue}
+              onComplete={handlePinComplete}
+              shake={pinShake}
+              disabled={pinBusy}
+            />
+            {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+            <div className="flex flex-col items-center gap-2 pt-1">
+              <TextLink
+                onClick={() => {
+                  setNotice(null);
+                  setPinValue("");
+                  setUnlockMethod("passphrase");
+                }}
+              >
+                Use passphrase instead
+              </TextLink>
+              {bioEnrolled && bioAvailable && (
+                <button
+                  type="button"
+                  onClick={handleBiometricUnlock}
+                  disabled={bioBusy}
+                  className="flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100 disabled:opacity-50"
+                  style={{ color: MUTED, opacity: 0.85 }}
+                >
+                  <Fingerprint className="h-3.5 w-3.5" strokeWidth={1.6} />
+                  <span>Unlock with biometrics</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Biometric FIRST when enrolled (passphrase path) — that's the fast path. */}
+        {!isCreate && unlockMethod === "passphrase" && bioEnrolled && bioAvailable && (
           <motion.button
             type="button"
             onClick={handleBiometricUnlock}
@@ -420,7 +457,7 @@ function LockPage() {
           </motion.button>
         )}
 
-        {!isCreate && bioEnrolled && bioAvailable && (
+        {!isCreate && unlockMethod === "passphrase" && bioEnrolled && bioAvailable && (
           <div className="flex items-center gap-3">
             <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
             <span className="text-[11px] uppercase tracking-[0.14em]" style={{ color: MUTED }}>
@@ -430,63 +467,79 @@ function LockPage() {
           </div>
         )}
 
-        <form onSubmit={isCreate ? handleCreate : handleUnlock} className="flex flex-col gap-2.5">
-          <PasswordField
-            value={passphrase}
-            onChange={setPassphrase}
-            autoComplete={isCreate ? "new-password" : "current-password"}
-            autoFocus={!bioEnrolled}
-            minLength={isCreate ? 10 : 1}
-            placeholder={isCreate ? "Create a memorable passphrase" : "Master passphrase"}
-            delay={0.05}
-          />
+        {(isCreate || unlockMethod === "passphrase") && (
+          <form onSubmit={isCreate ? handleCreate : handleUnlock} className="flex flex-col gap-2.5">
+            <PasswordField
+              value={passphrase}
+              onChange={setPassphrase}
+              autoComplete={isCreate ? "new-password" : "current-password"}
+              autoFocus={!bioEnrolled}
+              minLength={isCreate ? 10 : 1}
+              placeholder={isCreate ? "Create a memorable passphrase" : "Master passphrase"}
+              delay={0.05}
+            />
 
-          {isCreate && (
-            <>
-              <StrengthMeter value={passphrase} />
-              <PasswordField
-                value={confirmPass}
-                onChange={setConfirmPass}
-                autoComplete="new-password"
-                minLength={10}
-                placeholder="Confirm passphrase"
-                delay={0.1}
-              />
-              <Field icon={<KeyRound className="h-4 w-4" strokeWidth={1.6} />} delay={0.15}>
-                <input
-                  type="text"
-                  placeholder="Optional hint (never the passphrase)"
-                  value={hint}
-                  onChange={(e) => setHint(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                  maxLength={80}
+            {isCreate && (
+              <>
+                <StrengthMeter value={passphrase} />
+                <PasswordField
+                  value={confirmPass}
+                  onChange={setConfirmPass}
+                  autoComplete="new-password"
+                  minLength={10}
+                  placeholder="Confirm passphrase"
+                  delay={0.1}
                 />
-              </Field>
-            </>
-          )}
+                <Field icon={<KeyRound className="h-4 w-4" strokeWidth={1.6} />} delay={0.15}>
+                  <input
+                    type="text"
+                    placeholder="Optional hint (never the passphrase)"
+                    value={hint}
+                    onChange={(e) => setHint(e.target.value)}
+                    className={inputClass}
+                    style={inputStyle}
+                    maxLength={80}
+                  />
+                </Field>
+              </>
+            )}
 
-          {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+            {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
 
-          <div className="pt-1">
-            <PrimaryButton
-              type="submit"
-              loading={loading}
-              disabled={
-                !passphrase ||
-                (isCreate && (scoreStrength(passphrase) < 2 || passphrase !== confirmPass))
-              }
-            >
-              {isCreate ? "Create vault" : "Unlock"}
-            </PrimaryButton>
-          </div>
+            <div className="pt-1">
+              <PrimaryButton
+                type="submit"
+                loading={loading}
+                disabled={
+                  !passphrase ||
+                  (isCreate && (scoreStrength(passphrase) < 2 || passphrase !== confirmPass))
+                }
+              >
+                {isCreate ? "Create vault" : "Unlock"}
+              </PrimaryButton>
+            </div>
 
-          {isCreate && bioAvailable && isBiometricPending() && (
-            <p className="pt-1 text-center text-[11.5px]" style={{ color: MUTED }}>
-              We'll set up Face ID / fingerprint right after your vault is created.
-            </p>
-          )}
-        </form>
+            {!isCreate && pinEnrolled && (
+              <div className="flex justify-center pt-1">
+                <TextLink
+                  onClick={() => {
+                    setNotice(null);
+                    setPassphrase("");
+                    setUnlockMethod("pin");
+                  }}
+                >
+                  Use PIN instead
+                </TextLink>
+              </div>
+            )}
+
+            {isCreate && bioAvailable && isBiometricPending() && (
+              <p className="pt-1 text-center text-[11.5px]" style={{ color: MUTED }}>
+                We'll set up Face ID / fingerprint right after your vault is created.
+              </p>
+            )}
+          </form>
+        )}
 
         {isCreate ? (
           <p className="text-center text-[11.5px] leading-snug" style={{ color: MUTED }}>
