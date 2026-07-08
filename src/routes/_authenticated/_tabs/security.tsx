@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -173,12 +174,36 @@ function SecurityPage() {
   }, [user.id]);
 
   // Boot the auto-backup scheduler for this user; refresh UI on settings/status changes.
+  // Also surface success/error events as toast notifications so the user gets feedback
+  // even when the Auto-backup sheet is closed.
   useEffect(() => {
     initAutoBackup(user.id);
     setAutoBackup(getAutoBackupSettings(user.id));
-    const unsub = subscribeAutoBackup(user.id, () =>
-      setAutoBackup(getAutoBackupSettings(user.id)),
-    );
+    // Seed the "last seen" cursor with the newest existing entry so we don't
+    // toast historical events on mount / navigation.
+    let lastSeen = getAutoBackupLog(user.id)[0]?.at ?? "";
+    const unsub = subscribeAutoBackup(user.id, () => {
+      setAutoBackup(getAutoBackupSettings(user.id));
+      const log = getAutoBackupLog(user.id);
+      const fresh: AutoBackupLogEntry[] = [];
+      for (const entry of log) {
+        if (entry.at === lastSeen) break;
+        fresh.push(entry);
+      }
+      if (log.length > 0) lastSeen = log[0].at;
+      // Oldest → newest so toast stack order matches event order.
+      for (const entry of fresh.reverse()) {
+        if (entry.kind === "success") {
+          toast.success("Encrypted backup uploaded", {
+            description: entry.message ?? "Your vault is safely backed up to the cloud.",
+          });
+        } else if (entry.kind === "error") {
+          toast.error("Auto-backup failed", {
+            description: entry.message ?? "We'll retry on the next vault change.",
+          });
+        }
+      }
+    });
     return () => {
       unsub();
     };
