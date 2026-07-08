@@ -24,7 +24,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 const SECURITY_HEADERS: Record<string, string> = {
   "content-security-policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://*.lovable.dev https://*.lovable.app https://*.lovableproject.com",
     "img-src 'self' data: blob: https:",
