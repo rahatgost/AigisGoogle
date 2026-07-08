@@ -269,18 +269,79 @@ function stopFor(userId: string) {
   }
 }
 
-// Wire into vault session so we (re)start on unlock, stop on lock.
+// Wire into vault session so we (re)start on unlock, stop on lock. Also
+// listen for vault-changed events (any add/edit/delete/reorder/HOTP) and
+// `online` events so a change made offline auto-backs-up the moment the
+// device reconnects.
 let sessionUnsub: (() => void) | null = null;
 let activeUserId: string | null = null;
+let dirty = false;
+let debounceTimer: number | null = null;
+const DIRTY_DEBOUNCE_MS = 15 * 1000; // batch rapid changes
+
+const VAULT_CHANGED_EVENT = "aegis:vault-changed";
+
+function isOnline(): boolean {
+  return typeof navigator === "undefined" ? true : navigator.onLine !== false;
+}
+
+function tryFlushDirty() {
+  if (!dirty) return;
+  if (!activeUserId) return;
+  if (!isVaultUnlocked()) return;
+  if (!isOnline()) return;
+  const settings = getAutoBackupSettings(activeUserId);
+  if (!settings.enabled) return;
+  dirty = false;
+  void runAutoBackupNow(activeUserId);
+}
+
+function markDirty() {
+  dirty = true;
+  if (typeof window === "undefined") return;
+  if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+  debounceTimer = window.setTimeout(() => {
+    debounceTimer = null;
+    tryFlushDirty();
+  }, DIRTY_DEBOUNCE_MS);
+}
+
+function onOnline() {
+  // Coming back online: if a change happened while offline, flush right away.
+  if (dirty) tryFlushDirty();
+}
+
+function attachWindowListeners() {
+  if (typeof window === "undefined") return;
+  window.addEventListener(VAULT_CHANGED_EVENT, markDirty);
+  window.addEventListener("online", onOnline);
+}
+
+function detachWindowListeners() {
+  if (typeof window === "undefined") return;
+  window.removeEventListener(VAULT_CHANGED_EVENT, markDirty);
+  window.removeEventListener("online", onOnline);
+}
+
+let windowListenersAttached = false;
 
 export function initAutoBackup(userId: string) {
   activeUserId = userId;
   if (sessionUnsub) sessionUnsub();
   sessionUnsub = subscribeVaultSession(() => {
     if (!activeUserId) return;
-    if (isVaultUnlocked()) scheduleFor(activeUserId);
-    else stopFor(activeUserId);
+    if (isVaultUnlocked()) {
+      scheduleFor(activeUserId);
+      // Unlock might follow an offline change — flush anything pending.
+      if (dirty) tryFlushDirty();
+    } else {
+      stopFor(activeUserId);
+    }
   });
+  if (!windowListenersAttached) {
+    attachWindowListeners();
+    windowListenersAttached = true;
+  }
   if (isVaultUnlocked()) scheduleFor(userId);
 }
 
@@ -290,5 +351,14 @@ export function stopAutoBackup() {
     sessionUnsub = null;
   }
   for (const uid of Array.from(timers.keys())) stopFor(uid);
+  if (windowListenersAttached) {
+    detachWindowListeners();
+    windowListenersAttached = false;
+  }
+  if (debounceTimer !== null && typeof window !== "undefined") {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  dirty = false;
   activeUserId = null;
 }

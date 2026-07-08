@@ -35,6 +35,19 @@ import {
   type CreatePayload,
 } from "@/lib/vault-outbox";
 
+// Fired after any successful vault mutation (create/edit/delete/reorder/HOTP).
+// Auto-backup and other listeners subscribe to this on window.
+export const VAULT_CHANGED_EVENT = "aegis:vault-changed";
+function emitVaultChanged(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new Event(VAULT_CHANGED_EVENT));
+  } catch {
+    // ignore
+  }
+}
+
+
 const ACCOUNT_SELECT =
   "id, issuer, label, icon_slug, algorithm, digits, period, sort_order, is_favorite, tags, secret_ciphertext, secret_iv, otp_type, counter_ciphertext, counter_iv, updated_at";
 
@@ -313,6 +326,7 @@ export async function addAccount(
 
   if (isOffline()) {
     await enqueueOfflineCreate();
+    emitVaultChanged();
     return { queued: true };
   }
 
@@ -324,10 +338,12 @@ export async function addAccount(
       .single();
     if (error) throw error;
     if (data) void upsertVaultCache(data as VaultAccountRecord);
+    emitVaultChanged();
     return { queued: false };
   } catch (err) {
     if (isLikelyNetworkError(err)) {
       await enqueueOfflineCreate();
+      emitVaultChanged();
       return { queued: true };
     }
     throw err;
@@ -369,6 +385,7 @@ export async function advanceHotpCounter(
 
   if (isOffline()) {
     await patchCache();
+    emitVaultChanged();
     return { counter: next, queued: true };
   }
 
@@ -381,10 +398,12 @@ export async function advanceHotpCounter(
       .single();
     if (error) throw error;
     if (data) void upsertVaultCache(data as VaultAccountRecord);
+    emitVaultChanged();
     return { counter: next, queued: false };
   } catch (err) {
     if (isLikelyNetworkError(err)) {
       await patchCache();
+      emitVaultChanged();
       return { counter: next, queued: true };
     }
     throw err;
@@ -418,6 +437,7 @@ export async function deleteAccount(id: string): Promise<{ queued: boolean }> {
   if (isOffline()) {
     enqueueDelete(id);
     void removeFromVaultCache(id);
+    emitVaultChanged();
     return { queued: true };
   }
 
@@ -425,11 +445,13 @@ export async function deleteAccount(id: string): Promise<{ queued: boolean }> {
     await attempt();
     dequeueOutbox(id);
     void removeFromVaultCache(id);
+    emitVaultChanged();
     return { queued: false };
   } catch (err) {
     if (isLikelyNetworkError(err)) {
       enqueueDelete(id);
       void removeFromVaultCache(id);
+      emitVaultChanged();
       return { queued: true };
     }
     throw err;
@@ -472,16 +494,19 @@ export async function setAccountFavorite(
   if (isOffline()) {
     enqueueFavorite(id, isFavorite);
     await patchCacheFavorite();
+    emitVaultChanged();
     return { queued: true };
   }
 
   try {
     await attempt();
+    emitVaultChanged();
     return { queued: false };
   } catch (err) {
     if (isLikelyNetworkError(err)) {
       enqueueFavorite(id, isFavorite);
       await patchCacheFavorite();
+      emitVaultChanged();
       return { queued: true };
     }
     throw err;
@@ -900,6 +925,7 @@ export async function reorderAccounts(orderedIds: string[]): Promise<void> {
   if (orderedIds.length === 0) return;
   const updates = orderedIds.map((id, index) => ({ id, sort_order: index }));
   await patchCacheSortOrders(updates);
+  emitVaultChanged();
   if (isOffline()) return;
   await Promise.all(
     updates.map(({ id, sort_order }) =>

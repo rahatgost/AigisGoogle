@@ -1379,7 +1379,7 @@ function AutoBackupSheet({
               Scheduled auto-backup
             </div>
             <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
-              Silently uploads an encrypted .avf while your vault is unlocked. Zero-knowledge — passphrase never leaves this device.
+              Uploads an encrypted .avf right after you add or change an account (queued while offline, flushed on reconnect), plus a daily/weekly safety run. Zero-knowledge — passphrase never leaves this device.
             </div>
           </div>
           <motion.button
