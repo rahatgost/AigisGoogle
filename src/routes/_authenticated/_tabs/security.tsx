@@ -1291,6 +1291,13 @@ function AutoBackupSheet({
   const [needsPass, setNeedsPass] = useState<boolean>(!alreadyStored);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [log, setLog] = useState<AutoBackupLogEntry[]>(() => getAutoBackupLog(userId));
+
+  useEffect(() => {
+    setLog(getAutoBackupLog(userId));
+    const unsub = subscribeAutoBackup(userId, () => setLog(getAutoBackupLog(userId)));
+    return () => unsub();
+  }, [userId]);
 
   const canSave = !enabled
     ? true
