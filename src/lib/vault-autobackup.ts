@@ -106,7 +106,11 @@ function fromB64(b64: string): Uint8Array {
 async function wrapPassphrase(dek: CryptoKey, passphrase: string): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, dek, enc.encode(passphrase)),
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: iv as unknown as BufferSource },
+      dek,
+      enc.encode(passphrase) as unknown as BufferSource,
+    ),
   );
   return JSON.stringify({ iv: toB64(iv), ct: toB64(ct) });
 }
