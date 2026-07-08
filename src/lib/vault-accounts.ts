@@ -385,6 +385,7 @@ export async function advanceHotpCounter(
 
   if (isOffline()) {
     await patchCache();
+    emitVaultChanged();
     return { counter: next, queued: true };
   }
 
@@ -397,10 +398,12 @@ export async function advanceHotpCounter(
       .single();
     if (error) throw error;
     if (data) void upsertVaultCache(data as VaultAccountRecord);
+    emitVaultChanged();
     return { counter: next, queued: false };
   } catch (err) {
     if (isLikelyNetworkError(err)) {
       await patchCache();
+      emitVaultChanged();
       return { counter: next, queued: true };
     }
     throw err;
