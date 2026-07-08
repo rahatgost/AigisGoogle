@@ -925,6 +925,7 @@ export async function reorderAccounts(orderedIds: string[]): Promise<void> {
   if (orderedIds.length === 0) return;
   const updates = orderedIds.map((id, index) => ({ id, sort_order: index }));
   await patchCacheSortOrders(updates);
+  emitVaultChanged();
   if (isOffline()) return;
   await Promise.all(
     updates.map(({ id, sort_order }) =>
