@@ -1145,7 +1145,7 @@ function CloudBackupSheet({
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Label (e.g. before-cleanup)"
               className="w-full rounded-xl border px-3 py-2 text-[13px] outline-none"
-              style={{ borderColor: BORDER, background: "white", color: CHARCOAL }}
+              style={{ borderColor: BORDER, background: CREAM_SOFT, color: CHARCOAL }}
             />
             <PasswordField
               value={passphrase}
@@ -1189,7 +1189,7 @@ function CloudBackupSheet({
                 <li
                   key={e.name}
                   className="flex items-center gap-3 rounded-xl border px-3 py-2.5"
-                  style={{ borderColor: BORDER, background: "white" }}
+                  style={{ borderColor: BORDER, background: CREAM_SOFT }}
                 >
                   <div className="min-w-0 flex-1">
                     <div
@@ -1211,7 +1211,7 @@ function CloudBackupSheet({
                       setRestoreErr(null);
                     }}
                     className="rounded-full px-3 py-1.5 text-[12px]"
-                    style={{ background: CHARCOAL, color: "white" }}
+                    style={{ background: CHARCOAL, color: CREAM_SOFT }}
                   >
                     Restore
                   </button>
@@ -1234,7 +1234,7 @@ function CloudBackupSheet({
         {restoreTarget && (
           <div
             className="mt-4 rounded-xl border p-3"
-            style={{ borderColor: BORDER, background: "white" }}
+            style={{ borderColor: BORDER, background: CREAM_SOFT }}
           >
             <div className="mb-2 text-[12.5px]" style={{ color: CHARCOAL }}>
               Restore <span style={{ fontWeight: 600 }}>{restoreTarget.fileName}</span>
