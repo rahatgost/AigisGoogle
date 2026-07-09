@@ -1253,6 +1253,7 @@ function TagManagerSheet({
   const [busyTag, setBusyTag] = useState<string | null>(null);
   const [renameFor, setRenameFor] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const t = useT();
 
   const tagIndex = useMemo(() => {
     const m = new Map<string, DecryptedAccount[]>();
@@ -1290,11 +1291,11 @@ function TagManagerSheet({
       const { anyQueued } = await applyTransform((tags) => tags.filter((t) => t !== tag));
       toast.success(
         anyQueued
-          ? `Removed "${tag}" locally — will sync when online`
-          : `Removed tag "${tag}"`,
+          ? t("vault.toast.tagRemovedOffline", `Removed "${tag}" locally — will sync when online`, { tag })
+          : t("vault.toast.tagRemoved", `Removed tag "${tag}"`, { tag }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not remove tag.");
+      toast.error(e instanceof Error ? e.message : t("vault.toast.tagRemoveFailed", "Could not remove tag."));
     } finally {
       setBusyTag(null);
     }
@@ -1313,12 +1314,12 @@ function TagManagerSheet({
       );
       toast.success(
         anyQueued
-          ? `Renamed "${tag}" → "${target}" locally — will sync when online`
-          : `Renamed "${tag}" → "${target}"`,
+          ? t("vault.toast.tagRenamedOffline", `Renamed "${tag}" → "${target}" locally — will sync when online`, { from: tag, to: target })
+          : t("vault.toast.tagRenamed", `Renamed "${tag}" → "${target}"`, { from: tag, to: target }),
       );
       setRenameFor(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not rename tag.");
+      toast.error(e instanceof Error ? e.message : t("vault.toast.tagRenameFailed", "Could not rename tag."));
     } finally {
       setBusyTag(null);
     }
@@ -1327,7 +1328,7 @@ function TagManagerSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <button
-        aria-label="Close"
+        aria-label={t("common.close", "Close")}
         onClick={onClose}
         className="absolute inset-0"
         style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
@@ -1335,7 +1336,7 @@ function TagManagerSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Manage tags"
+        aria-label={t("vault.tagManager.aria", "Manage tags")}
         className="relative z-10 mx-auto flex max-h-[80vh] w-full max-w-[440px] flex-col rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px]"
         style={{
           background: CREAM_SOFT,
@@ -1350,15 +1351,15 @@ function TagManagerSheet({
         />
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3 style={typeSheetTitle}>Manage tags</h3>
-            <p style={typeSubLabel}>Rename or delete tags across every account.</p>
+            <h3 style={typeSheetTitle}>{t("vault.tagManager.title", "Manage tags")}</h3>
+            <p style={typeSubLabel}>{t("vault.tagManager.subtitle", "Rename or delete tags across every account.")}</p>
 
           </div>
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
             style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
-            aria-label="Close"
+            aria-label={t("common.close", "Close")}
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
           </button>
@@ -1369,7 +1370,7 @@ function TagManagerSheet({
             className="rounded-[14px] px-4 py-8 text-center text-[13px]"
             style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}`, color: MUTED }}
           >
-            No tags yet. Add one from any account's details sheet.
+            {t("vault.tagManager.empty", "No tags yet. Add one from any account's details sheet.")}
           </div>
         ) : (
           <div
@@ -1385,7 +1386,7 @@ function TagManagerSheet({
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <TagChip tag={tag} size="md" />
                       <span className="text-[11.5px]" style={{ color: MUTED }}>
-                        {count} account{count === 1 ? "" : "s"}
+                        {t(count === 1 ? "vault.tagManager.count.one" : "vault.tagManager.count.other", `${count} account${count === 1 ? "" : "s"}`, { count })}
                       </span>
                     </div>
                     {isRenaming ? (
@@ -1408,7 +1409,7 @@ function TagManagerSheet({
                           className="rounded-full px-2.5 py-1 text-[11px] disabled:opacity-60"
                           style={{ background: CHARCOAL, color: CREAM_SOFT, fontWeight: 600 }}
                         >
-                          Save
+                          {t("common.save", "Save")}
                         </button>
                       </div>
                     ) : (
@@ -1427,7 +1428,7 @@ function TagManagerSheet({
                             fontWeight: 600,
                           }}
                         >
-                          Rename
+                          {t("vault.tagManager.rename", "Rename")}
                         </button>
                         <button
                           type="button"
@@ -1441,7 +1442,7 @@ function TagManagerSheet({
                             fontWeight: 600,
                           }}
                         >
-                          {isBusy ? "…" : "Delete"}
+                          {isBusy ? "…" : t("vault.tagManager.delete", "Delete")}
                         </button>
                       </div>
                     )}
@@ -1453,8 +1454,10 @@ function TagManagerSheet({
         )}
 
         <p className="mt-3 px-1 text-[11px]" style={{ color: MUTED }}>
-          Renaming to an existing tag merges the two. Deleting removes the tag from every account —
-          the accounts themselves stay.
+          {t(
+            "vault.tagManager.footnote",
+            "Renaming to an existing tag merges the two. Deleting removes the tag from every account — the accounts themselves stay.",
+          )}
         </p>
       </div>
     </div>
@@ -1517,6 +1520,7 @@ function SearchField({
   onChange: (v: string) => void;
   menu?: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-2">
       <div
@@ -1532,7 +1536,7 @@ function SearchField({
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search accounts"
+          placeholder={t("vault.search.placeholder", "Search accounts")}
           className="flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[color:var(--aegis-placeholder)]"
           style={{ color: CHARCOAL }}
         />
@@ -1542,7 +1546,7 @@ function SearchField({
             onClick={() => onChange("")}
             className="flex h-6 w-6 items-center justify-center rounded-full"
             style={{ color: MUTED, background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
-            aria-label="Clear search"
+            aria-label={t("vault.search.clearAria", "Clear search")}
           >
             <X className="h-3 w-3" strokeWidth={2} />
           </button>
@@ -1572,6 +1576,7 @@ function SearchMenu({
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -1628,7 +1633,7 @@ function SearchMenu({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="More actions"
+        aria-label={t("vault.menu.aria", "More actions")}
         className="relative flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-[0.97]"
         style={{
           background: CREAM_SOFT,
@@ -1662,13 +1667,13 @@ function SearchMenu({
                 "0 8px 24px -8px rgb(var(--aegis-ink-rgb) / 0.18), 0 2px 6px -2px rgb(var(--aegis-ink-rgb) / 0.10)",
             }}
           >
-            {item(<CheckSquare className="h-3.5 w-3.5" strokeWidth={1.8} />, "Select multiple", onSelect)}
+            {item(<CheckSquare className="h-3.5 w-3.5" strokeWidth={1.8} />, t("vault.menu.selectMultiple", "Select multiple"), onSelect)}
             {onManageTags &&
-              item(<Tags className="h-3.5 w-3.5" strokeWidth={1.8} />, "Manage tags", onManageTags)}
+              item(<Tags className="h-3.5 w-3.5" strokeWidth={1.8} />, t("vault.menu.manageTags", "Manage tags"), onManageTags)}
             {onClearFilters &&
               item(
                 <X className="h-3.5 w-3.5" strokeWidth={1.8} />,
-                "Clear filters",
+                t("vault.menu.clearFilters", "Clear filters"),
                 onClearFilters,
                 String(activeFilterCount),
               )}
@@ -1679,10 +1684,10 @@ function SearchMenu({
                   className="mt-1.5 flex items-center justify-between px-2.5 pb-1 pt-2 text-[10.5px] uppercase tracking-[0.08em]"
                   style={{ color: MUTED, fontWeight: 600 }}
                 >
-                  <span>Filter by tag</span>
+                  <span>{t("vault.menu.filterByTag", "Filter by tag")}</span>
                   {activeFilterCount > 0 && (
                     <span className="tabular-nums normal-case tracking-normal" style={{ color: CHARCOAL }}>
-                      {activeFilterCount} on
+                      {t("vault.menu.tagCount.on", `${activeFilterCount} on`, { count: activeFilterCount })}
                     </span>
                   )}
                 </div>
@@ -1733,6 +1738,7 @@ function SearchMenu({
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const t = useT();
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -1753,15 +1759,15 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
             letterSpacing: "-0.02em",
           }}
         >
-          No codes yet
+          {t("vault.emptyState.title", "No codes yet")}
         </h2>
         <p className="max-w-[260px] text-[13px]" style={{ color: MUTED }}>
-          Scan a QR from any service or paste a secret to add your first account.
+          {t("vault.emptyState.body", "Scan a QR from any service or paste a secret to add your first account.")}
         </p>
       </div>
       <div className="w-full max-w-[240px] pt-1">
         <PrimaryButton onClick={onAdd} icon={<Plus className="h-4 w-4" strokeWidth={2} />}>
-          Add your first account
+          {t("vault.emptyState.cta", "Add your first account")}
         </PrimaryButton>
       </div>
     </motion.div>
@@ -1790,6 +1796,7 @@ function BulkActionsBar({
   onExport: () => void;
 }) {
   const disabled = count === 0 || busy;
+  const t = useT();
   return (
     <motion.div
       initial={{ y: 60, opacity: 0 }}
@@ -1797,7 +1804,7 @@ function BulkActionsBar({
       exit={{ y: 60, opacity: 0 }}
       transition={soft}
       role="toolbar"
-      aria-label="Bulk actions"
+      aria-label={t("vault.bulk.toolbarAria", "Bulk actions")}
       className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[440px] px-3 pb-[max(12px,env(safe-area-inset-bottom))]"
     >
       <div
@@ -1813,30 +1820,30 @@ function BulkActionsBar({
           onClick={onCancel}
           className="flex h-9 w-9 items-center justify-center rounded-full"
           style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
-          aria-label="Cancel selection"
+          aria-label={t("vault.bulk.cancelAria", "Cancel selection")}
         >
           <X className="h-4 w-4" strokeWidth={1.8} />
         </button>
         <div className="flex flex-1 items-center gap-2 px-1 text-[13px]" style={{ color: CHARCOAL }}>
           <span style={{ fontWeight: 600 }}>{count}</span>
-          <span style={{ color: MUTED }}>selected</span>
+          <span style={{ color: MUTED }}>{t("vault.bulk.selected", "selected")}</span>
           <button
             type="button"
             onClick={onSelectAll}
             className="ml-auto rounded-full px-2 py-0.5 text-[11px]"
             style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, fontWeight: 600 }}
           >
-            All
+            {t("vault.bulk.all", "All")}
           </button>
         </div>
-        <BulkIconBtn label="Add tag" onClick={onTag} disabled={disabled}>
+        <BulkIconBtn label={t("vault.bulk.addTag", "Add tag")} onClick={onTag} disabled={disabled}>
           <TagIcon className="h-4 w-4" strokeWidth={1.8} />
         </BulkIconBtn>
-        <BulkIconBtn label="Export selected" onClick={onExport} disabled={disabled}>
+        <BulkIconBtn label={t("vault.bulk.exportSelected", "Export selected")} onClick={onExport} disabled={disabled}>
           <Download className="h-4 w-4" strokeWidth={1.8} />
         </BulkIconBtn>
         <BulkIconBtn
-          label="Delete selected"
+          label={t("vault.bulk.deleteSelected", "Delete selected")}
           onClick={onDelete}
           disabled={disabled}
           danger
@@ -1889,6 +1896,7 @@ function BulkTagSheet({
   onClose: () => void;
   onPick: (tag: string) => void;
 }) {
+  const t = useT();
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
@@ -1897,7 +1905,7 @@ function BulkTagSheet({
       exit={{ opacity: 0 }}
     >
       <motion.button
-        aria-label="Close"
+        aria-label={t("common.close", "Close")}
         onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1919,9 +1927,9 @@ function BulkTagSheet({
       >
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div style={typeSheetTitleLg}>Add tag</div>
+            <div style={typeSheetTitleLg}>{t("vault.bulkTag.title", "Add tag")}</div>
             <div className="mt-1" style={{ ...typeSubLabel, fontSize: 12.5 }}>
-              Pick a tag to add to every selected account.
+              {t("vault.bulkTag.subtitle", "Pick a tag to add to every selected account.")}
             </div>
 
           </div>
@@ -1930,7 +1938,7 @@ function BulkTagSheet({
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full"
             style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
-            aria-label="Close"
+            aria-label={t("common.close", "Close")}
           >
             <X className="h-4 w-4" strokeWidth={1.8} />
           </motion.button>
