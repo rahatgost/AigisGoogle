@@ -33,6 +33,7 @@ const CRITICAL_FILES = [
   "components/aegis/plan-comparison-sheet.tsx",
   "components/aegis/sharing-section.tsx",
   "components/vault/AccountCard.tsx",
+  "routes/_authenticated/_tabs/vault.tsx",
 ];
 
 const CALL_PATTERNS: RegExp[] = [
