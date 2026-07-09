@@ -668,16 +668,11 @@ function VaultPage() {
               onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
               onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
               activeFilterCount={activeTags.size}
+              tags={allTags}
+              activeTags={activeTags}
+              onToggleTag={toggleTagFilter}
             />
           }
-        />
-      )}
-
-      {accounts && allTags.length > 0 && !selectionMode && (
-        <TagFilterRow
-          tags={allTags}
-          active={activeTags}
-          onToggle={toggleTagFilter}
         />
       )}
 
