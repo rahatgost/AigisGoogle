@@ -658,26 +658,18 @@ function VaultPage() {
       )}
 
       {accounts && accounts.length > 0 && !selectionMode && (
-        <SearchField value={query} onChange={setQuery} />
-      )}
-
-      {accounts && accounts.length > 0 && allTags.length === 0 && !selectionMode && (
-        <div className="mb-1 mt-1 flex items-center justify-end">
-          <button
-            type="button"
-            onClick={() => enterSelection()}
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] transition-colors"
-            style={{
-              background: "rgb(var(--aegis-ink-rgb) / 0.06)",
-              color: CHARCOAL,
-              fontWeight: 600,
-            }}
-            aria-label="Select multiple accounts"
-          >
-            <CheckSquare className="h-3.5 w-3.5" strokeWidth={1.8} />
-            Select
-          </button>
-        </div>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          menu={
+            <SearchMenu
+              onSelect={() => enterSelection()}
+              onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
+              onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
+              activeFilterCount={activeTags.size}
+            />
+          }
+        />
       )}
 
       {accounts && allTags.length > 0 && !selectionMode && (
@@ -685,9 +677,6 @@ function VaultPage() {
           tags={allTags}
           active={activeTags}
           onToggle={toggleTagFilter}
-          onClear={() => setActiveTags(new Set())}
-          onManage={() => setTagManagerOpen(true)}
-          onSelect={() => enterSelection()}
         />
       )}
 
