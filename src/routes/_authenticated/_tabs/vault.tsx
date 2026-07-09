@@ -674,6 +674,9 @@ function VaultPage() {
       )}
 
       <div className="pt-2">
+        <IncomingSharesSection />
+
+
         {error && <Notice kind="error">{error}</Notice>}
 
         {accounts === null && !error && (
