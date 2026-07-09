@@ -12,6 +12,7 @@ import {
   type OtpType,
 } from "@/lib/vault-accounts";
 import { TagInput } from "@/components/vault/tags";
+import { friendlyVaultSaveError } from "@/lib/friendly-errors";
 import { ScanTab } from "@/components/vault/ScanTab";
 import {
   ArrowLeft,
