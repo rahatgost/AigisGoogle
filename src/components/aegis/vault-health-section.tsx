@@ -560,11 +560,7 @@ export function HealthSheet({
                 severity="info"
               >
                 {!canBreachScan ? (
-                  <UpgradePrompt
-                    title="Breach monitoring"
-                    body="Pro checks your issuers against Have I Been Pwned so you know when a service you use has leaked credentials."
-                    tier="Pro"
-                  />
+                  <BreachUpgradeCard />
                 ) : (
                   <>
                 <div className="text-[11.5px]" style={{ color: MUTED }}>
