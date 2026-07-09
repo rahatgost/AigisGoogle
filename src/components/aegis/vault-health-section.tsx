@@ -32,7 +32,7 @@ import {
   type VaultHealthReport,
 } from "@/lib/vault-health";
 import { usePlan } from "@/hooks/use-plan";
-import { UpgradePrompt } from "@/components/aegis/upgrade-prompt";
+import { BreachUpgradeCard } from "@/components/aegis/breach-upgrade-card";
 
 
 /**
@@ -559,11 +559,7 @@ export function HealthSheet({
                 severity="info"
               >
                 {!canBreachScan ? (
-                  <UpgradePrompt
-                    title="Breach monitoring"
-                    body="Pro checks your issuers against Have I Been Pwned so you know when a service you use has leaked credentials."
-                    tier="Pro"
-                  />
+                  <BreachUpgradeCard />
                 ) : (
                   <>
                 <div className="text-[11.5px]" style={{ color: MUTED }}>
