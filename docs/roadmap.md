@@ -288,8 +288,8 @@ encrypted, without the server ever seeing plaintext.
 ## Phase 14 — Openness & self-hosting (`[P2]`, 2 weeks)
 
 ### 14.1 Open-source client `[P2]`
-- [ ] Publish client + shared crypto under Apache 2.0 or MPL 2.0
-- [ ] Reproducible build recipe in `docs/reproducible-build.md`
+- [x] Publish client + shared crypto under Apache 2.0 or MPL 2.0
+- [x] Reproducible build recipe in `docs/reproducible-build.md`
 
 ### 14.2 Public API + docs `[P2]`
 - [ ] Publish OpenAPI schema for read-only vault ops (personal API token required)

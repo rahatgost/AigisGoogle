@@ -1,0 +1,13 @@
+Aegis Authenticator
+Copyright 2026 Aegis Authenticator contributors
+
+This product includes software developed as the Aegis open-source
+client (web app, browser extension, and shared crypto library).
+
+Licensed under the Apache License, Version 2.0. See LICENSE for the
+full text of the license.
+
+Third-party dependencies are distributed under their own licenses. Run
+`npm ls --all --json` (or your package manager's equivalent) against a
+freshly installed tree to enumerate them; each package retains its
+original license file inside `node_modules/`.
