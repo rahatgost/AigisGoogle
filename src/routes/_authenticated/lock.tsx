@@ -12,6 +12,7 @@ import {
   toByteaHex,
 } from "@/lib/vault-crypto";
 import { setVaultKey } from "@/lib/vault-session";
+import { runV3Migration } from "@/lib/vault-migrator";
 import {
   getFailureCount,
   recordFailure,
