@@ -1531,11 +1531,17 @@ function SearchMenu({
   onManageTags,
   onClearFilters,
   activeFilterCount,
+  tags,
+  activeTags,
+  onToggleTag,
 }: {
   onSelect: () => void;
   onManageTags?: () => void;
   onClearFilters?: () => void;
   activeFilterCount: number;
+  tags: { tag: string; count: number }[];
+  activeTags: Set<string>;
+  onToggleTag: (tag: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -1556,6 +1562,15 @@ function SearchMenu({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  const orderedTags = useMemo(() => {
+    return [...tags].sort((a, b) => {
+      const aOn = activeTags.has(a.tag) ? 0 : 1;
+      const bOn = activeTags.has(b.tag) ? 0 : 1;
+      if (aOn !== bOn) return aOn - bOn;
+      return b.count - a.count || a.tag.localeCompare(b.tag);
+    });
+  }, [tags, activeTags]);
 
   const item = (icon: React.ReactNode, label: string, onClick: () => void, hint?: string) => (
     <button
@@ -1612,7 +1627,7 @@ function SearchMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.14, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute right-0 top-[calc(100%+6px)] z-30 w-[200px] rounded-[14px] p-1.5"
+            className="absolute right-0 top-[calc(100%+6px)] z-30 w-[240px] rounded-[14px] p-1.5"
             style={{
               background: CREAM_SOFT,
               border: `1px solid ${BORDER}`,
@@ -1630,6 +1645,59 @@ function SearchMenu({
                 onClearFilters,
                 String(activeFilterCount),
               )}
+
+            {orderedTags.length > 0 && (
+              <>
+                <div
+                  className="mt-1.5 flex items-center justify-between px-2.5 pb-1 pt-2 text-[10.5px] uppercase tracking-[0.08em]"
+                  style={{ color: MUTED, fontWeight: 600 }}
+                >
+                  <span>Filter by tag</span>
+                  {activeFilterCount > 0 && (
+                    <span className="tabular-nums normal-case tracking-normal" style={{ color: CHARCOAL }}>
+                      {activeFilterCount} on
+                    </span>
+                  )}
+                </div>
+                <div className="flex max-h-[220px] flex-wrap gap-1.5 overflow-y-auto px-1.5 pb-1.5">
+                  {orderedTags.map(({ tag, count }) => {
+                    const isActive = activeTags.has(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => onToggleTag(tag)}
+                        className="flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] transition-colors"
+                        style={{
+                          background: isActive ? CHARCOAL : "rgb(var(--aegis-ink-rgb) / 0.05)",
+                          color: isActive ? CREAM_SOFT : CHARCOAL,
+                          border: `1px solid ${isActive ? CHARCOAL : BORDER}`,
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{
+                            background: isActive ? CREAM_SOFT : `hsl(${hashHue(tag)}, 55%, 55%)`,
+                          }}
+                        />
+                        <span className="truncate">{tag}</span>
+                        <span
+                          className="tabular-nums"
+                          style={{
+                            color: isActive ? "rgb(var(--aegis-cream-rgb) / 0.75)" : MUTED,
+                            fontSize: "10.5px",
+                          }}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
