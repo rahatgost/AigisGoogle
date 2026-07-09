@@ -1,12 +1,10 @@
-// Phase 13.1 — Sharing UI section, rendered inside the Security tab.
+// Phase 13.1 — Sharing UI.
 //
-// Three surfaces:
-//   1. "Share an account" flow — pick one of your accounts + enter recipient
-//      email; local decrypt → seal to recipient pub → insert vault_shares row.
-//   2. Outgoing shares list — with revoke button (soft-delete + flags the
-//      account for rotation).
-//   3. Incoming shares list — decrypts sealed secrets in-session and shows
-//      live TOTP codes read-only (no persistence in vault_accounts).
+// Two surfaces, split across tabs:
+//   • SharingSection (Security tab) — outgoing shares list with revoke, plus
+//     rotation reminders for accounts you previously shared.
+//   • IncomingSharesSection (Vault tab) — accounts other people shared with
+//     you, rendered as their own read-only group above your codes.
 
 import { useEffect, useMemo, useState } from "react";
 import * as OTPAuth from "otpauth";
@@ -40,10 +38,14 @@ interface OwnedAccount {
   needs_rotation: boolean;
 }
 
+/* ============================================================
+   SharingSection — Security tab
+   Shows only outgoing shares + rotation reminders.
+   ============================================================ */
+
 export function SharingSection() {
   const [keys, setKeys] = useState<UserKeyMaterial | null>(null);
   const [outgoing, setOutgoing] = useState<OutgoingShare[]>([]);
-  const [incoming, setIncoming] = useState<IncomingShare[]>([]);
   const [rotationNeeded, setRotationNeeded] = useState<OwnedAccount[]>([]);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export function SharingSection() {
         const km = await ensureUserKeys(uid, dek);
         if (cancelled) return;
         setKeys(km);
-        await refreshLists(km);
+        await refresh();
       } catch (err) {
         if (!cancelled) {
           setNotice({
@@ -81,24 +83,22 @@ export function SharingSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshLists = async (km: UserKeyMaterial) => {
-    const [out, inc, rotRes] = await Promise.all([
+  const refresh = async () => {
+    const [out, rotRes] = await Promise.all([
       listOutgoingShares(),
-      listIncomingShares(km),
       supabase
         .from("vault_accounts")
         .select("id, issuer, label, needs_rotation")
         .eq("needs_rotation", true),
     ]);
     setOutgoing(out);
-    setIncoming(inc);
     setRotationNeeded((rotRes.data ?? []) as OwnedAccount[]);
   };
 
   const handleRevoke = async (shareId: string) => {
     try {
       await revokeShare(shareId);
-      if (keys) await refreshLists(keys);
+      await refresh();
       toast.success("Share revoked. Consider rotating the code at the source site.");
     } catch (err) {
       setNotice({
@@ -117,7 +117,7 @@ export function SharingSection() {
     }
   };
 
-  if (loading) return null;
+  if (loading || !keys) return null;
 
   return (
     <>
@@ -178,7 +178,8 @@ export function SharingSection() {
         <SettingsRow
           icon={<Inbox className="h-4 w-4" strokeWidth={1.8} />}
           title="Shared with you"
-          value={incoming.length === 0 ? "None" : `${incoming.length} account${incoming.length === 1 ? "" : "s"}`}
+          description="Appears at the top of your vault"
+          value="In vault"
         />
       </SettingsGroup>
 
@@ -215,14 +216,6 @@ export function SharingSection() {
         </div>
       )}
 
-      {incoming.length > 0 && (
-        <div className="mt-2 flex flex-col gap-1">
-          {incoming.map((share) => (
-            <IncomingShareCard key={share.id} share={share} />
-          ))}
-        </div>
-      )}
-
       {notice && (
         <div className="pt-2">
           <Notice kind={notice.kind}>{notice.text}</Notice>
@@ -232,6 +225,55 @@ export function SharingSection() {
   );
 }
 
+/* ============================================================
+   IncomingSharesSection — Vault tab
+   Rendered as its own group above the user's own accounts.
+   ============================================================ */
+
+export function IncomingSharesSection() {
+  const [incoming, setIncoming] = useState<IncomingShare[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const dek = getVaultKey();
+      if (!dek) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes.user?.id;
+        if (!uid) throw new Error("Not signed in.");
+        const km = await ensureUserKeys(uid, dek);
+        if (cancelled) return;
+        const inc = await listIncomingShares(km);
+        if (!cancelled) setIncoming(inc);
+      } catch {
+        // Silently skip — sharing is optional; the Security tab surfaces errors.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading || incoming.length === 0) return null;
+
+  return (
+    <div className="mb-2">
+      <SectionLabel>Shared with you</SectionLabel>
+      <div className="flex flex-col gap-1">
+        {incoming.map((share) => (
+          <IncomingShareCard key={share.id} share={share} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ---------------- incoming share card with live TOTP ---------------- */
 

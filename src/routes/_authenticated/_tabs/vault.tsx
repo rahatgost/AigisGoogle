@@ -81,6 +81,7 @@ import {
 } from "@/components/aegis/typography";
 import { LargeTitle, SectionLabel } from "@/components/aegis/settings";
 import { InstallPrompt } from "@/components/aegis/InstallPrompt";
+import { IncomingSharesSection } from "@/components/aegis/sharing-section";
 import { useLingui } from "@lingui/react";
 
 export const Route = createFileRoute("/_authenticated/_tabs/vault")({
@@ -673,6 +674,9 @@ function VaultPage() {
       )}
 
       <div className="pt-2">
+        <IncomingSharesSection />
+
+
         {error && <Notice kind="error">{error}</Notice>}
 
         {accounts === null && !error && (
