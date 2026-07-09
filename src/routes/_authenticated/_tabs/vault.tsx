@@ -1115,16 +1115,10 @@ function TagFilterRow({
   tags,
   active,
   onToggle,
-  onClear,
-  onManage,
-  onSelect,
 }: {
   tags: { tag: string; count: number }[];
   active: Set<string>;
   onToggle: (tag: string) => void;
-  onClear: () => void;
-  onManage: () => void;
-  onSelect?: () => void;
 }) {
   const activeCount = active.size;
   // Sort so active filters lead — user always sees what's on first.
@@ -1138,61 +1132,22 @@ function TagFilterRow({
   return (
     <div className="mt-2.5">
       {/* Label row */}
-      <div className="mb-1.5 flex items-center justify-between px-0.5">
-        <div className="flex items-center gap-2">
-          <span style={typeEyebrow}>Filter</span>
-          {activeCount > 0 && (
-            <span
-              className="rounded-full px-1.5 py-0.5"
-              style={{
-                ...typeBadge,
-                background: CHARCOAL,
-                fontWeight: 700,
-                fontFamily: "var(--font-mono)",
-                letterSpacing: "0.06em",
-              }}
-            >
-              {activeCount}
-            </span>
-          )}
-
-        </div>
-        <div className="flex items-center gap-1">
-          {activeCount > 0 && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.06)]"
-              style={{ color: MUTED, fontWeight: 500 }}
-              aria-label="Clear tag filters"
-            >
-              <X className="h-2.5 w-2.5" strokeWidth={2.4} />
-              Clear
-            </button>
-          )}
-          {onSelect && (
-            <button
-              type="button"
-              onClick={onSelect}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.06)]"
-              style={{ color: MUTED, fontWeight: 500 }}
-              aria-label="Select multiple accounts"
-            >
-              <CheckSquare className="h-2.5 w-2.5" strokeWidth={2.2} />
-              Select
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onManage}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] transition-colors hover:bg-[rgb(var(--aegis-ink-rgb)/0.06)]"
-            style={{ color: MUTED, fontWeight: 500 }}
-            aria-label="Manage tags"
+      <div className="mb-1.5 flex items-center gap-2 px-0.5">
+        <span style={typeEyebrow}>Filter</span>
+        {activeCount > 0 && (
+          <span
+            className="rounded-full px-1.5 py-0.5"
+            style={{
+              ...typeBadge,
+              background: CHARCOAL,
+              fontWeight: 700,
+              fontFamily: "var(--font-mono)",
+              letterSpacing: "0.06em",
+            }}
           >
-            <Tags className="h-2.5 w-2.5" strokeWidth={2.2} />
-            Manage
-          </button>
-        </div>
+            {activeCount}
+          </span>
+        )}
       </div>
 
 
