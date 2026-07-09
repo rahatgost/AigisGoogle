@@ -87,6 +87,12 @@ function safeRedirect(target: string | undefined): string {
   return "/vault";
 }
 
+async function finishUnlock(userId: string, dek: CryptoKey, routeAfterUnlock: () => void) {
+  await ensureUserKeys(userId, dek);
+  void runV3Migration(userId, dek);
+  routeAfterUnlock();
+}
+
 function LockPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -213,8 +219,7 @@ function LockPage() {
       if (error) throw error;
       setVaultKey(dek);
       await maybeEnrollBiometric(dek);
-      void ensureUserKeys(user.id, dek).catch(() => {});
-      routeAfterUnlock();
+      await finishUnlock(user.id, dek, routeAfterUnlock);
     } catch (err) {
       setNotice({
         kind: "error",
@@ -288,12 +293,7 @@ function LockPage() {
             }
           })();
         }
-        // Phase 12.2: background row-level v2 → v3 re-encrypt. Runs
-        // silently, telemetry lands in `client_errors` on completion.
-        void runV3Migration(user.id, dek);
-        // Phase 13.1: create sharing keypair on first unlock after upgrade.
-        void ensureUserKeys(user.id, dek).catch(() => {});
-        routeAfterUnlock();
+        await finishUnlock(user.id, dek, routeAfterUnlock);
       } catch (cryptoErr) {
         // WebCrypto throws OperationError with an empty message in Chrome
         // for a wrong key. Any unwrap/decrypt failure here means the
@@ -337,9 +337,7 @@ function LockPage() {
     try {
       const dek = await unlockWithBiometric(user.id);
       setVaultKey(dek);
-      void runV3Migration(user.id, dek);
-      void ensureUserKeys(user.id, dek).catch(() => {});
-      routeAfterUnlock();
+      await finishUnlock(user.id, dek, routeAfterUnlock);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Biometric unlock failed.";
       // If the stored blob is broken (e.g. cleared), drop it so user isn't stuck.
