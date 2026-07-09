@@ -149,4 +149,45 @@ export const messages: Record<string, string> = {
 
   // Vault card
   "vault.card.share": "Share",
+
+  // Plan comparison sheet
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — $0",
+  "plan.price.pro": "Pro — $2.99/mo",
+  "plan.price.family": "Family — $4.99/mo",
+
+  // Sharing section (Security tab)
+  "sharing.rotate.title": "Rotate these secrets",
+  "sharing.rotate.description":
+    "You revoked a share for these accounts. TOTP secrets don't rotate automatically — sign in to each site's security page and re-enroll to invalidate the copy your former recipient held.",
+  "sharing.rotate.done": "Done",
+  "sharing.row.shareAccount.title": "Share an account",
+  "sharing.row.shareAccount.description": "Open any account card and tap Share",
+  "sharing.row.shareAccount.value": "From vault",
+  "sharing.row.outgoing.title": "Outgoing shares",
+  "sharing.row.outgoing.none": "None",
+  "sharing.row.outgoing.count": "{count} active",
+  "sharing.row.sharedWithYou.title": "Shared with you",
+  "sharing.row.sharedWithYou.description": "Appears at the top of your vault",
+  "sharing.row.sharedWithYou.value": "In vault",
+  "sharing.status.active": "Active",
+  "sharing.status.revoked": "Revoked",
+  "sharing.revoke": "Revoke",
+  "sharing.account.fallback": "Account",
+  "sharing.incoming.header": "Shared with you",
+  "sharing.incoming.readOnly": "Shared · read-only",
+  "sharing.incoming.fallback": "Shared account",
+  "sharing.revoke.toast": "Share revoked. Consider rotating the code at the source site.",
+
+  // Vault card share dialog
+  "vault.card.share.title": "Share {issuer}",
+  "vault.card.share.accountFallback": "account",
+  "vault.card.share.recipientEmail": "Recipient's email",
+  "vault.card.share.placeholder": "friend@example.com",
+  "vault.card.share.description":
+    "End-to-end encrypted. They must already have an Aegis account and have unlocked their vault at least once.",
+  "vault.card.share.submit": "Share",
+  "vault.card.share.busy": "Sharing…",
 };

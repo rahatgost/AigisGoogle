@@ -94,4 +94,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — सक्षम करने के लिए अपग्रेड करें",
 
   "vault.card.share": "साझा करें",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — $0",
+  "plan.price.pro": "Pro — $2.99/माह",
+  "plan.price.family": "Family — $4.99/माह",
+
+  "sharing.rotate.title": "इन गुप्त कुंजियों को बदलें",
+  "sharing.rotate.description":
+    "आपने इन खातों के लिए साझा वापस लिया। TOTP गुप्त कुंजियाँ स्वचालित नहीं बदलतीं — हर साइट के सुरक्षा पेज पर जाकर फिर से पंजीकरण करें ताकि पूर्व प्राप्तकर्ता की प्रति अमान्य हो जाए।",
+  "sharing.rotate.done": "हो गया",
+  "sharing.row.shareAccount.title": "खाता साझा करें",
+  "sharing.row.shareAccount.description": "कोई खाता कार्ड खोलें और साझा दबाएँ",
+  "sharing.row.shareAccount.value": "वॉल्ट से",
+  "sharing.row.outgoing.title": "आउटगोइंग साझा",
+  "sharing.row.outgoing.none": "कोई नहीं",
+  "sharing.row.outgoing.count": "{count} सक्रिय",
+  "sharing.row.sharedWithYou.title": "आपके साथ साझा",
+  "sharing.row.sharedWithYou.description": "आपके वॉल्ट के शीर्ष पर दिखता है",
+  "sharing.row.sharedWithYou.value": "वॉल्ट में",
+  "sharing.status.active": "सक्रिय",
+  "sharing.status.revoked": "रद्द",
+  "sharing.revoke": "रद्द करें",
+  "sharing.account.fallback": "खाता",
+  "sharing.incoming.header": "आपके साथ साझा",
+  "sharing.incoming.readOnly": "साझा · केवल पढ़ने योग्य",
+  "sharing.incoming.fallback": "साझा खाता",
+  "sharing.revoke.toast": "साझा रद्द किया गया। मूल साइट पर कोड बदलने पर विचार करें।",
+
+  "vault.card.share.title": "{issuer} साझा करें",
+  "vault.card.share.accountFallback": "खाता",
+  "vault.card.share.recipientEmail": "प्राप्तकर्ता का ईमेल",
+  "vault.card.share.placeholder": "friend@example.com",
+  "vault.card.share.description":
+    "एंड-टू-एंड एन्क्रिप्टेड। उनके पास पहले से Aegis खाता होना चाहिए और उन्होंने कम से कम एक बार अपना वॉल्ट अनलॉक किया हो।",
+  "vault.card.share.submit": "साझा करें",
+  "vault.card.share.busy": "साझा हो रहा है…",
 };

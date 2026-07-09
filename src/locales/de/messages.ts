@@ -94,4 +94,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — upgraden zum Aktivieren",
 
   "vault.card.share": "Teilen",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — 0 $",
+  "plan.price.pro": "Pro — 2,99 $/Monat",
+  "plan.price.family": "Family — 4,99 $/Monat",
+
+  "sharing.rotate.title": "Diese Geheimnisse erneuern",
+  "sharing.rotate.description":
+    "Du hast eine Freigabe für diese Konten widerrufen. TOTP-Geheimnisse rotieren nicht automatisch — melde dich auf jeder Sicherheitsseite an und richte 2FA neu ein, um die Kopie deines ehemaligen Empfängers ungültig zu machen.",
+  "sharing.rotate.done": "Erledigt",
+  "sharing.row.shareAccount.title": "Ein Konto teilen",
+  "sharing.row.shareAccount.description": "Öffne eine Kontokarte und tippe auf Teilen",
+  "sharing.row.shareAccount.value": "Aus dem Tresor",
+  "sharing.row.outgoing.title": "Ausgehende Freigaben",
+  "sharing.row.outgoing.none": "Keine",
+  "sharing.row.outgoing.count": "{count} aktiv",
+  "sharing.row.sharedWithYou.title": "Mit dir geteilt",
+  "sharing.row.sharedWithYou.description": "Erscheint oben in deinem Tresor",
+  "sharing.row.sharedWithYou.value": "Im Tresor",
+  "sharing.status.active": "Aktiv",
+  "sharing.status.revoked": "Widerrufen",
+  "sharing.revoke": "Widerrufen",
+  "sharing.account.fallback": "Konto",
+  "sharing.incoming.header": "Mit dir geteilt",
+  "sharing.incoming.readOnly": "Geteilt · schreibgeschützt",
+  "sharing.incoming.fallback": "Geteiltes Konto",
+  "sharing.revoke.toast": "Freigabe widerrufen. Wechsle den Code auf der Ursprungsseite.",
+
+  "vault.card.share.title": "{issuer} teilen",
+  "vault.card.share.accountFallback": "Konto",
+  "vault.card.share.recipientEmail": "E-Mail des Empfängers",
+  "vault.card.share.placeholder": "freund@beispiel.com",
+  "vault.card.share.description":
+    "Ende-zu-Ende verschlüsselt. Die Person muss bereits ein Aegis-Konto haben und den Tresor mindestens einmal entsperrt haben.",
+  "vault.card.share.submit": "Teilen",
+  "vault.card.share.busy": "Wird geteilt…",
 };

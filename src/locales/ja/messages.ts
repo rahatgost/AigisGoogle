@@ -94,4 +94,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — アップグレードで有効化",
 
   "vault.card.share": "共有",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — $0",
+  "plan.price.pro": "Pro — $2.99/月",
+  "plan.price.family": "Family — $4.99/月",
+
+  "sharing.rotate.title": "これらのシークレットを更新",
+  "sharing.rotate.description":
+    "これらのアカウントの共有を取り消しました。TOTP のシークレットは自動で切り替わりません — 各サイトのセキュリティ設定にサインインして再登録し、以前の受信者が持っているコピーを無効にしてください。",
+  "sharing.rotate.done": "完了",
+  "sharing.row.shareAccount.title": "アカウントを共有",
+  "sharing.row.shareAccount.description": "任意のアカウントカードを開いて「共有」をタップ",
+  "sharing.row.shareAccount.value": "保管庫から",
+  "sharing.row.outgoing.title": "共有中",
+  "sharing.row.outgoing.none": "なし",
+  "sharing.row.outgoing.count": "{count} 件がアクティブ",
+  "sharing.row.sharedWithYou.title": "あなたと共有",
+  "sharing.row.sharedWithYou.description": "保管庫の上部に表示されます",
+  "sharing.row.sharedWithYou.value": "保管庫内",
+  "sharing.status.active": "アクティブ",
+  "sharing.status.revoked": "取り消し済み",
+  "sharing.revoke": "取り消す",
+  "sharing.account.fallback": "アカウント",
+  "sharing.incoming.header": "あなたと共有",
+  "sharing.incoming.readOnly": "共有 · 読み取り専用",
+  "sharing.incoming.fallback": "共有アカウント",
+  "sharing.revoke.toast": "共有を取り消しました。元のサイトでコードの再発行をご検討ください。",
+
+  "vault.card.share.title": "{issuer} を共有",
+  "vault.card.share.accountFallback": "アカウント",
+  "vault.card.share.recipientEmail": "宛先のメールアドレス",
+  "vault.card.share.placeholder": "friend@example.com",
+  "vault.card.share.description":
+    "エンドツーエンドで暗号化されます。相手は Aegis アカウントを持ち、少なくとも一度は保管庫を解除している必要があります。",
+  "vault.card.share.submit": "共有",
+  "vault.card.share.busy": "共有中…",
 };

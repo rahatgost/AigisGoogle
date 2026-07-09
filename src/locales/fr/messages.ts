@@ -94,4 +94,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — passez à Pro pour activer",
 
   "vault.card.share": "Partager",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — 0 $",
+  "plan.price.pro": "Pro — 2,99 $/mois",
+  "plan.price.family": "Family — 4,99 $/mois",
+
+  "sharing.rotate.title": "Faites tourner ces secrets",
+  "sharing.rotate.description":
+    "Vous avez révoqué un partage pour ces comptes. Les secrets TOTP ne tournent pas automatiquement — connectez-vous à la page de sécurité de chaque site et refaites l'inscription pour invalider la copie détenue par l'ancien destinataire.",
+  "sharing.rotate.done": "Terminé",
+  "sharing.row.shareAccount.title": "Partager un compte",
+  "sharing.row.shareAccount.description": "Ouvrez une carte de compte et touchez Partager",
+  "sharing.row.shareAccount.value": "Depuis le coffre",
+  "sharing.row.outgoing.title": "Partages sortants",
+  "sharing.row.outgoing.none": "Aucun",
+  "sharing.row.outgoing.count": "{count} actifs",
+  "sharing.row.sharedWithYou.title": "Partagés avec vous",
+  "sharing.row.sharedWithYou.description": "Apparaît en haut de votre coffre",
+  "sharing.row.sharedWithYou.value": "Dans le coffre",
+  "sharing.status.active": "Actif",
+  "sharing.status.revoked": "Révoqué",
+  "sharing.revoke": "Révoquer",
+  "sharing.account.fallback": "Compte",
+  "sharing.incoming.header": "Partagés avec vous",
+  "sharing.incoming.readOnly": "Partagé · lecture seule",
+  "sharing.incoming.fallback": "Compte partagé",
+  "sharing.revoke.toast": "Partage révoqué. Pensez à changer le code sur le site d'origine.",
+
+  "vault.card.share.title": "Partager {issuer}",
+  "vault.card.share.accountFallback": "compte",
+  "vault.card.share.recipientEmail": "E-mail du destinataire",
+  "vault.card.share.placeholder": "ami@exemple.com",
+  "vault.card.share.description":
+    "Chiffré de bout en bout. Il doit déjà avoir un compte Aegis et avoir déverrouillé son coffre au moins une fois.",
+  "vault.card.share.submit": "Partager",
+  "vault.card.share.busy": "Partage en cours…",
 };

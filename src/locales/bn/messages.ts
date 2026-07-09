@@ -122,4 +122,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — চালু করতে আপগ্রেড করো",
 
   "vault.card.share": "শেয়ার",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — $0",
+  "plan.price.pro": "Pro — $২.৯৯/মাস",
+  "plan.price.family": "Family — $৪.৯৯/মাস",
+
+  "sharing.rotate.title": "এই সিক্রেটগুলো বদলাও",
+  "sharing.rotate.description":
+    "তুমি এই অ্যাকাউন্টগুলোর শেয়ার বাতিল করেছ। TOTP সিক্রেট নিজে থেকে বদলায় না — প্রতিটি সাইটের সিকিউরিটি পেজে গিয়ে আবার সেটআপ করো, যাতে আগের প্রাপকের কাছে থাকা কপি অকেজো হয়ে যায়।",
+  "sharing.rotate.done": "হয়েছে",
+  "sharing.row.shareAccount.title": "একটি অ্যাকাউন্ট শেয়ার করো",
+  "sharing.row.shareAccount.description": "যেকোনো অ্যাকাউন্ট কার্ড খুলে শেয়ার চাপো",
+  "sharing.row.shareAccount.value": "ভল্ট থেকে",
+  "sharing.row.outgoing.title": "যা শেয়ার করেছ",
+  "sharing.row.outgoing.none": "কিছু নেই",
+  "sharing.row.outgoing.count": "{count}টি সক্রিয়",
+  "sharing.row.sharedWithYou.title": "তোমার সাথে শেয়ার করা",
+  "sharing.row.sharedWithYou.description": "তোমার ভল্টের উপরে দেখা যাবে",
+  "sharing.row.sharedWithYou.value": "ভল্টে",
+  "sharing.status.active": "সক্রিয়",
+  "sharing.status.revoked": "বাতিল",
+  "sharing.revoke": "বাতিল",
+  "sharing.account.fallback": "অ্যাকাউন্ট",
+  "sharing.incoming.header": "তোমার সাথে শেয়ার করা",
+  "sharing.incoming.readOnly": "শেয়ার · শুধু পড়া",
+  "sharing.incoming.fallback": "শেয়ার করা অ্যাকাউন্ট",
+  "sharing.revoke.toast": "শেয়ার বাতিল হয়েছে। মূল সাইটে কোডটি পাল্টে নেওয়ার কথা ভাবো।",
+
+  "vault.card.share.title": "{issuer} শেয়ার করো",
+  "vault.card.share.accountFallback": "অ্যাকাউন্ট",
+  "vault.card.share.recipientEmail": "প্রাপকের ইমেল",
+  "vault.card.share.placeholder": "friend@example.com",
+  "vault.card.share.description":
+    "এন্ড-টু-এন্ড এনক্রিপ্টেড। তার আগে থেকে Aegis অ্যাকাউন্ট থাকতে হবে এবং অন্তত একবার ভল্ট আনলক করা থাকতে হবে।",
+  "vault.card.share.submit": "শেয়ার",
+  "vault.card.share.busy": "শেয়ার হচ্ছে…",
 };
