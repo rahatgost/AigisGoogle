@@ -180,6 +180,9 @@ export function HealthSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const [hibp, setHibp] = useState<Record<string, HibpResult | "loading">>({});
+  const plan = usePlan();
+  const canBreachScan = plan.hasFeature("breach-monitoring");
+
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
