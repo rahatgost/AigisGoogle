@@ -146,10 +146,10 @@ function AuthPage() {
     mode === "signup" ? "Create account" : mode === "reset" ? "Reset access" : "Sign in";
   const title =
     mode === "signup"
-      ? "Create your Aegis."
+      ? "Create your Aegis account"
       : mode === "reset"
-        ? "Reset your password."
-        : "Welcome back.";
+        ? "Reset your password"
+        : "Sign in to your Aegis account";
   const subtitle =
     mode === "signup"
       ? "One account, every one-time code — quietly protected."

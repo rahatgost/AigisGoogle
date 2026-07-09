@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-const BASE_URL = "https://hug-machine-maker.lovable.app";
+const BASE_URL = "https://aegis-syed.lovable.app";
 
 interface SitemapEntry {
   path: string;
@@ -18,6 +18,11 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/auth", changefreq: "monthly", priority: "0.6" },
           {
             path: "/blog/aegis-vs-google-authenticator",
+            changefreq: "monthly",
+            priority: "0.8",
+          },
+          {
+            path: "/blog/google-authenticator-for-pc",
             changefreq: "monthly",
             priority: "0.8",
           },

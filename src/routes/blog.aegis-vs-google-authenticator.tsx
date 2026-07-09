@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, X, ShieldCheck, Cloud, Lock, KeyRound } from "lucide-react";
 import ogImageAsset from "@/assets/og-aegis-vs-google-authenticator.jpg.asset.json";
 
-const OG_IMAGE = `https://hug-machine-maker.lovable.app${ogImageAsset.url}`;
+const OG_IMAGE = `https://aegis-syed.lovable.app${ogImageAsset.url}`;
 
-const URL = "https://hug-machine-maker.lovable.app/blog/aegis-vs-google-authenticator";
-const TITLE = "Aegis vs Google Authenticator — the secure TOTP authenticator";
+const URL = "https://aegis-syed.lovable.app/blog/aegis-vs-google-authenticator";
+const TITLE = "Aegis vs Google Authenticator — Secure TOTP Compared";
 const DESCRIPTION =
   "Compare Aegis and Google Authenticator: zero-knowledge, end-to-end encrypted TOTP codes with multi-device sync, in one secure authenticator.";
 

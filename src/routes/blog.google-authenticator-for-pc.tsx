@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Monitor, Globe, ShieldCheck, Copy, KeyRound } from "lucide-react";
 
-const URL = "https://hug-machine-maker.lovable.app/blog/google-authenticator-for-pc";
-const TITLE = "How to Use Google Authenticator on PC, Mac, and Browser (2026)";
+const URL = "https://aegis-syed.lovable.app/blog/google-authenticator-for-pc";
+const TITLE = "How to Use Google Authenticator on PC and Mac (2026)";
 const DESCRIPTION =
   "Google Authenticator is mobile-only. Here's how to get your 2FA codes on PC, Mac, and any browser — securely, without waiting for the official desktop app.";
 

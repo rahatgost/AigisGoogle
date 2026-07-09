@@ -5,8 +5,11 @@ Disallow: /security
 Disallow: /profile
 Disallow: /onboarding
 Disallow: /lock
+Disallow: /approve
+Disallow: /devices
+Disallow: /family
 Disallow: /auth/callback
 Disallow: /auth/reset-password
 Disallow: /dev/
 
-Sitemap: https://hug-machine-maker.lovable.app/sitemap.xml
+Sitemap: https://aegis-syed.lovable.app/sitemap.xml
