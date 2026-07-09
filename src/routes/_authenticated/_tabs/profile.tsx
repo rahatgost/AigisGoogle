@@ -89,6 +89,78 @@ function ProfilePage() {
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
   const deleteAccount = useServerFn(deleteMyAccount);
+  const fetchSub = useServerFn(getMySubscription);
+  const startCheckout = useServerFn(createCheckoutSession);
+  const openPortal = useServerFn(createPortalSession);
+
+  const { data: sub, refetch: refetchSub } = useQuery({
+    queryKey: ["subscription", user.id],
+    queryFn: () => fetchSub(),
+    staleTime: 30_000,
+  });
+  const [planBusy, setPlanBusy] = useState<null | "pro" | "family" | "portal">(null);
+  const [planSheet, setPlanSheet] = useState(false);
+
+  const activePaidTier = sub && sub.tier !== "free" && ["active", "trialing"].includes(sub.status);
+  const planLabel = !sub
+    ? "Loading…"
+    : activePaidTier
+      ? sub.tier === "family"
+        ? "Family"
+        : "Pro"
+      : "Free";
+
+  const handleUpgrade = async (tier: "pro" | "family") => {
+    setPlanBusy(tier);
+    setNotice(null);
+    try {
+      const { url } = await startCheckout({
+        data: { tier, origin: window.location.origin },
+      });
+      if (url) window.location.href = url;
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Could not start checkout.",
+      });
+      setPlanBusy(null);
+    }
+  };
+
+  const handleManage = async () => {
+    setPlanBusy("portal");
+    setNotice(null);
+    try {
+      const { url } = await openPortal({ data: { origin: window.location.origin } });
+      if (url) window.location.href = url;
+    } catch (err) {
+      setNotice({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Could not open billing portal.",
+      });
+      setPlanBusy(null);
+    }
+  };
+
+  // Re-check subscription after returning from Stripe Checkout (webhook may
+  // arrive a beat later — refetch a few times).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      toast.success("Welcome to Pro. Give billing a moment to sync.");
+      let tries = 0;
+      const iv = setInterval(() => {
+        void refetchSub();
+        if (++tries >= 6) clearInterval(iv);
+      }, 1500);
+      // Clean the URL so refresh doesn't re-toast.
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.toString());
+      return () => clearInterval(iv);
+    }
+  }, [refetchSub]);
+
 
   const [displayName, setDisplayName] = useState("");
   const [initialName, setInitialName] = useState("");
