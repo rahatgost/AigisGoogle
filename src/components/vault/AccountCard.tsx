@@ -1416,7 +1416,7 @@ export function AccountCard({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -4 }}
                           transition={actionSwapT}
-                          className="grid grid-cols-2 gap-2 pb-1"
+                          className="grid grid-cols-3 gap-2 pb-1"
                         >
                           <motion.button
                             ref={editButtonRef}
