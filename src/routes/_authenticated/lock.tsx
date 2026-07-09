@@ -286,6 +286,9 @@ function LockPage() {
             }
           })();
         }
+        // Phase 12.2: background row-level v2 → v3 re-encrypt. Runs
+        // silently, telemetry lands in `client_errors` on completion.
+        void runV3Migration(user.id, dek);
         routeAfterUnlock();
       } catch (cryptoErr) {
         // WebCrypto throws OperationError with an empty message in Chrome
