@@ -45,12 +45,9 @@ export function SharingSection() {
   const [outgoing, setOutgoing] = useState<OutgoingShare[]>([]);
   const [incoming, setIncoming] = useState<IncomingShare[]>([]);
   const [rotationNeeded, setRotationNeeded] = useState<OwnedAccount[]>([]);
-  const [accounts, setAccounts] = useState<DecryptedAccount[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Bootstrap: ensure keypair exists, then load all three lists in parallel.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -66,7 +63,7 @@ export function SharingSection() {
         const km = await ensureUserKeys(uid, dek);
         if (cancelled) return;
         setKeys(km);
-        await refreshLists(km, dek);
+        await refreshLists(km);
       } catch (err) {
         if (!cancelled) {
           setNotice({
@@ -84,11 +81,10 @@ export function SharingSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshLists = async (km: UserKeyMaterial, dek: CryptoKey) => {
-    const [out, inc, accts, rotRes] = await Promise.all([
+  const refreshLists = async (km: UserKeyMaterial) => {
+    const [out, inc, rotRes] = await Promise.all([
       listOutgoingShares(),
       listIncomingShares(km),
-      listAccounts(dek),
       supabase
         .from("vault_accounts")
         .select("id, issuer, label, needs_rotation")
@@ -96,31 +92,13 @@ export function SharingSection() {
     ]);
     setOutgoing(out);
     setIncoming(inc);
-    setAccounts(accts);
     setRotationNeeded((rotRes.data ?? []) as OwnedAccount[]);
-  };
-
-  const handleShareSubmit = async (accountId: string, email: string) => {
-    setNotice(null);
-    try {
-      await shareAccountByEmail(accountId, email);
-      const dek = getVaultKey();
-      if (keys && dek) await refreshLists(keys, dek);
-      setDialogOpen(false);
-      toast.success("Shared. They'll see it after they unlock their vault.");
-    } catch (err) {
-      setNotice({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Could not share account.",
-      });
-    }
   };
 
   const handleRevoke = async (shareId: string) => {
     try {
       await revokeShare(shareId);
-      const dek = getVaultKey();
-      if (keys && dek) await refreshLists(keys, dek);
+      if (keys) await refreshLists(keys);
       toast.success("Share revoked. Consider rotating the code at the source site.");
     } catch (err) {
       setNotice({
@@ -185,10 +163,8 @@ export function SharingSection() {
         <SettingsRow
           icon={<Share2 className="h-4 w-4" strokeWidth={1.8} />}
           title="Share an account"
-          description="Send a code to another Aegis user, end-to-end encrypted"
-          onClick={() => setDialogOpen(true)}
-          chevron
-          disabled={accounts.length === 0}
+          description="Open any account card and tap Share"
+          value="From vault"
         />
         <SettingsRow
           icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
@@ -252,123 +228,10 @@ export function SharingSection() {
           <Notice kind={notice.kind}>{notice.text}</Notice>
         </div>
       )}
-
-      {dialogOpen && (
-        <ShareDialog
-          accounts={accounts}
-          onCancel={() => setDialogOpen(false)}
-          onSubmit={handleShareSubmit}
-        />
-      )}
     </>
   );
 }
 
-/* ---------------- share dialog ---------------- */
-
-function ShareDialog({
-  accounts,
-  onCancel,
-  onSubmit,
-}: {
-  accounts: DecryptedAccount[];
-  onCancel: () => void;
-  onSubmit: (accountId: string, email: string) => Promise<void>;
-}) {
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accountId || !email.trim()) return;
-    setBusy(true);
-    try {
-      await onSubmit(accountId, email.trim());
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.35)" }}
-      onClick={onCancel}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={soft}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-[18px] p-5"
-        style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}` }}
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-[15px] font-medium" style={{ color: CHARCOAL }}>
-            Share an account
-          </h3>
-          <button type="button" onClick={onCancel} aria-label="Close">
-            <X className="h-4 w-4" strokeWidth={1.8} style={{ color: MUTED }} />
-          </button>
-        </div>
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-[12px]" style={{ color: MUTED }}>
-            Account
-            <select
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="rounded-[10px] border bg-transparent px-3 py-2 text-[14px]"
-              style={{ borderColor: BORDER, color: CHARCOAL }}
-            >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.issuer || "Account"}
-                  {a.label ? ` · ${a.label}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-[12px]" style={{ color: MUTED }}>
-            Recipient's email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder="friend@example.com"
-              className="rounded-[10px] border bg-transparent px-3 py-2 text-[14px]"
-              style={{ borderColor: BORDER, color: CHARCOAL }}
-            />
-          </label>
-          <p className="text-[11.5px]" style={{ color: MUTED }}>
-            They must already have an Aegis account and have unlocked their
-            vault at least once (that's when their sharing key is created).
-          </p>
-          <div className="mt-1 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-[10px] border px-3 py-2 text-[13px]"
-              style={{ borderColor: BORDER, color: CHARCOAL }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy || !accountId || !email.trim()}
-              className="rounded-[10px] px-3 py-2 text-[13px] disabled:opacity-55"
-              style={{ background: CHARCOAL, color: CREAM_SOFT }}
-            >
-              {busy ? "Sharing…" : "Share"}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
 
 /* ---------------- incoming share card with live TOTP ---------------- */
 
