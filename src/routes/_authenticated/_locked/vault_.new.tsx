@@ -240,78 +240,74 @@ function NewAccountPage() {
           </div>
         ) : (
           <>
-        </>
+            <SegmentedTabs tab={tab} setTab={setTab} />
+
+            <div className="flex items-center justify-between pt-3">
+              <span className="text-[11.5px]" style={{ color: MUTED }}>
+                Coming from another app?
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/vault/import" })}
+                className="rounded-full px-3 py-1.5 text-[12px] transition-colors"
+                style={{
+                  background: CREAM_SOFT,
+                  border: `1px solid ${BORDER}`,
+                  color: CHARCOAL,
+                  fontWeight: 600,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+                }}
+              >
+                Bulk import →
+              </button>
+            </div>
+
+            {!online && (
+              <div
+                className="mt-3 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
+                style={{
+                  background: CREAM_SOFT,
+                  border: `1px solid ${BORDER}`,
+                  color: MUTED,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+                }}
+              >
+                <WifiOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
+                <span>You're offline — new codes will sync automatically when you reconnect.</span>
+              </div>
+            )}
+
+            {notice && (
+              <div className="pt-3">
+                <Notice kind={notice.kind}>{notice.text}</Notice>
+              </div>
+            )}
+
+            <div className="pt-4">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={tab}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={soft}
+                >
+                  {tab === "scan" ? (
+                    <ScanTab
+                      key={scanAttempt}
+                      onDetected={handleQrDetected}
+                      onError={handleScanError}
+                      saving={saving}
+                      switchToManual={switchToManual}
+                    />
+                  ) : (
+                    <ManualTab onSubmit={save} saving={saving} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </>
         )}
-
-        {!atCap && (
-        <>
-        <SegmentedTabs tab={tab} setTab={setTab} />
-
-        <div className="flex items-center justify-between pt-3">
-          <span className="text-[11.5px]" style={{ color: MUTED }}>
-            Coming from another app?
-          </span>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/vault/import" })}
-            className="rounded-full px-3 py-1.5 text-[12px] transition-colors"
-            style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${BORDER}`,
-              color: CHARCOAL,
-              fontWeight: 600,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
-            }}
-          >
-            Bulk import →
-          </button>
-        </div>
-
-        {!online && (
-          <div
-            className="mt-3 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
-            style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${BORDER}`,
-              color: MUTED,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
-            }}
-          >
-            <WifiOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
-            <span>You're offline — new codes will sync automatically when you reconnect.</span>
-          </div>
-        )}
-
-        {notice && (
-          <div className="pt-3">
-            <Notice kind={notice.kind}>{notice.text}</Notice>
-          </div>
-        )}
-
-
-        <div className="pt-4">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={tab}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={soft}
-            >
-              {tab === "scan" ? (
-                <ScanTab
-                  key={scanAttempt}
-                  onDetected={handleQrDetected}
-                  onError={handleScanError}
-                  saving={saving}
-                  switchToManual={switchToManual}
-                />
-              ) : (
-                <ManualTab onSubmit={save} saving={saving} />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
       </div>
       <BottomTabs />
     </AegisScreen>
