@@ -113,6 +113,24 @@ function ProfilePage() {
         : "Pro"
       : "Free";
 
+  const openExternal = (url: string) => {
+    // Stripe Checkout / Billing Portal refuse to render inside an iframe
+    // (the Lovable preview is iframed), so a same-window navigation shows a
+    // blank/black page. Break out of the frame — top-window nav when we can,
+    // otherwise a new tab.
+    try {
+      const top = window.top;
+      if (top && top !== window) {
+        top.location.href = url;
+        return;
+      }
+    } catch {
+      // cross-origin top frame — fall through to window.open
+    }
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) window.location.href = url;
+  };
+
   const handleUpgrade = async (tier: "pro" | "family") => {
     setPlanBusy(tier);
     setNotice(null);
@@ -120,12 +138,13 @@ function ProfilePage() {
       const { url } = await startCheckout({
         data: { tier, origin: window.location.origin },
       });
-      if (url) window.location.href = url;
+      if (url) openExternal(url);
     } catch (err) {
       setNotice({
         kind: "error",
         text: err instanceof Error ? err.message : "Could not start checkout.",
       });
+    } finally {
       setPlanBusy(null);
     }
   };
@@ -135,12 +154,13 @@ function ProfilePage() {
     setNotice(null);
     try {
       const { url } = await openPortal({ data: { origin: window.location.origin } });
-      if (url) window.location.href = url;
+      if (url) openExternal(url);
     } catch (err) {
       setNotice({
         kind: "error",
         text: err instanceof Error ? err.message : "Could not open billing portal.",
       });
+    } finally {
       setPlanBusy(null);
     }
   };
