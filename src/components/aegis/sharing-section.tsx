@@ -105,7 +105,12 @@ export function SharingSection() {
     try {
       await revokeShare(shareId);
       await refresh();
-      toast.success("Share revoked. Consider rotating the code at the source site.");
+      toast.success(
+        t(
+          "sharing.revoke.toast",
+          "Share revoked. Consider rotating the code at the source site.",
+        ),
+      );
     } catch (err) {
       setNotice({
         kind: "error",
@@ -125,6 +130,9 @@ export function SharingSection() {
 
   if (loading || !keys) return null;
 
+  const activeOutgoing = outgoing.filter((s) => !s.revokedAt).length;
+  const accountFallback = t("sharing.account.fallback", "Account");
+
   return (
     <>
       {rotationNeeded.length > 0 && (
@@ -135,18 +143,21 @@ export function SharingSection() {
           >
             <div className="mb-2 flex items-center gap-2" style={{ color: CHARCOAL }}>
               <AlertTriangle className="h-4 w-4" strokeWidth={1.8} />
-              <span className="font-medium">Rotate these secrets</span>
+              <span className="font-medium">
+                {t("sharing.rotate.title", "Rotate these secrets")}
+              </span>
             </div>
             <p className="mb-2 text-[12.5px]" style={{ color: MUTED }}>
-              You revoked a share for these accounts. TOTP secrets don't rotate
-              automatically — sign in to each site's security page and
-              re-enroll to invalidate the copy your former recipient held.
+              {t(
+                "sharing.rotate.description",
+                "You revoked a share for these accounts. TOTP secrets don't rotate automatically — sign in to each site's security page and re-enroll to invalidate the copy your former recipient held.",
+              )}
             </p>
             <ul className="flex flex-col gap-1">
               {rotationNeeded.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-2 text-[13px]">
                   <span>
-                    {a.issuer || "Account"}
+                    {a.issuer || accountFallback}
                     {a.label ? ` · ${a.label}` : ""}
                   </span>
                   <button
@@ -155,7 +166,7 @@ export function SharingSection() {
                     className="rounded-md px-2 py-0.5 text-[11px]"
                     style={{ color: MUTED, border: `1px solid ${BORDER}` }}
                   >
-                    Done
+                    {t("sharing.rotate.done", "Done")}
                   </button>
                 </li>
               ))}
@@ -164,28 +175,37 @@ export function SharingSection() {
         </div>
       )}
 
-      <SectionLabel>Sharing</SectionLabel>
+      <SectionLabel>{t("profile.section.sharing", "Sharing")}</SectionLabel>
       <SettingsGroup>
         <SettingsRow
           icon={<Share2 className="h-4 w-4" strokeWidth={1.8} />}
-          title="Share an account"
-          description="Open any account card and tap Share"
-          value="From vault"
+          title={t("sharing.row.shareAccount.title", "Share an account")}
+          description={t(
+            "sharing.row.shareAccount.description",
+            "Open any account card and tap Share",
+          )}
+          value={t("sharing.row.shareAccount.value", "From vault")}
         />
         <SettingsRow
           icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
-          title="Outgoing shares"
+          title={t("sharing.row.outgoing.title", "Outgoing shares")}
           value={
-            outgoing.filter((s) => !s.revokedAt).length === 0
-              ? "None"
-              : `${outgoing.filter((s) => !s.revokedAt).length} active`
+            activeOutgoing === 0
+              ? t("sharing.row.outgoing.none", "None")
+              : t("sharing.row.outgoing.count", "{count} active").replace(
+                  "{count}",
+                  String(activeOutgoing),
+                )
           }
         />
         <SettingsRow
           icon={<Inbox className="h-4 w-4" strokeWidth={1.8} />}
-          title="Shared with you"
-          description="Appears at the top of your vault"
-          value="In vault"
+          title={t("sharing.row.sharedWithYou.title", "Shared with you")}
+          description={t(
+            "sharing.row.sharedWithYou.description",
+            "Appears at the top of your vault",
+          )}
+          value={t("sharing.row.sharedWithYou.value", "In vault")}
         />
       </SettingsGroup>
 
@@ -200,11 +220,14 @@ export function SharingSection() {
               <Share2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} style={{ color: MUTED }} />
               <div className="min-w-0 flex-1">
                 <div className="truncate" style={{ color: CHARCOAL }}>
-                  {share.issuer || "Account"}
+                  {share.issuer || accountFallback}
                   {share.label ? ` · ${share.label}` : ""}
                 </div>
                 <div className="text-[11px]" style={{ color: MUTED }}>
-                  {share.revokedAt ? "Revoked" : "Active"} · {new Date(share.createdAt).toLocaleDateString()}
+                  {share.revokedAt
+                    ? t("sharing.status.revoked", "Revoked")
+                    : t("sharing.status.active", "Active")}{" "}
+                  · {new Date(share.createdAt).toLocaleDateString()}
                 </div>
               </div>
               {!share.revokedAt && (
@@ -214,13 +237,14 @@ export function SharingSection() {
                   className="rounded-md px-2 py-1 text-[11px]"
                   style={{ color: MUTED, border: `1px solid ${BORDER}` }}
                 >
-                  Revoke
+                  {t("sharing.revoke", "Revoke")}
                 </button>
               )}
             </div>
           ))}
         </div>
       )}
+
 
       {notice && (
         <div className="pt-2">
