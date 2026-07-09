@@ -783,7 +783,7 @@ function VaultPage() {
             exit={{ opacity: 0 }}
           >
             <motion.button
-              aria-label="Close"
+              aria-label={t("common.close", "Close")}
               onClick={() => !bulkBusy && setBulkDeleteConfirm(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -826,10 +826,14 @@ function VaultPage() {
                   </div>
                   <div className="min-w-0">
                     <div id="bulk-delete-title" className="truncate" style={typeSheetTitleSm}>
-                      Remove {selectedIds.size} account{selectedIds.size === 1 ? "" : "s"}?
+                      {t(
+                        selectedIds.size === 1 ? "vault.bulkDelete.title.one" : "vault.bulkDelete.title.other",
+                        `Remove ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}?`,
+                        { count: selectedIds.size },
+                      )}
                     </div>
                     <div className="mt-0.5 truncate" style={{ ...typeSubLabel, fontSize: 12 }}>
-                      Selected from your vault
+                      {t("vault.bulkDelete.subtitle", "Selected from your vault")}
                     </div>
                   </div>
 
@@ -840,7 +844,7 @@ function VaultPage() {
                   disabled={bulkBusy}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                   style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL }}
-                  aria-label="Close"
+                  aria-label={t("common.close", "Close")}
                 >
                   <X className="h-4 w-4" strokeWidth={1.8} />
                 </motion.button>
@@ -851,8 +855,10 @@ function VaultPage() {
                 className="mb-4"
                 style={{ ...typeBody, fontSize: 13 }}
               >
-                The encrypted secrets will be deleted from your vault. You'll need the original QR
-                codes or setup keys to add them back. This can't be undone.
+                {t(
+                  "vault.bulkDelete.body",
+                  "The encrypted secrets will be deleted from your vault. You'll need the original QR codes or setup keys to add them back. This can't be undone.",
+                )}
               </p>
 
 
@@ -876,12 +882,16 @@ function VaultPage() {
                   {bulkBusy ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Removing…
+                      {t("vault.bulkDelete.removing", "Removing…")}
                     </>
                   ) : (
                     <>
                       <Trash2 className="h-4 w-4" strokeWidth={1.9} />
-                      Remove {selectedIds.size} account{selectedIds.size === 1 ? "" : "s"}
+                      {t(
+                        selectedIds.size === 1 ? "vault.bulkDelete.confirm.one" : "vault.bulkDelete.confirm.other",
+                        `Remove ${selectedIds.size} account${selectedIds.size === 1 ? "" : "s"}`,
+                        { count: selectedIds.size },
+                      )}
                     </>
                   )}
                 </motion.button>
@@ -897,7 +907,7 @@ function VaultPage() {
                     fontWeight: 500,
                   }}
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </motion.button>
               </div>
             </motion.div>
@@ -919,9 +929,9 @@ function VaultPage() {
           onDone={(n) => {
             setBulkExportOpen(false);
             exitSelection();
-            toast.success(`Exported ${n} account${n === 1 ? "" : "s"}.`);
+            toast.success(t(n === 1 ? "vault.toast.exported.one" : "vault.toast.exported.other", `Exported ${n} account${n === 1 ? "" : "s"}.`, { count: n }));
           }}
-          title="Export selected"
+          title={t("vault.export.selectedTitle", "Export selected")}
         />
       )}
     </>
@@ -959,11 +969,7 @@ function UnifiedAccountList({
   selectedIds: Set<string>;
   onSelectToggle: (id: string) => void;
 }) {
-  const { i18n } = useLingui();
-  const t = (id: string, fallback: string) => {
-    const msg = i18n._(id);
-    return msg === id ? fallback : msg;
-  };
+  const t = useT();
   const showBothLabels = favoriteList.length > 0 && otherList.length > 0;
 
   // Long-press activation keeps normal tap-to-copy working: a real drag
@@ -1069,6 +1075,7 @@ function SortableAccountRow({
     transition,
     isDragging,
   } = useSortable({ id, disabled: !enabled });
+  const t = useT();
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -1101,7 +1108,7 @@ function SortableAccountRow({
             onSelectToggle(id);
           }}
           aria-pressed={selected}
-          aria-label={selected ? "Deselect account" : "Select account"}
+          aria-label={selected ? t("vault.select.off", "Deselect account") : t("vault.select.on", "Select account")}
           className="absolute inset-0 flex items-start justify-end p-3"
           style={{
             background: selected ? "rgb(var(--aegis-ink-rgb) / 0.04)" : "transparent",
@@ -1136,6 +1143,7 @@ function TagFilterRow({
   onToggle: (tag: string) => void;
 }) {
   const activeCount = active.size;
+  const t = useT();
   // Sort so active filters lead — user always sees what's on first.
   const ordered = [...tags].sort((a, b) => {
     const aOn = active.has(a.tag) ? 0 : 1;
@@ -1148,7 +1156,7 @@ function TagFilterRow({
     <div className="mt-2.5">
       {/* Label row */}
       <div className="mb-1.5 flex items-center gap-2 px-0.5">
-        <span style={typeEyebrow}>Filter</span>
+        <span style={typeEyebrow}>{t("vault.filter.label", "Filter")}</span>
         {activeCount > 0 && (
           <span
             className="rounded-full px-1.5 py-0.5"
