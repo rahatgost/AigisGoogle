@@ -74,7 +74,9 @@ export const Route = createFileRoute("/_authenticated/family")({
 
 function FamilyPage() {
   const router = useRouter();
+  const plan = usePlan();
   const [overview, setOverview] = useState<FamilyOverview | null>(null);
+
   const [pendingInvitesForMe, setPendingInvitesForMe] = useState<
     Array<FamilyInvite & { familyName: string }>
   >([]);
