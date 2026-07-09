@@ -11,6 +11,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useLingui } from "@lingui/react";
 import {
   ArrowLeft,
   Users,
@@ -72,9 +73,24 @@ export const Route = createFileRoute("/_authenticated/family")({
   component: FamilyPage,
 });
 
+function useT() {
+  const { i18n } = useLingui();
+  return (id: string, fallback: string, values?: Record<string, string | number>) => {
+    let msg = i18n._(id);
+    if (msg === id) msg = fallback;
+    if (values) {
+      for (const [k, v] of Object.entries(values)) {
+        msg = msg.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+      }
+    }
+    return msg;
+  };
+}
+
 function FamilyPage() {
   const router = useRouter();
   const plan = usePlan();
+  const t = useT();
   const [overview, setOverview] = useState<FamilyOverview | null>(null);
 
   const [pendingInvitesForMe, setPendingInvitesForMe] = useState<
@@ -95,10 +111,10 @@ function FamilyPage() {
     } catch (err) {
       setNotice({
         kind: "error",
-        text: err instanceof Error ? err.message : "Could not load family.",
+        text: err instanceof Error ? err.message : t("family.err.load", "Could not load family."),
       });
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -120,7 +136,7 @@ function FamilyPage() {
       const text =
         err instanceof Error
           ? err.message
-          : (anyErr?.message ?? anyErr?.hint ?? anyErr?.details ?? "Something went wrong.");
+          : (anyErr?.message ?? anyErr?.hint ?? anyErr?.details ?? t("family.err.generic", "Something went wrong."));
       // Surface the raw shape for diagnosis when it's not a plain Error.
       // eslint-disable-next-line no-console
       console.error("[family] action failed:", err);
@@ -141,7 +157,7 @@ function FamilyPage() {
       setPickerAccounts([]);
       setNotice({
         kind: "error",
-        text: err instanceof Error ? err.message : "Could not load your accounts.",
+        text: err instanceof Error ? err.message : t("family.err.loadAccounts", "Could not load your accounts."),
       });
     }
   };
@@ -149,9 +165,9 @@ function FamilyPage() {
   return (
     <AegisScreen>
       <AppBar
-        title="Family"
+        title={t("family.title", "Family")}
         trailing={
-          <AppBarButton label="Back" onClick={() => router.history.back()}>
+          <AppBarButton label={t("family.back", "Back")} onClick={() => router.history.back()}>
             <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
           </AppBarButton>
         }
@@ -161,11 +177,11 @@ function FamilyPage() {
         style={{ WebkitOverflowScrolling: "touch" as never }}
       >
         <LargeTitle
-          title={overview?.family?.name ?? "Family"}
+          title={overview?.family?.name ?? t("family.title", "Family")}
           subtitle={
             overview?.family
-              ? `${memberCount}/6 members • end-to-end encrypted sharing`
-              : "Share Aegis codes with up to 6 people."
+              ? t("family.subtitle.members", "{count}/6 members • end-to-end encrypted sharing", { count: memberCount })
+              : t("family.subtitle.pitch", "Share Aegis codes with up to 6 people.")
           }
         />
 
@@ -178,7 +194,7 @@ function FamilyPage() {
         {/* Pending invites addressed to me — always shown up top. */}
         {pendingInvitesForMe.length > 0 && (
           <>
-            <SectionLabel>Invites for you</SectionLabel>
+            <SectionLabel>{t("family.invitesForYou", "Invites for you")}</SectionLabel>
             <SettingsGroup>
               {pendingInvitesForMe.map((inv) => (
                 <div key={inv.id} className="flex items-center gap-3 px-4 py-3">
@@ -197,7 +213,7 @@ function FamilyPage() {
                       {inv.familyName}
                     </span>
                     <span className="mt-0.5 text-[12.5px]" style={{ color: MUTED }}>
-                      Invited {new Date(inv.createdAt).toLocaleDateString()}
+                      {t("family.invitedOn", "Invited {date}", { date: new Date(inv.createdAt).toLocaleDateString() })}
                     </span>
                   </div>
                   <button
@@ -205,10 +221,10 @@ function FamilyPage() {
                     onClick={() =>
                       run(async () => {
                         await acceptInvite(inv.id);
-                      }, "Joined the family.")
+                      }, t("family.toast.joined", "Joined the family."))
                     }
                     className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-50"
-                    aria-label="Accept invite"
+                    aria-label={t("family.acceptAria", "Accept invite")}
                     style={{ background: CHARCOAL, color: CREAM_SOFT }}
                   >
                     <Check className="h-4 w-4" strokeWidth={2} />
@@ -218,10 +234,10 @@ function FamilyPage() {
                     onClick={() =>
                       run(async () => {
                         await declineInvite(inv.id);
-                      }, "Invite declined.")
+                      }, t("family.toast.declined", "Invite declined."))
                     }
                     className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-50"
-                    aria-label="Decline invite"
+                    aria-label={t("family.declineAria", "Decline invite")}
                     style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, border: `1px solid ${BORDER}` }}
                   >
                     <X className="h-4 w-4" strokeWidth={2} />
@@ -236,8 +252,11 @@ function FamilyPage() {
         {overview && !overview.family && !plan.isFamily && (
           <div className="pt-3">
             <UpgradePrompt
-              title="Family sharing is a Family-plan feature"
-              body="Upgrade to Family to create a household, invite up to 6 members, and share Aegis codes end-to-end encrypted."
+              title={t("family.upgrade.title", "Family sharing is a Family-plan feature")}
+              body={t(
+                "family.upgrade.body",
+                "Upgrade to Family to create a household, invite up to 6 members, and share Aegis codes end-to-end encrypted.",
+              )}
               tier="Family"
             />
           </div>
@@ -246,17 +265,17 @@ function FamilyPage() {
         {/* State 1: No family yet — offer creation. */}
         {overview && !overview.family && plan.isFamily && (
           <>
-            <SectionLabel>Start a family</SectionLabel>
+            <SectionLabel>{t("family.start.section", "Start a family")}</SectionLabel>
             <SettingsGroup>
               <div className="flex flex-col gap-3 px-4 py-4">
                 <label className="text-[12.5px]" style={{ color: MUTED }}>
-                  Family name
+                  {t("family.start.nameLabel", "Family name")}
                 </label>
                 <input
                   type="text"
                   value={nameDraft}
                   onChange={(e) => setNameDraft(e.target.value)}
-                  placeholder="e.g. Rahman household"
+                  placeholder={t("family.start.namePlaceholder", "e.g. Rahman household")}
                   maxLength={80}
                   className="rounded-[10px] px-3 py-2 text-[14px] outline-none"
                   style={{
@@ -272,19 +291,21 @@ function FamilyPage() {
                     run(async () => {
                       await createFamily(nameDraft);
                       setNameDraft("");
-                    }, "Family created.")
+                    }, t("family.toast.created", "Family created."))
                   }
                   className="flex items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-[14px] disabled:opacity-50"
                   style={{ background: CHARCOAL, color: CREAM_SOFT, fontWeight: 600 }}
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-                  Create family
+                  {t("family.start.cta", "Create family")}
                 </motion.button>
               </div>
             </SettingsGroup>
             <p className="px-2 pt-3 text-[12px]" style={{ color: MUTED }}>
-              You'll be the admin. Invite up to 5 more people by email — they need
-              an Aegis account and a set-up vault to accept.
+              {t(
+                "family.start.hint",
+                "You'll be the admin. Invite up to 5 more people by email — they need an Aegis account and a set-up vault to accept.",
+              )}
             </p>
           </>
         )}
@@ -293,7 +314,7 @@ function FamilyPage() {
         {/* State 2/3: In a family — roster. */}
         {overview?.family && (
           <>
-            <SectionLabel>Members</SectionLabel>
+            <SectionLabel>{t("family.members", "Members")}</SectionLabel>
             <SettingsGroup>
               {overview.members.map((m) => (
                 <MemberRow
@@ -303,7 +324,7 @@ function FamilyPage() {
                   onRemove={() =>
                     run(async () => {
                       await removeMember(m.id);
-                    }, "Removed from family.")
+                    }, t("family.toast.removed", "Removed from family."))
                   }
                   busy={busy}
                 />
@@ -313,7 +334,7 @@ function FamilyPage() {
             {/* Admin: invites + shared accounts. */}
             {isAdmin && (
               <>
-                <SectionLabel>Invite by email</SectionLabel>
+                <SectionLabel>{t("family.invite.section", "Invite by email")}</SectionLabel>
                 <SettingsGroup>
                   <div className="flex flex-col gap-3 px-4 py-4">
                     <div className="flex gap-2">
@@ -321,7 +342,7 @@ function FamilyPage() {
                         type="email"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="name@example.com"
+                        placeholder={t("family.invite.placeholder", "name@example.com")}
                         maxLength={255}
                         disabled={seats <= 0}
                         className="flex-1 rounded-[10px] px-3 py-2 text-[14px] outline-none disabled:opacity-60"
@@ -334,26 +355,28 @@ function FamilyPage() {
                           run(async () => {
                             await inviteMember(overview.family!.id, inviteEmail);
                             setInviteEmail("");
-                          }, "Invitation created.")
+                          }, t("family.toast.invited", "Invitation created."))
                         }
                         className="flex items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] disabled:opacity-50"
                         style={{ background: CHARCOAL, color: CREAM_SOFT, fontWeight: 600 }}
                       >
                         <UserPlus className="h-4 w-4" />
-                        Invite
+                        {t("family.invite.cta", "Invite")}
                       </motion.button>
                     </div>
                     <p className="text-[11.5px]" style={{ color: MUTED }}>
                       {seats > 0
-                        ? `${seats} seat${seats === 1 ? "" : "s"} left. Invitees see the invite next time they open Aegis.`
-                        : "Family is full. Remove a member to add someone else."}
+                        ? seats === 1
+                          ? t("family.invite.seatsLeft.one", "1 seat left. Invitees see the invite next time they open Aegis.")
+                          : t("family.invite.seatsLeft.other", "{count} seats left. Invitees see the invite next time they open Aegis.", { count: seats })
+                        : t("family.invite.full", "Family is full. Remove a member to add someone else.")}
                     </p>
                   </div>
                 </SettingsGroup>
 
                 {overview.invites.filter((i) => i.status === "pending").length > 0 && (
                   <>
-                    <SectionLabel>Pending invites</SectionLabel>
+                    <SectionLabel>{t("family.pending", "Pending invites")}</SectionLabel>
                     <SettingsGroup>
                       {overview.invites
                         .filter((i) => i.status === "pending")
@@ -362,19 +385,19 @@ function FamilyPage() {
                             key={inv.id}
                             icon={<Mail className="h-4 w-4" strokeWidth={1.8} />}
                             title={inv.email}
-                            description={`Expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                            description={t("family.pending.expires", "Expires {date}", { date: new Date(inv.expiresAt).toLocaleDateString() })}
                             trailing={
                               <button
                                 disabled={busy}
                                 onClick={() =>
                                   run(async () => {
                                     await revokeInvite(inv.id);
-                                  }, "Invite revoked.")
+                                  }, t("family.toast.revoked", "Invite revoked."))
                                 }
                                 className="rounded-[8px] px-2 py-1 text-[12px] disabled:opacity-50"
                                 style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, border: `1px solid ${BORDER}` }}
                               >
-                                Revoke
+                                {t("family.pending.revoke", "Revoke")}
                               </button>
                             }
                           />
@@ -383,11 +406,11 @@ function FamilyPage() {
                   </>
                 )}
 
-                <SectionLabel>Shared with family</SectionLabel>
+                <SectionLabel>{t("family.shared.section", "Shared with family")}</SectionLabel>
                 <SettingsGroup>
                   {overview.sharedAccounts.length === 0 && (
                     <div className="px-4 py-4 text-[13px]" style={{ color: MUTED }}>
-                      No accounts shared yet. Pick one to share the code with everyone in your family.
+                      {t("family.shared.empty", "No accounts shared yet. Pick one to share the code with everyone in your family.")}
                     </div>
                   )}
                   {overview.sharedAccounts.map((s) => (
@@ -397,7 +420,7 @@ function FamilyPage() {
                       onUnshare={() =>
                         run(async () => {
                           await unshareAccountFromFamily(s.id);
-                        }, "Unshared. Consider rotating the code at the source site.")
+                        }, t("family.toast.unshared", "Unshared. Consider rotating the code at the source site."))
                       }
                       busy={busy}
                     />
@@ -411,7 +434,7 @@ function FamilyPage() {
                       style={{ background: CHARCOAL, color: CREAM_SOFT, fontWeight: 600 }}
                     >
                       <Share2 className="h-4 w-4" />
-                      Share an account
+                      {t("family.shared.cta", "Share an account")}
                     </motion.button>
                     {overview.sharedAccounts.some((s) => s.missingRecipients.length > 0) && (
                       <motion.button
@@ -420,7 +443,9 @@ function FamilyPage() {
                         onClick={() =>
                           run(async () => {
                             const res = await syncFamilyShares(overview.family!.id);
-                            return `Synced ${res.created} share${res.created === 1 ? "" : "s"}.`;
+                            return res.created === 1
+                              ? t("family.toast.synced.one", "Synced 1 share.")
+                              : t("family.toast.synced.other", "Synced {count} shares.", { count: res.created });
                           })
                         }
                         className="flex items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] disabled:opacity-50"
@@ -431,7 +456,7 @@ function FamilyPage() {
                         }}
                       >
                         <RefreshCw className="h-4 w-4" />
-                        Sync
+                        {t("family.shared.sync", "Sync")}
                       </motion.button>
                     )}
                   </div>
@@ -439,32 +464,32 @@ function FamilyPage() {
               </>
             )}
 
-            <SectionLabel>Membership</SectionLabel>
+            <SectionLabel>{t("family.membership", "Membership")}</SectionLabel>
             <SettingsGroup>
               {!isAdmin && (
                 <SettingsRow
                   icon={<LogOut className="h-4 w-4" strokeWidth={1.8} />}
-                  title="Leave family"
-                  description="You'll lose access to family-shared codes."
+                  title={t("family.leave.title", "Leave family")}
+                  description={t("family.leave.desc", "You'll lose access to family-shared codes.")}
                   danger
                   onClick={() =>
                     run(async () => {
                       await leaveFamily();
-                    }, "You've left the family.")
+                    }, t("family.toast.left", "You've left the family."))
                   }
                 />
               )}
               {isAdmin && (
                 <SettingsRow
                   icon={<Trash2 className="h-4 w-4" strokeWidth={1.8} />}
-                  title="Delete family"
-                  description="Removes every member and revokes all family shares. This can't be undone."
+                  title={t("family.delete.title", "Delete family")}
+                  description={t("family.delete.desc", "Removes every member and revokes all family shares. This can't be undone.")}
                   danger
                   onClick={() => {
-                    if (!confirm("Delete this family? Every family share will be revoked.")) return;
+                    if (!confirm(t("family.delete.confirm", "Delete this family? Every family share will be revoked."))) return;
                     void run(async () => {
                       await deleteFamily(overview.family!.id);
-                    }, "Family deleted.");
+                    }, t("family.toast.deleted", "Family deleted."));
                   }}
                 />
               )}
@@ -474,7 +499,7 @@ function FamilyPage() {
 
         <div className="pt-4 text-center">
           <Link to="/profile" className="text-[12.5px]" style={{ color: MUTED }}>
-            Back to profile
+            {t("family.backToProfile", "Back to profile")}
           </Link>
         </div>
       </div>
@@ -491,9 +516,9 @@ function FamilyPage() {
             setPickerAccounts(null);
             await run(async () => {
               const res = await shareAccountWithFamily(overview.family!.id, accountId);
-              return `Shared with ${res.createdShareCount} member${
-                res.createdShareCount === 1 ? "" : "s"
-              }.`;
+              return res.createdShareCount === 1
+                ? t("family.toast.sharedWith.one", "Shared with 1 member.")
+                : t("family.toast.sharedWith.other", "Shared with {count} members.", { count: res.createdShareCount });
             });
           }}
         />
@@ -513,7 +538,8 @@ function MemberRow({
   onRemove: () => void;
   busy: boolean;
 }) {
-  const displayName = member.displayName || "Member";
+  const t = useT();
+  const displayName = member.displayName || t("family.member.fallback", "Member");
   const initial = displayName.slice(0, 1).toUpperCase();
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -543,20 +569,20 @@ function MemberRow({
           )}
         </div>
         <span className="mt-0.5 text-[12px]" style={{ color: MUTED }}>
-          Joined {new Date(member.joinedAt).toLocaleDateString()}
+          {t("family.member.joined", "Joined {date}", { date: new Date(member.joinedAt).toLocaleDateString() })}
         </span>
       </div>
       {canRemove && (
         <button
           disabled={busy}
           onClick={() => {
-            if (!confirm(`Remove ${displayName} from the family?`)) return;
+            if (!confirm(t("family.member.removeConfirm", "Remove {name} from the family?", { name: displayName }))) return;
             onRemove();
           }}
           className="rounded-[8px] px-2 py-1 text-[12px] disabled:opacity-50"
           style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, border: `1px solid ${BORDER}` }}
         >
-          Remove
+          {t("family.member.remove", "Remove")}
         </button>
       )}
     </div>
@@ -572,7 +598,14 @@ function SharedAccountRow({
   onUnshare: () => void;
   busy: boolean;
 }) {
+  const t = useT();
   const missing = shared.missingRecipients.length;
+  const missingText =
+    missing === 0
+      ? ""
+      : missing === 1
+        ? t("family.shared.outOfSync.one", "1 member out of sync")
+        : t("family.shared.outOfSync.other", "{count} members out of sync", { count: missing });
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <span
@@ -590,19 +623,19 @@ function SharedAccountRow({
           {shared.issuer}
         </span>
         <span className="mt-0.5 truncate text-[12px]" style={{ color: MUTED }}>
-          {shared.label || "•"} {missing > 0 && `• ${missing} member${missing === 1 ? "" : "s"} out of sync`}
+          {shared.label || "•"} {missing > 0 && `• ${missingText}`}
         </span>
       </div>
       <button
         disabled={busy}
         onClick={() => {
-          if (!confirm("Unshare this account from the whole family?")) return;
+          if (!confirm(t("family.shared.unshareConfirm", "Unshare this account from the whole family?"))) return;
           onUnshare();
         }}
         className="rounded-[8px] px-2 py-1 text-[12px] disabled:opacity-50"
         style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, border: `1px solid ${BORDER}` }}
       >
-        Unshare
+        {t("family.shared.unshare", "Unshare")}
       </button>
     </div>
   );
@@ -617,6 +650,7 @@ function AccountPickerSheet({
   onPick: (accountId: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const available = useMemo(() => (accounts ?? []).filter((a) => !a.alreadyShared), [accounts]);
   return (
     <div
@@ -633,10 +667,10 @@ function AccountPickerSheet({
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: BORDER }} />
         <h2 className="text-[16px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
-          Share which account?
+          {t("family.picker.title", "Share which account?")}
         </h2>
         <p className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
-          The TOTP secret is encrypted per family member on this device.
+          {t("family.picker.desc", "The TOTP secret is encrypted per family member on this device.")}
         </p>
         <div className="mt-4 max-h-[50vh] overflow-y-auto">
           {accounts === null && (
@@ -646,7 +680,7 @@ function AccountPickerSheet({
           )}
           {accounts !== null && available.length === 0 && (
             <div className="py-6 text-center text-[13px]" style={{ color: MUTED }}>
-              Nothing left to share — every account is already family-shared.
+              {t("family.picker.empty", "Nothing left to share — every account is already family-shared.")}
             </div>
           )}
           <div className="flex flex-col gap-2">
@@ -659,7 +693,7 @@ function AccountPickerSheet({
               >
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[14px]" style={{ color: CHARCOAL, fontWeight: 500 }}>
-                    {a.issuer || "Untitled"}
+                    {a.issuer || t("family.picker.untitled", "Untitled")}
                   </span>
                   <span className="truncate text-[12px]" style={{ color: MUTED }}>
                     {a.label}
@@ -675,7 +709,7 @@ function AccountPickerSheet({
           className="mt-4 w-full rounded-[10px] py-2 text-[13px]"
           style={{ background: "rgb(var(--aegis-ink-rgb) / 0.06)", color: CHARCOAL, border: `1px solid ${BORDER}` }}
         >
-          Cancel
+          {t("family.picker.cancel", "Cancel")}
         </button>
       </motion.div>
     </div>
