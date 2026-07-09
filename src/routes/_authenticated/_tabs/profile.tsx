@@ -227,6 +227,7 @@ function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarVersion, setAvatarVersion] = useState(0);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [themeSheet, setThemeSheet] = useState(false);
@@ -311,13 +312,18 @@ function ProfilePage() {
         .from("avatars")
         .createSignedUrl(avatarPath, 60 * 60);
       if (cancelled) return;
-      if (error) setAvatarUrl(null);
-      else setAvatarUrl(data.signedUrl);
+      if (error || !data?.signedUrl) {
+        setAvatarUrl(null);
+      } else {
+        // Cache-bust on the signed URL so a re-uploaded photo shows immediately.
+        const sep = data.signedUrl.includes("?") ? "&" : "?";
+        setAvatarUrl(avatarVersion ? `${data.signedUrl}${sep}v=${avatarVersion}` : data.signedUrl);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [avatarPath]);
+  }, [avatarPath, avatarVersion]);
 
   const save = async () => {
     setSaving(true);
@@ -405,10 +411,8 @@ function ProfilePage() {
         .from("profiles")
         .upsert({ id: user.id, avatar_url: path }, { onConflict: "id" });
       if (profErr) throw profErr;
-      // Force signed-URL refresh by re-setting the path (cache-bust via query).
-      setAvatarPath(`${path}?v=${Date.now()}`);
-      // Then normalize back to the real path so future updates work.
-      setTimeout(() => setAvatarPath(path), 50);
+      setAvatarPath(path);
+      setAvatarVersion(Date.now());
       setNotice({ kind: "info", text: "Photo updated." });
       toast.success("Photo updated");
     } catch (err) {
