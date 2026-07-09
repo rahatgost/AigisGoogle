@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getVaultKey } from "@/lib/vault-session";
-import { addAccount, type ParsedOtpauth } from "@/lib/vault-accounts";
+import { addAccount, readCachedAccountsOnly, type ParsedOtpauth } from "@/lib/vault-accounts";
+import { UpgradePrompt } from "@/components/aegis/upgrade-prompt";
+import { usePlan } from "@/hooks/use-plan";
 import {
   importFromAvf,
   importFromJson,
@@ -77,6 +79,32 @@ function ImportPage() {
   const [avfBusy, setAvfBusy] = useState(false);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Preflight cap check — mirrors the Add-account gate. Prevents Free users
+  // from decoding/decrypting an entire export only to have the DB quota
+  // trigger reject most rows at save time.
+  const plan = usePlan();
+  const [accountCount, setAccountCount] = useState<number | null>(null);
+  useEffect(() => {
+    const key = getVaultKey();
+    if (!key) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const cached = await readCachedAccountsOnly(key, user.id);
+        if (!cancelled) setAccountCount(cached?.length ?? 0);
+      } catch {
+        if (!cancelled) setAccountCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
+  const cap = plan.getLimit("maxAccounts");
+  const capFinite = Number.isFinite(cap);
+  const remaining = capFinite && accountCount !== null ? Math.max(0, cap - accountCount) : Number.POSITIVE_INFINITY;
+  const atCap = !plan.loading && accountCount !== null && capFinite && accountCount >= cap;
 
   const showPreview = (p: Preview) => {
     if (p.entries.length === 0) {
@@ -281,57 +309,77 @@ function ImportPage() {
               </p>
             </div>
 
-
-            <SegmentedTabs tab={tab} setTab={setTab} />
-
-            {notice && (
-              <div className="pt-3">
-                <Notice kind={notice.kind}>{notice.text}</Notice>
+            {atCap ? (
+              <div className="pt-2">
+                <UpgradePrompt
+                  title={`You're at your ${cap}-account limit`}
+                  body="Free plans hold up to 25 accounts. Upgrade to Pro to import more and unlock 500 slots."
+                />
               </div>
+            ) : (
+              <>
+                {plan.isFree && capFinite && accountCount !== null && remaining <= 5 && (
+                  <div className="pt-2">
+                    <Notice kind="info">
+                      {remaining === 0
+                        ? `You're at your ${cap}-account Free limit.`
+                        : `Only ${remaining} slot${remaining === 1 ? "" : "s"} left on the Free plan (${accountCount}/${cap}).`}
+                    </Notice>
+                  </div>
+                )}
+
+                <SegmentedTabs tab={tab} setTab={setTab} />
+
+                {notice && (
+                  <div className="pt-3">
+                    <Notice kind={notice.kind}>{notice.text}</Notice>
+                  </div>
+                )}
+
+                <div className="pt-4">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={tab}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={soft}
+                    >
+                      {tab === "scan" ? (
+                        <ScanTab
+                          onDetected={handleScanned}
+                          onError={(msg) => setNotice({ kind: "error", text: msg })}
+                          switchToPaste={() => setTab("paste")}
+                        />
+                      ) : tab === "paste" ? (
+                        <PasteTab value={pasteText} onChange={setPasteText} onSubmit={handlePaste} />
+                      ) : (
+                        <FileTab
+                          decoding={decoding}
+                          onJsonPick={() => jsonInputRef.current?.click()}
+                          onImagePick={() => imageInputRef.current?.click()}
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <input
+                  ref={jsonInputRef}
+                  type="file"
+                  accept="application/json,.json,.txt,.avf"
+                  className="hidden"
+                  onChange={handleJsonFile}
+                />
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageFile}
+                />
+              </>
             )}
-
-            <div className="pt-4">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={tab}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={soft}
-                >
-                  {tab === "scan" ? (
-                    <ScanTab
-                      onDetected={handleScanned}
-                      onError={(msg) => setNotice({ kind: "error", text: msg })}
-                      switchToPaste={() => setTab("paste")}
-                    />
-                  ) : tab === "paste" ? (
-                    <PasteTab value={pasteText} onChange={setPasteText} onSubmit={handlePaste} />
-                  ) : (
-                    <FileTab
-                      decoding={decoding}
-                      onJsonPick={() => jsonInputRef.current?.click()}
-                      onImagePick={() => imageInputRef.current?.click()}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <input
-              ref={jsonInputRef}
-              type="file"
-              accept="application/json,.json,.txt,.avf"
-              className="hidden"
-              onChange={handleJsonFile}
-            />
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageFile}
-            />
           </>
         ) : stage === "avf" ? (
           <AvfPassStage
@@ -350,6 +398,9 @@ function ImportPage() {
             notice={notice}
             busy={busy}
             onCommit={commit}
+            remaining={remaining}
+            capFinite={capFinite}
+            cap={cap}
           />
         ) : null}
       </div>
@@ -552,6 +603,9 @@ function PreviewStage({
   notice,
   busy,
   onCommit,
+  remaining,
+  capFinite,
+  cap,
 }: {
   preview: Preview;
   selected: Set<number>;
@@ -560,6 +614,9 @@ function PreviewStage({
   notice: { kind: "error" | "info"; text: string } | null;
   busy: boolean;
   onCommit: () => void;
+  remaining: number;
+  capFinite: boolean;
+  cap: number;
 }) {
   const toggle = (i: number) => {
     const next = new Set(selected);
@@ -568,6 +625,7 @@ function PreviewStage({
     setSelected(next);
   };
   const allChecked = selected.size === preview.entries.length;
+  const overCap = capFinite && selected.size > remaining;
 
   return (
     <div className="flex flex-col gap-4 pt-2">
@@ -582,7 +640,16 @@ function PreviewStage({
 
       </div>
 
+      {overCap && (
+        <Notice kind="info">
+          {remaining === 0
+            ? `Your vault is at the ${cap}-account Free limit — upgrade to Pro to import these.`
+            : `Only ${remaining} of your ${selected.size} selected will fit on the Free plan (${cap} max). Deselect some or upgrade to Pro.`}
+        </Notice>
+      )}
+
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
+
 
       <button
         type="button"
