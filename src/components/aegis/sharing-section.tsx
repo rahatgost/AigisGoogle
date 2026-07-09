@@ -9,20 +9,17 @@
 //      live TOTP codes read-only (no persistence in vault_accounts).
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import * as OTPAuth from "otpauth";
 import { toast } from "sonner";
-import { Share2, X, RefreshCw, Users, Inbox, AlertTriangle } from "lucide-react";
+import { Share2, Users, Inbox, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVaultKey } from "@/lib/vault-session";
-import { listAccounts, type DecryptedAccount } from "@/lib/vault-accounts";
 import {
   clearNeedsRotation,
   ensureUserKeys,
   listIncomingShares,
   listOutgoingShares,
   revokeShare,
-  shareAccountByEmail,
   type IncomingShare,
   type OutgoingShare,
   type UserKeyMaterial,
@@ -33,7 +30,6 @@ import {
   CREAM_SOFT,
   MUTED,
   Notice,
-  soft,
 } from "@/components/aegis/chrome";
 import { SectionLabel, SettingsGroup, SettingsRow } from "@/components/aegis/settings";
 
