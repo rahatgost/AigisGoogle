@@ -470,6 +470,7 @@ function ProfilePage() {
         .from("profiles")
         .upsert({ id: user.id, avatar_url: null }, { onConflict: "id" });
       if (error) throw error;
+      await clearAvatarBlob(user.id);
       setAvatarPath(null);
       toast.success("Photo removed");
     } catch (err) {
