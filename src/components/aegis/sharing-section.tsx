@@ -261,6 +261,11 @@ export function SharingSection() {
    ============================================================ */
 
 export function IncomingSharesSection() {
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   const [incoming, setIncoming] = useState<IncomingShare[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -295,7 +300,7 @@ export function IncomingSharesSection() {
 
   return (
     <div className="mb-2">
-      <SectionLabel>Shared with you</SectionLabel>
+      <SectionLabel>{t("sharing.incoming.header", "Shared with you")}</SectionLabel>
       <div className="flex flex-col gap-1">
         {incoming.map((share) => (
           <IncomingShareCard key={share.id} share={share} />
@@ -305,9 +310,15 @@ export function IncomingSharesSection() {
   );
 }
 
+
 /* ---------------- incoming share card with live TOTP ---------------- */
 
 function IncomingShareCard({ share }: { share: IncomingShare }) {
+  const { i18n } = useLingui();
+  const tr = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -344,11 +355,11 @@ function IncomingShareCard({ share }: { share: IncomingShare }) {
       <Inbox className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} style={{ color: MUTED }} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13px]" style={{ color: CHARCOAL }}>
-          {share.issuer || "Shared account"}
+          {share.issuer || tr("sharing.incoming.fallback", "Shared account")}
           {share.label ? ` · ${share.label}` : ""}
         </div>
         <div className="text-[11px]" style={{ color: MUTED }}>
-          Shared · read-only
+          {tr("sharing.incoming.readOnly", "Shared · read-only")}
         </div>
       </div>
       <div
