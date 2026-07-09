@@ -31,6 +31,9 @@ import {
   type HibpResult,
   type VaultHealthReport,
 } from "@/lib/vault-health";
+import { usePlan } from "@/hooks/use-plan";
+import { UpgradePrompt } from "@/components/aegis/upgrade-prompt";
+
 
 /**
  * Phase 9.3 — Vault health.
@@ -49,6 +52,8 @@ function scoreTone(score: number): { label: string; color: string; bar: string }
 
 export function VaultHealthSection({ heading = "Vault health" }: { heading?: string }) {
   const unlocked = useVaultUnlocked();
+
+
   const [report, setReport] = useState<VaultHealthReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -174,6 +179,9 @@ export function HealthSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const [hibp, setHibp] = useState<Record<string, HibpResult | "loading">>({});
+  const plan = usePlan();
+  const canBreachScan = plan.hasFeature("breach-monitoring");
+
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -550,12 +558,21 @@ export function HealthSheet({
                 count={-1 /* always render body */}
                 severity="info"
               >
+                {!canBreachScan ? (
+                  <UpgradePrompt
+                    title="Breach monitoring"
+                    body="Pro checks your issuers against Have I Been Pwned so you know when a service you use has leaked credentials."
+                    tier="Pro"
+                  />
+                ) : (
+                  <>
                 <div className="text-[11.5px]" style={{ color: MUTED }}>
                   Tap an issuer to run an anonymous k-anonymity lookup against
                   Have I Been Pwned. Only the first 5 characters of the hashed
                   domain are sent — the issuer name and full hash stay on this
                   device.
                 </div>
+
                 <div className="space-y-1.5">
                   {uniqueIssuers(report).map((issuer) => {
                     const r = hibp[issuer];
@@ -605,7 +622,10 @@ export function HealthSheet({
                     );
                   })}
                 </div>
+                  </>
+                )}
               </Category>
+
 
               <div
                 className="pt-1 text-center text-[10.5px]"

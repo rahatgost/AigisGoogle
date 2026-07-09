@@ -57,6 +57,9 @@ import {
   type FamilySharedAccount,
   type OwnedAccountSummary,
 } from "@/lib/family";
+import { usePlan } from "@/hooks/use-plan";
+import { UpgradePrompt } from "@/components/aegis/upgrade-prompt";
+
 
 export const Route = createFileRoute("/_authenticated/family")({
   head: () => ({
@@ -71,7 +74,9 @@ export const Route = createFileRoute("/_authenticated/family")({
 
 function FamilyPage() {
   const router = useRouter();
+  const plan = usePlan();
   const [overview, setOverview] = useState<FamilyOverview | null>(null);
+
   const [pendingInvitesForMe, setPendingInvitesForMe] = useState<
     Array<FamilyInvite & { familyName: string }>
   >([]);
@@ -228,7 +233,18 @@ function FamilyPage() {
         )}
 
         {/* State 1: No family yet — offer creation. */}
-        {overview && !overview.family && (
+        {overview && !overview.family && !plan.isFamily && (
+          <div className="pt-3">
+            <UpgradePrompt
+              title="Family sharing is a Family-plan feature"
+              body="Upgrade to Family to create a household, invite up to 6 members, and share Aegis codes end-to-end encrypted."
+              tier="Family"
+            />
+          </div>
+        )}
+
+        {/* State 1: No family yet — offer creation. */}
+        {overview && !overview.family && plan.isFamily && (
           <>
             <SectionLabel>Start a family</SectionLabel>
             <SettingsGroup>
@@ -272,6 +288,7 @@ function FamilyPage() {
             </p>
           </>
         )}
+
 
         {/* State 2/3: In a family — roster. */}
         {overview?.family && (
