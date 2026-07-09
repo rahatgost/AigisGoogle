@@ -81,8 +81,16 @@ export const Route = createFileRoute("/_authenticated/_tabs/profile")({
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
   ),
-  notFoundComponent: () => <div className="p-6 text-sm">Not found</div>,
+  notFoundComponent: () => <NotFoundView />,
 });
+
+function NotFoundView() {
+  const { i18n } = useLingui();
+  const msg = i18n._("common.notFound");
+  return <div className="p-6 text-sm">{msg === "common.notFound" ? "Not found" : msg}</div>;
+}
+
+
 
 
 function initials(source: string): string {
@@ -180,7 +188,7 @@ function ProfilePage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
-      toast.success("Welcome to Pro. Give billing a moment to sync.");
+      toast.success(t("profile.upgradeSyncToast", "Welcome to Pro. Give billing a moment to sync."));
       setAwaitingUpgrade(true);
       let tries = 0;
       const iv = setInterval(() => {
@@ -447,10 +455,10 @@ function ProfilePage() {
       await putAvatarBlob(user.id, blob);
       setAvatarPath(path);
       setAvatarVersion(Date.now());
-      setNotice({ kind: "info", text: "Photo updated." });
-      toast.success("Photo updated");
+      setNotice({ kind: "info", text: t("profile.photoUpdated", "Photo updated") });
+      toast.success(t("profile.photoUpdated", "Photo updated"));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not upload photo.";
+      const msg = err instanceof Error ? err.message : t("profile.photoUpdateFailed", "Could not upload photo.");
       setNotice({ kind: "error", text: msg });
       toast.error(msg);
     } finally {
@@ -472,9 +480,9 @@ function ProfilePage() {
       if (error) throw error;
       await clearAvatarBlob(user.id);
       setAvatarPath(null);
-      toast.success("Photo removed");
+      toast.success(t("profile.photoRemoved", "Photo removed"));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not remove photo.";
+      const msg = err instanceof Error ? err.message : t("profile.photoRemoveFailed", "Could not remove photo.");
       setNotice({ kind: "error", text: msg });
       toast.error(msg);
     } finally {
@@ -483,12 +491,12 @@ function ProfilePage() {
   };
 
   const seed = displayName || user.email || "?";
-  const displayShown = initialName || "Unnamed";
+  const displayShown = initialName || t("profile.unnamed", "Unnamed");
   const hasAvatar = !!avatarPath;
 
   return (
     <>
-      <LargeTitle title="Account" subtitle="How you show up inside Aegis." />
+      <LargeTitle title={t("profile.title", "Account")} subtitle={t("profile.subtitle", "How you show up inside Aegis.")} />
 
       <div className="flex flex-col gap-1 pt-1">
         <motion.div
@@ -604,7 +612,7 @@ function ProfilePage() {
           </div>
         </motion.div>
 
-        <SectionLabel>Personal</SectionLabel>
+        <SectionLabel>{t("profile.section.personal", "Personal")}</SectionLabel>
         <SettingsGroup>
           {loading ? (
             <div className="flex items-center justify-center py-6" style={{ color: MUTED }}>
@@ -628,12 +636,12 @@ function ProfilePage() {
                 value={displayName}
                 maxLength={64}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t("profile.displayName.placeholder", "Your name")}
                 className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none"
                 style={{ color: CHARCOAL, fontWeight: 500 }}
               />
               <button onClick={cancelEdit} className="text-[12px]" style={{ color: MUTED }}>
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <motion.button
                 whileTap={{ scale: 0.94 }}
@@ -641,7 +649,7 @@ function ProfilePage() {
                 disabled={saving}
                 className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-60"
                 style={{ background: CHARCOAL, color: CREAM_SOFT }}
-                aria-label="Save"
+                aria-label={t("common.save", "Save")}
               >
                 {saving ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -653,8 +661,8 @@ function ProfilePage() {
           ) : (
             <SettingsRow
               icon={<User className="h-4 w-4" strokeWidth={1.8} />}
-              title="Display name"
-              value={initialName || "Not set"}
+              title={t("profile.displayName", "Display name")}
+              value={initialName || t("profile.displayName.empty", "Not set")}
               onClick={() => setEditing(true)}
               trailing={
                 <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} style={{ color: MUTED }} />
