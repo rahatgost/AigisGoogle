@@ -214,19 +214,29 @@ function ImportPage() {
     setBusy(true);
     let ok = 0;
     let failed = 0;
+    let quotaHit = false;
     for (let i = 0; i < preview.entries.length; i++) {
       if (!selected.has(i)) continue;
       const e = preview.entries[i];
       try {
         await addAccount(key, user.id, e);
         ok++;
-      } catch {
+      } catch (err) {
         failed++;
+        const msg = err instanceof Error ? err.message.toLowerCase() : "";
+        if (msg.includes("vault account limit reached")) {
+          quotaHit = true;
+          break; // stop importing — every subsequent save will fail the same way
+        }
       }
     }
     setBusy(false);
     if (ok > 0) toast.success(`Imported ${ok} account${ok === 1 ? "" : "s"}.`);
-    if (failed > 0) toast.error(`${failed} account${failed === 1 ? "" : "s"} couldn't be saved.`);
+    if (quotaHit) {
+      toast.error("Free plan capped at 25 accounts. Upgrade to Pro to import the rest.");
+    } else if (failed > 0) {
+      toast.error(`${failed} account${failed === 1 ? "" : "s"} couldn't be saved.`);
+    }
     navigate({ to: "/vault", replace: true });
   };
 
