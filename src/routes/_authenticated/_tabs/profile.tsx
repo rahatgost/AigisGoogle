@@ -312,13 +312,18 @@ function ProfilePage() {
         .from("avatars")
         .createSignedUrl(avatarPath, 60 * 60);
       if (cancelled) return;
-      if (error) setAvatarUrl(null);
-      else setAvatarUrl(data.signedUrl);
+      if (error || !data?.signedUrl) {
+        setAvatarUrl(null);
+      } else {
+        // Cache-bust on the signed URL so a re-uploaded photo shows immediately.
+        const sep = data.signedUrl.includes("?") ? "&" : "?";
+        setAvatarUrl(avatarVersion ? `${data.signedUrl}${sep}v=${avatarVersion}` : data.signedUrl);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [avatarPath]);
+  }, [avatarPath, avatarVersion]);
 
   const save = async () => {
     setSaving(true);
