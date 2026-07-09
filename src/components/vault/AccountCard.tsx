@@ -1441,7 +1441,9 @@ export function AccountCard({
                             whileTap={{ scale: 0.98 }}
                             onClick={() => {
                               setShareError(null);
-                              setShareOpen(true);
+                              setShareEmail("");
+                              setDetailsOpen(false);
+                              window.setTimeout(() => setShareOpen(true), 120);
                             }}
                             className="flex items-center justify-center gap-2 rounded-[14px] px-3 py-3 text-[13px]"
                             style={{
