@@ -52,8 +52,7 @@ function scoreTone(score: number): { label: string; color: string; bar: string }
 
 export function VaultHealthSection({ heading = "Vault health" }: { heading?: string }) {
   const unlocked = useVaultUnlocked();
-  const plan = usePlan();
-  const canBreachScan = plan.hasFeature("breach-monitoring");
+
 
   const [report, setReport] = useState<VaultHealthReport | null>(null);
   const [loading, setLoading] = useState(false);
