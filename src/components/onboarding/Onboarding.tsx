@@ -977,8 +977,8 @@ function StepPro({ next }: { next: () => void }) {
         <div className="flex flex-col gap-2">
           <FeatureRow
             icon={<InfinityIcon className="h-4 w-4" strokeWidth={1.8} />}
-            title="Unlimited accounts"
-            body="Free covers 25. Pro removes the cap — add as many as you like."
+            title="500 accounts (vs 25)"
+            body="20× the Free vault size — enough for even the busiest security setup."
             delay={0.05}
           />
           <FeatureRow
