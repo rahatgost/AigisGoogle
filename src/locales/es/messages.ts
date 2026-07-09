@@ -94,4 +94,42 @@ export const messages: Record<string, string> = {
   "security.autoBackup.proOnly": "Pro — mejora para activar",
 
   "vault.card.share": "Compartir",
+
+  "plan.tier.free": "Free",
+  "plan.tier.pro": "Pro",
+  "plan.tier.family": "Family",
+  "plan.price.free": "Free — $0",
+  "plan.price.pro": "Pro — $2,99/mes",
+  "plan.price.family": "Family — $4,99/mes",
+
+  "sharing.rotate.title": "Rota estos secretos",
+  "sharing.rotate.description":
+    "Revocaste un uso compartido para estas cuentas. Los secretos TOTP no rotan solos: entra en la página de seguridad de cada sitio y vuelve a registrarte para invalidar la copia que tenía el destinatario.",
+  "sharing.rotate.done": "Listo",
+  "sharing.row.shareAccount.title": "Compartir una cuenta",
+  "sharing.row.shareAccount.description": "Abre cualquier tarjeta y toca Compartir",
+  "sharing.row.shareAccount.value": "Desde la bóveda",
+  "sharing.row.outgoing.title": "Compartidos por ti",
+  "sharing.row.outgoing.none": "Ninguno",
+  "sharing.row.outgoing.count": "{count} activos",
+  "sharing.row.sharedWithYou.title": "Compartidos contigo",
+  "sharing.row.sharedWithYou.description": "Aparece en la parte superior de tu bóveda",
+  "sharing.row.sharedWithYou.value": "En la bóveda",
+  "sharing.status.active": "Activo",
+  "sharing.status.revoked": "Revocado",
+  "sharing.revoke": "Revocar",
+  "sharing.account.fallback": "Cuenta",
+  "sharing.incoming.header": "Compartidos contigo",
+  "sharing.incoming.readOnly": "Compartido · solo lectura",
+  "sharing.incoming.fallback": "Cuenta compartida",
+  "sharing.revoke.toast": "Uso compartido revocado. Considera rotar el código en el sitio original.",
+
+  "vault.card.share.title": "Compartir {issuer}",
+  "vault.card.share.accountFallback": "cuenta",
+  "vault.card.share.recipientEmail": "Correo del destinatario",
+  "vault.card.share.placeholder": "amigo@ejemplo.com",
+  "vault.card.share.description":
+    "Cifrado de extremo a extremo. Debe tener ya una cuenta de Aegis y haber desbloqueado su bóveda al menos una vez.",
+  "vault.card.share.submit": "Compartir",
+  "vault.card.share.busy": "Compartiendo…",
 };

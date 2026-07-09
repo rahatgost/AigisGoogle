@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { useLingui } from "@lingui/react";
 import { COMPARISON_ROWS } from "@/lib/plan";
 
 /**
@@ -14,6 +15,11 @@ export function PlanComparisonSheet({
   open: boolean;
   onClose: () => void;
 }) {
+  const { i18n } = useLingui();
+  const t = (id: string, fallback: string) => {
+    const msg = i18n._(id);
+    return msg === id ? fallback : msg;
+  };
   return (
     <AnimatePresence>
       {open && (
@@ -43,11 +49,11 @@ export function PlanComparisonSheet({
                 className="text-[16px]"
                 style={{ color: "var(--aegis-ink)", fontWeight: 600 }}
               >
-                Compare plans
+                {t("profile.plan.compare", "Compare plans")}
               </div>
               <button
                 onClick={onClose}
-                aria-label="Close"
+                aria-label={t("common.close", "Close")}
                 className="flex h-8 w-8 items-center justify-center rounded-full"
                 style={{ color: "var(--aegis-ink)" }}
               >
@@ -66,9 +72,9 @@ export function PlanComparisonSheet({
                 }}
               >
                 <div />
-                <div className="text-center">Free</div>
-                <div className="text-center">Pro</div>
-                <div className="text-center">Family</div>
+                <div className="text-center">{t("plan.tier.free", "Free")}</div>
+                <div className="text-center">{t("plan.tier.pro", "Pro")}</div>
+                <div className="text-center">{t("plan.tier.family", "Family")}</div>
               </div>
               {COMPARISON_ROWS.map((row) => (
                 <div
@@ -94,9 +100,9 @@ export function PlanComparisonSheet({
                 className="mt-3 flex items-center justify-around text-[12.5px]"
                 style={{ color: "var(--aegis-muted)" }}
               >
-                <span>Free — $0</span>
-                <span>Pro — $2.99/mo</span>
-                <span>Family — $4.99/mo</span>
+                <span>{t("plan.price.free", "Free — $0")}</span>
+                <span>{t("plan.price.pro", "Pro — $2.99/mo")}</span>
+                <span>{t("plan.price.family", "Family — $4.99/mo")}</span>
               </div>
             </div>
           </motion.div>
