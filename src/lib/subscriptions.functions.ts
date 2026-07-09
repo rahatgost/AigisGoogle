@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getLimit, type PlanTier } from "@/lib/plan";
 
 /**
  * Phase 13.3 — Billing server functions.
@@ -146,4 +147,56 @@ export const createPortalSession = createServerFn({ method: "POST" })
     });
 
     return { url: session.url };
+  });
+
+/**
+ * Pre-flight check used by import/add flows. Reads the caller's tier and
+ * current vault-entry count and returns whether `additional` new rows
+ * would exceed the plan cap. This mirrors the DB trigger
+ * `enforce_vault_accounts_per_user_limit` so the UI can surface a
+ * friendly upgrade prompt before the write is even attempted.
+ */
+export const checkAccountQuota = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ additional: z.number().int().min(0).max(10_000).default(1) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const client = context.supabase as unknown as {
+      from: (t: string) => {
+        select: (c: string, opts?: { count?: "exact"; head?: boolean }) => {
+          eq: (c: string, v: string) => Promise<{ count: number | null; error: { message: string } | null }> & {
+            maybeSingle: () => Promise<{ data: { tier: PlanTier } | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+
+    const sub = await client
+      .from("subscriptions")
+      .select("tier")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const tier: PlanTier = (sub.data?.tier as PlanTier | undefined) ?? "free";
+
+    const countRes = await client
+      .from("vault_accounts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId);
+    const current = countRes.count ?? 0;
+
+    const cap = getLimit(tier, "maxAccounts");
+    const finite = Number.isFinite(cap);
+    const projected = current + data.additional;
+    const allowed = !finite || projected <= cap;
+    const remaining = finite ? Math.max(0, cap - current) : Number.POSITIVE_INFINITY;
+
+    return {
+      tier,
+      cap: finite ? cap : null,
+      current,
+      remaining: Number.isFinite(remaining) ? remaining : null,
+      allowed,
+      requested: data.additional,
+    };
   });
