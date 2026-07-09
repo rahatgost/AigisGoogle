@@ -1514,33 +1514,38 @@ export function AccountCard({
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="text-[15px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
-                        Share {account.issuer || "account"}
+                        {t("vault.card.share.title", "Share {issuer}").replace(
+                          "{issuer}",
+                          account.issuer || t("vault.card.share.accountFallback", "account"),
+                        )}
                       </h3>
                       <button
                         type="button"
                         onClick={() => !shareBusy && setShareOpen(false)}
-                        aria-label="Close"
+                        aria-label={t("common.close", "Close")}
                       >
                         <X className="h-4 w-4" strokeWidth={1.8} style={{ color: MUTED }} />
                       </button>
                     </div>
                     <form onSubmit={submitShare} className="flex flex-col gap-3">
                       <label className="flex flex-col gap-1 text-[12px]" style={{ color: MUTED }}>
-                        Recipient's email
+                        {t("vault.card.share.recipientEmail", "Recipient's email")}
                         <input
                           type="email"
                           value={shareEmail}
                           onChange={(e) => setShareEmail(e.target.value)}
                           required
                           autoComplete="email"
-                          placeholder="friend@example.com"
+                          placeholder={t("vault.card.share.placeholder", "friend@example.com")}
                           className="rounded-[10px] border bg-transparent px-3 py-2 text-[14px] outline-none"
                           style={{ borderColor: BORDER, color: CHARCOAL }}
                         />
                       </label>
                       <p className="text-[11.5px]" style={{ color: MUTED, lineHeight: 1.5 }}>
-                        End-to-end encrypted. They must already have an Aegis
-                        account and have unlocked their vault at least once.
+                        {t(
+                          "vault.card.share.description",
+                          "End-to-end encrypted. They must already have an Aegis account and have unlocked their vault at least once.",
+                        )}
                       </p>
                       {shareError && (
                         <p className="text-[12px]" style={{ color: DANGER }} role="alert">
@@ -1555,7 +1560,7 @@ export function AccountCard({
                           className="rounded-[10px] border px-3 py-2 text-[13px]"
                           style={{ borderColor: BORDER, color: CHARCOAL }}
                         >
-                          Cancel
+                          {t("common.cancel", "Cancel")}
                         </button>
                         <button
                           type="submit"
@@ -1566,17 +1571,18 @@ export function AccountCard({
                           {shareBusy ? (
                             <>
                               <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2} />
-                              Sharing…
+                              {t("vault.card.share.busy", "Sharing…")}
                             </>
                           ) : (
                             <>
                               <Share2 className="h-3.5 w-3.5" strokeWidth={1.9} />
-                              Share
+                              {t("vault.card.share.submit", "Share")}
                             </>
                           )}
                         </button>
                       </div>
                     </form>
+
                   </motion.div>
                 </motion.div>
               )}
