@@ -104,6 +104,151 @@ export type Database = {
         }
         Relationships: []
       }
+      families: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      family_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          family_id: string
+          id: string
+          invited_by: string
+          status: Database["public"]["Enums"]["family_invite_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          family_id: string
+          id?: string
+          invited_by: string
+          status?: Database["public"]["Enums"]["family_invite_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          family_id?: string
+          id?: string
+          invited_by?: string
+          status?: Database["public"]["Enums"]["family_invite_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invites_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          created_at: string
+          family_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["family_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["family_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["family_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_shared_accounts: {
+        Row: {
+          account_id: string
+          created_at: string
+          family_id: string
+          id: string
+          shared_by: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          family_id: string
+          id?: string
+          shared_by: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          shared_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_shared_accounts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "vault_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_shared_accounts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flags: {
         Row: {
           audience: Json
@@ -531,6 +676,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_user_email: { Args: never; Returns: string }
       find_user_by_email: {
         Args: { _email: string }
         Returns: {
@@ -539,7 +685,18 @@ export type Database = {
           x25519_public_key: string
         }[]
       }
+      get_family_member_public_keys: {
+        Args: never
+        Returns: {
+          ed25519_public_key: string
+          email: string
+          user_id: string
+          x25519_public_key: string
+        }[]
+      }
+      get_user_family_id: { Args: { _user_id?: string }; Returns: string }
       is_admin: { Args: { _user_id?: string }; Returns: boolean }
+      is_family_admin: { Args: { _user_id?: string }; Returns: boolean }
       purge_old_client_errors: { Args: { days?: number }; Returns: number }
       purge_old_login_events: { Args: { days?: number }; Returns: number }
       purge_old_share_lookup_attempts: {
@@ -548,7 +705,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      family_invite_status:
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "revoked"
+        | "expired"
+      family_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -675,6 +838,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      family_invite_status: [
+        "pending",
+        "accepted",
+        "declined",
+        "revoked",
+        "expired",
+      ],
+      family_role: ["admin", "member"],
+    },
   },
 } as const

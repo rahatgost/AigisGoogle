@@ -21,6 +21,7 @@ import {
   Monitor,
   Sun,
   Moon,
+  Users,
 } from "lucide-react";
 import {
   BORDER,
@@ -517,6 +518,20 @@ function ProfilePage() {
                 : (SUPPORTED_LOCALES.find((l) => l.code === localePref)?.nativeLabel ?? "English")
             }
             onClick={() => setLocaleSheet(true)}
+            chevron
+          />
+        </SettingsGroup>
+
+        <SectionLabel>{t("profile.section.sharing", "Sharing")}</SectionLabel>
+        <SettingsGroup>
+          <SettingsRow
+            icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
+            title={t("profile.family", "Family")}
+            description={t(
+              "profile.family.description",
+              "Share your Aegis codes with up to 6 family members.",
+            )}
+            onClick={() => navigate({ to: "/family" })}
             chevron
           />
         </SettingsGroup>

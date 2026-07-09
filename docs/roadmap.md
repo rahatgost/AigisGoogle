@@ -273,8 +273,8 @@ within 30 days. Old v1 code kept in-tree for six months, then removed.
 - [x] Revocation soft-deletes the share row and flags `vault_accounts.needs_rotation = true`; Security tab prompts the owner to re-enroll the secret at the source site (TOTP is one-way — only the site can mint a new secret).
 
 ### 13.2 Family plan `[P2]`
-- [ ] Family group with admin, up to 6 members
-- [ ] Family-scoped vault alongside per-user vaults, same crypto path
+- [x] Family group with admin, up to 6 members (enforced by DB trigger); invite-by-email flow with pending/accepted/declined/revoked/expired states and 14-day expiry.
+- [x] Family-scoped shared accounts alongside per-user vaults, reusing the 1:1 sharing crypto (ephemeral-static X25519 → HKDF → AES-GCM per member). Admin can share/unshare accounts, remove members (auto-revokes their shares), and sync missing shares when new members join.
 
 ### 13.3 Billing `[P2]`
 - [ ] Stripe subscriptions via payments connector, `family` and `pro` tiers
