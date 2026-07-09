@@ -41,6 +41,7 @@ import {
 } from "@/components/aegis/chrome";
 import { LargeTitle, SectionLabel, SettingsGroup, SettingsRow } from "@/components/aegis/settings";
 import { PlanComparisonSheet } from "@/components/aegis/plan-comparison-sheet";
+import { PremiumWelcomeSheet } from "@/components/aegis/premium-welcome-sheet";
 import { Eye } from "lucide-react";
 import { getThemePref, setThemePref, type ThemePref } from "@/lib/theme";
 import {
@@ -103,6 +104,8 @@ function ProfilePage() {
   const [planBusy, setPlanBusy] = useState<null | "pro" | "family" | "portal">(null);
   const [planSheet, setPlanSheet] = useState(false);
   const [compareSheet, setCompareSheet] = useState(false);
+  const [welcomeSheet, setWelcomeSheet] = useState(false);
+  const [awaitingUpgrade, setAwaitingUpgrade] = useState(false);
 
   const activePaidTier = sub && sub.tier !== "free" && ["active", "trialing"].includes(sub.status);
   const planLabel = !sub
@@ -166,23 +169,37 @@ function ProfilePage() {
   };
 
   // Re-check subscription after returning from Stripe Checkout (webhook may
-  // arrive a beat later — refetch a few times).
+  // arrive a beat later — refetch a few times, and once the paid tier
+  // lands, fire the one-time welcome sheet.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
       toast.success("Welcome to Pro. Give billing a moment to sync.");
+      setAwaitingUpgrade(true);
       let tries = 0;
       const iv = setInterval(() => {
         void refetchSub();
-        if (++tries >= 6) clearInterval(iv);
+        if (++tries >= 8) clearInterval(iv);
       }, 1500);
-      // Clean the URL so refresh doesn't re-toast.
       const url = new URL(window.location.href);
       url.searchParams.delete("checkout");
       window.history.replaceState({}, "", url.toString());
       return () => clearInterval(iv);
     }
   }, [refetchSub]);
+
+  // When the paid tier actually lands (via webhook), reveal the welcome
+  // sheet exactly once per upgrade. Keyed by tier so a later Pro→Family
+  // upgrade also celebrates.
+  useEffect(() => {
+    if (!sub || !activePaidTier) return;
+    const key = `aegis:welcomed:${user.id}:${sub.tier}`;
+    if (awaitingUpgrade && !localStorage.getItem(key)) {
+      setWelcomeSheet(true);
+      localStorage.setItem(key, "1");
+      setAwaitingUpgrade(false);
+    }
+  }, [sub, activePaidTier, awaitingUpgrade, user.id]);
 
 
   const [displayName, setDisplayName] = useState("");
@@ -495,11 +512,28 @@ function ProfilePage() {
             onChange={handleAvatarFile}
           />
           <div className="min-w-0 flex-1">
-            <div
-              className="truncate text-[15px]"
-              style={{ color: CHARCOAL, fontWeight: 600, letterSpacing: "-0.01em" }}
-            >
-              {displayShown}
+            <div className="flex items-center gap-1.5">
+              <div
+                className="truncate text-[15px]"
+                style={{ color: CHARCOAL, fontWeight: 600, letterSpacing: "-0.01em" }}
+              >
+                {displayShown}
+              </div>
+              {activePaidTier && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] uppercase"
+                  style={{
+                    background: CHARCOAL,
+                    color: CREAM_SOFT,
+                    letterSpacing: "0.09em",
+                    fontWeight: 600,
+                  }}
+                  aria-label={`${planLabel} member`}
+                >
+                  <Sparkles className="h-2.5 w-2.5" strokeWidth={2.2} />
+                  {planLabel}
+                </span>
+              )}
             </div>
             <div className="truncate text-[12.5px]" style={{ color: MUTED }}>
               {avatarBusy ? (
@@ -740,6 +774,11 @@ function ProfilePage() {
         )}
       </AnimatePresence>
       <PlanComparisonSheet open={compareSheet} onClose={() => setCompareSheet(false)} />
+      <PremiumWelcomeSheet
+        open={welcomeSheet}
+        tier={(sub?.tier as "pro" | "family" | undefined) ?? "pro"}
+        onClose={() => setWelcomeSheet(false)}
+      />
     </>
   );
 }
