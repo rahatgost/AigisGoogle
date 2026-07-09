@@ -25,6 +25,7 @@ import { Route as AuthenticatedDevicesRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedApproveRouteImport } from './routes/_authenticated/approve'
 import { Route as AuthenticatedTabsRouteImport } from './routes/_authenticated/_tabs'
 import { Route as AuthenticatedLockedRouteRouteImport } from './routes/_authenticated/_locked/route'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as AuthenticatedTabsVaultRouteImport } from './routes/_authenticated/_tabs/vault'
 import { Route as AuthenticatedTabsSecurityRouteImport } from './routes/_authenticated/_tabs/security'
 import { Route as AuthenticatedTabsProfileRouteImport } from './routes/_authenticated/_tabs/profile'
@@ -112,6 +113,11 @@ const AuthenticatedLockedRouteRoute =
     id: '/_locked',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTabsVaultRoute = AuthenticatedTabsVaultRouteImport.update({
   id: '/vault',
   path: '/vault',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedTabsProfileRoute
   '/security': typeof AuthenticatedTabsSecurityRoute
   '/vault': typeof AuthenticatedTabsVaultRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/vault/import': typeof AuthenticatedLockedVaultImportRoute
   '/vault/new': typeof AuthenticatedLockedVaultNewRoute
   '/vault/recovery': typeof AuthenticatedLockedVaultRecoveryRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedTabsProfileRoute
   '/security': typeof AuthenticatedTabsSecurityRoute
   '/vault': typeof AuthenticatedTabsVaultRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/vault/import': typeof AuthenticatedLockedVaultImportRoute
   '/vault/new': typeof AuthenticatedLockedVaultNewRoute
   '/vault/recovery': typeof AuthenticatedLockedVaultRecoveryRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/_tabs/profile': typeof AuthenticatedTabsProfileRoute
   '/_authenticated/_tabs/security': typeof AuthenticatedTabsSecurityRoute
   '/_authenticated/_tabs/vault': typeof AuthenticatedTabsVaultRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/_locked/vault_/import': typeof AuthenticatedLockedVaultImportRoute
   '/_authenticated/_locked/vault_/new': typeof AuthenticatedLockedVaultNewRoute
   '/_authenticated/_locked/vault_/recovery': typeof AuthenticatedLockedVaultRecoveryRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/security'
     | '/vault'
+    | '/api/public/stripe-webhook'
     | '/vault/import'
     | '/vault/new'
     | '/vault/recovery'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/security'
     | '/vault'
+    | '/api/public/stripe-webhook'
     | '/vault/import'
     | '/vault/new'
     | '/vault/recovery'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_tabs/profile'
     | '/_authenticated/_tabs/security'
     | '/_authenticated/_tabs/vault'
+    | '/api/public/stripe-webhook'
     | '/_authenticated/_locked/vault_/import'
     | '/_authenticated/_locked/vault_/new'
     | '/_authenticated/_locked/vault_/recovery'
@@ -292,6 +304,7 @@ export interface RootRouteChildren {
   BlogAegisVsGoogleAuthenticatorRoute: typeof BlogAegisVsGoogleAuthenticatorRoute
   BlogGoogleAuthenticatorForPcRoute: typeof BlogGoogleAuthenticatorForPcRoute
   DevTokensRoute: typeof DevTokensRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedLockedRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_tabs/vault': {
       id: '/_authenticated/_tabs/vault'
@@ -530,6 +550,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogAegisVsGoogleAuthenticatorRoute: BlogAegisVsGoogleAuthenticatorRoute,
   BlogGoogleAuthenticatorForPcRoute: BlogGoogleAuthenticatorForPcRoute,
   DevTokensRoute: DevTokensRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

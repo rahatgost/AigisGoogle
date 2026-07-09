@@ -277,8 +277,8 @@ within 30 days. Old v1 code kept in-tree for six months, then removed.
 - [x] Family-scoped shared accounts alongside per-user vaults, reusing the 1:1 sharing crypto (ephemeral-static X25519 → HKDF → AES-GCM per member). Admin can share/unshare accounts, remove members (auto-revokes their shares), and sync missing shares when new members join.
 
 ### 13.3 Billing `[P2]`
-- [ ] Stripe subscriptions via payments connector, `family` and `pro` tiers
-- [ ] Free tier permanent for single-user vault up to 25 accounts
+- [x] Stripe subscriptions (BYOK) with `pro` and `family` tiers — checkout, customer portal, and lifecycle webhook at `/api/public/stripe-webhook` writing to `public.subscriptions` (service-role only).
+- [x] Free tier permanent for single-user vault up to 25 accounts; `enforce_vault_accounts_per_user_limit` trigger now consults `has_active_subscription()` and raises to 500 for Pro/Family.
 
 **Exit criteria:** Two humans can share one credential end-to-end
 encrypted, without the server ever seeing plaintext.

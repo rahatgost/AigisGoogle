@@ -399,6 +399,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          price_id: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["plan_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          price_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          price_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_login_events: {
         Row: {
           coarse_country: string | null
@@ -695,6 +734,7 @@ export type Database = {
         }[]
       }
       get_user_family_id: { Args: { _user_id?: string }; Returns: string }
+      has_active_subscription: { Args: { _user_id?: string }; Returns: boolean }
       is_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_family_admin: { Args: { _user_id?: string }; Returns: boolean }
       purge_old_client_errors: { Args: { days?: number }; Returns: number }
@@ -712,6 +752,16 @@ export type Database = {
         | "revoked"
         | "expired"
       family_role: "admin" | "member"
+      plan_tier: "free" | "pro" | "family"
+      subscription_status:
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "incomplete"
+        | "incomplete_expired"
+        | "unpaid"
+        | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -847,6 +897,17 @@ export const Constants = {
         "expired",
       ],
       family_role: ["admin", "member"],
+      plan_tier: ["free", "pro", "family"],
+      subscription_status: [
+        "active",
+        "trialing",
+        "past_due",
+        "canceled",
+        "incomplete",
+        "incomplete_expired",
+        "unpaid",
+        "paused",
+      ],
     },
   },
 } as const
