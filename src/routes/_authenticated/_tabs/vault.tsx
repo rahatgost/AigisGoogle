@@ -87,6 +87,17 @@ import { usePlan } from "@/hooks/use-plan";
 import { IncomingSharesSection } from "@/components/aegis/sharing-section";
 import { useLingui } from "@lingui/react";
 
+// Local i18n helper: falls back to the English literal when a translation
+// isn't available for the current locale. Values interpolate placeholders
+// like {count} / {query} at call time via Lingui.
+function useT() {
+  const { i18n } = useLingui();
+  return (id: string, fallback: string, values?: Record<string, unknown>): string => {
+    const msg = i18n._(id, values ?? {});
+    return typeof msg === "string" && msg !== id ? msg : fallback;
+  };
+}
+
 export const Route = createFileRoute("/_authenticated/_tabs/vault")({
   beforeLoad: ({ location }) => {
     if (!isVaultUnlocked()) {
@@ -122,11 +133,7 @@ function VaultPage() {
   const navigate = useNavigate();
   const unlocked = useVaultUnlocked();
   const { user } = Route.useRouteContext();
-  const { i18n } = useLingui();
-  const t = (id: string, fallback: string) => {
-    const msg = i18n._(id);
-    return msg === id ? fallback : msg;
-  };
+  const t = useT();
 
 
   useActivityKeepAlive();
@@ -342,7 +349,7 @@ function VaultPage() {
       setAccounts((prev) =>
         prev ? prev.map((a) => (a.id === id ? { ...a, is_favorite: !nextVal } : a)) : prev,
       );
-      setError(err instanceof Error ? err.message : "Could not update favorite.");
+      setError(err instanceof Error ? err.message : t("vault.error.favorite", "Could not update favorite."));
     });
   };
 
@@ -354,12 +361,12 @@ function VaultPage() {
       const { queued } = await deleteAccount(id);
       if (queued) {
         setPendingOutbox(pendingOutboxCount());
-        toast("Deletion queued — will sync when you're back online.");
+        toast(t("vault.toast.deletionQueued", "Deletion queued — will sync when you're back online."));
       }
     } catch (err) {
       // Server rejected the delete for a non-network reason — surface it
       // and force a reload so the UI matches the server.
-      setError(err instanceof Error ? err.message : "Could not delete.");
+      setError(err instanceof Error ? err.message : t("vault.error.delete", "Could not delete."));
       setReloadKey((k) => k + 1);
     }
   };
@@ -415,7 +422,7 @@ function VaultPage() {
         // surface a soft error only when there's nothing to show.
         setAccounts((prev) => {
           if (prev) return prev;
-          setError(err instanceof Error ? err.message : "Failed to load vault.");
+          setError(err instanceof Error ? err.message : t("vault.error.load", "Failed to load vault."));
           return [];
         });
         setSource((prev) => prev ?? "cache");
@@ -459,7 +466,7 @@ function VaultPage() {
         if (cancelled) return;
         setPendingOutbox(pendingOutboxCount());
         if (n > 0) {
-          toast.success(`Synced ${n} pending change${n === 1 ? "" : "s"}`);
+          toast.success(t(n === 1 ? "vault.toast.syncedChanges.one" : "vault.toast.syncedChanges.other", `Synced ${n} pending change${n === 1 ? "" : "s"}`, { count: n }));
           setReloadKey((k) => k + 1);
         }
       } catch {
@@ -483,10 +490,10 @@ function VaultPage() {
       const n = await flushPendingTagUpdates();
       refreshPendingCount();
       if (n > 0) {
-        toast.success(`Synced ${n} tag update${n === 1 ? "" : "s"}`);
+        toast.success(t(n === 1 ? "vault.toast.syncedTags.one" : "vault.toast.syncedTags.other", `Synced ${n} tag update${n === 1 ? "" : "s"}`, { count: n }));
         setReloadKey((k) => k + 1);
       } else if (hasQueuedTagUpdates()) {
-        toast.error("Some tag updates still can't reach the server.");
+        toast.error(t("vault.toast.tagSyncStuck", "Some tag updates still can't reach the server."));
       }
     } finally {
       setSyncingTags(false);
@@ -566,10 +573,10 @@ function VaultPage() {
           <UpgradePrompt
             title={
               accounts.length >= 25
-                ? `You've hit the Free limit (${accounts.length}/25)`
-                : `${accounts.length}/25 accounts used`
+                ? t("vault.freeLimit.hit", `You've hit the Free limit (${accounts.length}/25)`, { count: accounts.length })
+                : t("vault.freeLimit.progress", `${accounts.length}/25 accounts used`, { count: accounts.length })
             }
-            body="Upgrade to Pro for 500 accounts, encrypted cloud backup, and breach monitoring."
+            body={t("vault.freeLimit.body", "Upgrade to Pro for 500 accounts, encrypted cloud backup, and breach monitoring.")}
             tier="Pro"
           />
         </div>
@@ -589,10 +596,14 @@ function VaultPage() {
           <WifiOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
           <span className="flex-1 truncate">
             {online
-              ? "Reconnecting — showing cached codes."
+              ? t("vault.offline.reconnecting", "Reconnecting — showing cached codes.")
               : pendingOutbox > 0
-                ? `You're offline — ${pendingOutbox} change${pendingOutbox === 1 ? "" : "s"} queued for sync.`
-                : "You're offline — showing cached codes. Add is disabled."}
+                ? t(
+                    pendingOutbox === 1 ? "vault.offline.queued.one" : "vault.offline.queued.other",
+                    `You're offline — ${pendingOutbox} change${pendingOutbox === 1 ? "" : "s"} queued for sync.`,
+                    { count: pendingOutbox },
+                  )
+                : t("vault.offline.cached", "You're offline — showing cached codes. Add is disabled.")}
           </span>
           <button
             type="button"
@@ -604,14 +615,14 @@ function VaultPage() {
               color: CHARCOAL,
               fontWeight: 600,
             }}
-            aria-label="Retry loading vault"
+            aria-label={t("vault.offline.retryAria", "Retry loading vault")}
           >
             {retrying ? (
               <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
             ) : (
               <RefreshCw className="h-3 w-3" strokeWidth={2} />
             )}
-            Retry
+            {t("vault.offline.retry", "Retry")}
           </button>
         </div>
       )}
@@ -631,8 +642,16 @@ function VaultPage() {
           <Tags className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
           <span className="flex-1 truncate">
             {online
-              ? `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} waiting to sync.`
-              : `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} saved locally — will sync when online.`}
+              ? t(
+                  pendingTagCount === 1 ? "vault.tagSync.pending.one" : "vault.tagSync.pending.other",
+                  `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} waiting to sync.`,
+                  { count: pendingTagCount },
+                )
+              : t(
+                  pendingTagCount === 1 ? "vault.tagSync.pendingOffline.one" : "vault.tagSync.pendingOffline.other",
+                  `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} saved locally — will sync when online.`,
+                  { count: pendingTagCount },
+                )}
           </span>
           {online && (
             <button
@@ -645,14 +664,14 @@ function VaultPage() {
                 color: CHARCOAL,
                 fontWeight: 600,
               }}
-              aria-label="Retry syncing tag updates"
+              aria-label={t("vault.tagSync.retryAria", "Retry syncing tag updates")}
             >
               {syncingTags ? (
                 <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
               ) : (
                 <RefreshCw className="h-3 w-3" strokeWidth={2} />
               )}
-              Sync now
+              {t("vault.tagSync.syncNow", "Sync now")}
             </button>
           )}
         </div>
@@ -717,8 +736,8 @@ function VaultPage() {
             style={{ background: CREAM_SOFT, border: `1px solid ${BORDER}`, color: MUTED }}
           >
             {activeTags.size > 0
-              ? "No account matches the current filters."
-              : `No account matches "${query}".`}
+              ? t("vault.empty.filters", "No account matches the current filters.")
+              : t("vault.empty.query", `No account matches "${query}".`, { query })}
           </div>
         )}
       </div>
