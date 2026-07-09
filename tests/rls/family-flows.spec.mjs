@@ -148,3 +148,42 @@ test("anon cannot resolve users via find_user_by_email", async () => {
   if (error) return;
   assert.deepEqual(data, [], "find_user_by_email leaked to anon");
 });
+
+// --- Accept-invite + member count boundary --------------------------------
+// Real member-count assertions require two authenticated end-users (a
+// service_role key is unavailable on Lovable Cloud). At the anon boundary
+// we can still pin the invariants that must hold for the accept-invite
+// path: the row-inserting side (family_members) is unreachable, and the
+// count-observing side (SELECT on family_members) never leaks rows. If
+// either of these ever regresses, the "member count updates on accept"
+// UX silently breaks or turns into a data leak.
+
+test("anon cannot observe family_members row count", async () => {
+  const { count, error } = await anon
+    .from("family_members")
+    .select("*", { count: "exact", head: true });
+  if (error) return; // explicit deny is fine
+  // Either null (RLS hid the count) or 0 are acceptable; any positive
+  // number means the count leaked to unauthenticated callers.
+  assert.ok(
+    count === null || count === 0,
+    `family_members exposed count=${count} to anon`,
+  );
+});
+
+test("anon accept-invite attempt cannot create a family_members row", async () => {
+  // Simulates the write that a compromised accept flow would attempt:
+  // flipping accepted_at AND inserting the corresponding membership row.
+  // Both halves must be rejected — otherwise the 6-member cap trigger is
+  // bypassed entirely because RLS never gets a chance to run it.
+  const { data, error } = await anon
+    .from("family_members")
+    .insert({ family_id: ZERO, user_id: ZERO, role: "member" })
+    .select();
+  if (error) {
+    assert.ok(error, "expected RLS deny on accept-side insert");
+    return;
+  }
+  assert.deepEqual(data, [], "accept-side membership insert leaked to anon");
+});
+
