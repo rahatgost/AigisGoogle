@@ -1059,3 +1059,150 @@ function AvatarActionSheet({
     </motion.div>
   );
 }
+
+function PlanSheet({
+  tier,
+  status,
+  cancelAtPeriodEnd,
+  currentPeriodEnd,
+  busy,
+  onUpgrade,
+  onManage,
+  onClose,
+}: {
+  tier: "free" | "pro" | "family";
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  busy: null | "pro" | "family" | "portal";
+  onUpgrade: (tier: "pro" | "family") => void;
+  onManage: () => void;
+  onClose: () => void;
+}) {
+  const isPaid = tier !== "free" && ["active", "trialing"].includes(status);
+  const renews = currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString() : null;
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.button
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0"
+        style={{ background: "rgb(var(--aegis-ink-rgb) / 0.35)", backdropFilter: "blur(4px)" }}
+      />
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={soft}
+        className="relative z-10 mx-auto w-full max-w-[440px] rounded-t-[22px] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:rounded-[22px]"
+        style={{
+          background: CREAM_SOFT,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "0 -12px 40px -12px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div
+          className="mx-auto mb-4 h-1 w-10 rounded-full"
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+        />
+        <div
+          className="mb-3 px-1 text-[11px] uppercase"
+          style={{ color: MUTED, letterSpacing: "0.14em", fontWeight: 600 }}
+        >
+          Plan &amp; billing
+        </div>
+
+        {isPaid ? (
+          <div className="flex flex-col gap-3 px-1 pb-2">
+            <div className="rounded-[14px] px-4 py-3.5" style={{ border: `1px solid ${BORDER}` }}>
+              <div className="text-[14.5px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
+                {tier === "family" ? "Aegis Family" : "Aegis Pro"} · {status}
+              </div>
+              <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+                Up to 500 accounts.{" "}
+                {renews
+                  ? cancelAtPeriodEnd
+                    ? `Ends ${renews}.`
+                    : `Renews ${renews}.`
+                  : ""}
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.985 }}
+              onClick={onManage}
+              disabled={busy !== null}
+              className="flex items-center justify-center gap-2 rounded-[14px] px-4 py-3.5 text-[14px] disabled:opacity-60"
+              style={{ background: CHARCOAL, color: CREAM_SOFT, fontWeight: 500 }}
+            >
+              {busy === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" strokeWidth={1.8} />}
+              Manage billing
+            </motion.button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 px-1 pb-1">
+            <div className="rounded-[14px] px-4 py-3.5" style={{ border: `1px solid ${BORDER}` }}>
+              <div className="text-[14.5px]" style={{ color: CHARCOAL, fontWeight: 600 }}>
+                Free
+              </div>
+              <div className="mt-1 text-[12.5px]" style={{ color: MUTED }}>
+                Up to 25 accounts. Encrypted sync included.
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.985 }}
+              onClick={() => onUpgrade("pro")}
+              disabled={busy !== null}
+              className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3.5 text-left disabled:opacity-60"
+              style={{ background: CHARCOAL, color: CREAM_SOFT }}
+            >
+              <div className="flex flex-col">
+                <span className="text-[14px]" style={{ fontWeight: 600 }}>
+                  Upgrade to Pro
+                </span>
+                <span className="text-[12px] opacity-80">Up to 500 accounts.</span>
+              </div>
+              {busy === "pro" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" strokeWidth={1.8} />
+              )}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.985 }}
+              onClick={() => onUpgrade("family")}
+              disabled={busy !== null}
+              className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3.5 text-left disabled:opacity-60"
+              style={{ background: "transparent", color: CHARCOAL, border: `1px solid ${BORDER}` }}
+            >
+              <div className="flex flex-col">
+                <span className="text-[14px]" style={{ fontWeight: 600 }}>
+                  Upgrade to Family
+                </span>
+                <span className="text-[12px]" style={{ color: MUTED }}>
+                  Everything in Pro + share with up to 6 members.
+                </span>
+              </div>
+              {busy === "family" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Users className="h-4 w-4" strokeWidth={1.8} />
+              )}
+            </motion.button>
+          </div>
+        )}
+        <button
+          onClick={onClose}
+          className="mt-3 w-full rounded-[14px] px-4 py-3 text-[13.5px]"
+          style={{ color: MUTED, fontWeight: 500 }}
+        >
+          Close
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
