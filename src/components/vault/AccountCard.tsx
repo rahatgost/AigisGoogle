@@ -1454,6 +1454,7 @@ export function AccountCard({
                           >
                             <Share2 className="h-4 w-4" strokeWidth={1.9} />
                             {t("vault.card.share", "Share")}
+                          </motion.button>
                           <motion.button
                             whileTap={{ scale: 0.98 }}
                             onClick={openDelete}
