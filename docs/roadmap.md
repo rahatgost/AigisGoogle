@@ -296,8 +296,8 @@ encrypted, without the server ever seeing plaintext.
 - [x] Ship `docs/api.md` and a Postman collection
 
 ### 14.3 Self-hosted server recipe `[P2]`
-- [ ] Docker Compose stack: Postgres + migrations + lightweight edge runtime
-- [ ] `docs/self-host.md` walks four env vars, first-boot admin user, RLS CI test
+- [x] Docker Compose stack: Postgres + migrations + lightweight edge runtime
+- [x] `docs/self-host.md` walks four env vars, first-boot admin user, RLS CI test
 
 **Exit criteria:** A privacy-forum reader can install a self-hosted
 Aegis in under 15 minutes and pass the same RLS test we ship.
