@@ -774,6 +774,11 @@ function ProfilePage() {
         )}
       </AnimatePresence>
       <PlanComparisonSheet open={compareSheet} onClose={() => setCompareSheet(false)} />
+      <PremiumWelcomeSheet
+        open={welcomeSheet}
+        tier={(sub?.tier as "pro" | "family" | undefined) ?? "pro"}
+        onClose={() => setWelcomeSheet(false)}
+      />
     </>
   );
 }
