@@ -16,6 +16,11 @@ import {
   ChevronLeft,
   Vibrate,
   VibrateOff,
+  Sparkles,
+  Infinity as InfinityIcon,
+  ShieldAlert,
+  Users,
+  Chrome,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -955,6 +960,78 @@ function StepBiometrics({ next }: { next: () => void }) {
   );
 }
 
+function StepPro({ next }: { next: () => void }) {
+  const reduce = useReducedMotion();
+  return (
+    <Screen>
+      <div className="flex flex-1 flex-col justify-center gap-5">
+        <div className="flex flex-col gap-2">
+          <Eyebrow>
+            <Sparkles className="h-3 w-3" strokeWidth={2} />
+            Aegis Pro
+          </Eyebrow>
+          <Display>More, when you need it.</Display>
+          <Lede>Aegis is free forever. Pro unlocks the power features when your vault grows.</Lede>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <FeatureRow
+            icon={<InfinityIcon className="h-4 w-4" strokeWidth={1.8} />}
+            title="Unlimited accounts"
+            body="Free covers 25. Pro removes the cap — add as many as you like."
+            delay={0.05}
+          />
+          <FeatureRow
+            icon={<CloudUpload className="h-4 w-4" strokeWidth={1.8} />}
+            title="Encrypted cloud backup"
+            body="Auto-synced across every device, with 30-day version history."
+            delay={0.10}
+          />
+          <FeatureRow
+            icon={<ShieldAlert className="h-4 w-4" strokeWidth={1.8} />}
+            title="Breach monitoring"
+            body="Get alerted the moment one of your accounts leaks."
+            delay={0.15}
+          />
+          <FeatureRow
+            icon={<Chrome className="h-4 w-4" strokeWidth={1.8} />}
+            title="Browser autofill"
+            body="One-tap sign-in from the Aegis extension on any site."
+            delay={0.20}
+          />
+          <FeatureRow
+            icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
+            title="Family sharing"
+            body="Up to 6 members with a shared household vault."
+            delay={0.25}
+          />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...soft, delay: 0.3 }}
+          className="flex items-center justify-center gap-2 text-[12.5px]"
+          style={{ color: MUTED }}
+        >
+          <span>Pro</span>
+          <span style={{ color: CHARCOAL, fontWeight: 500 }}>$2.99/mo</span>
+          <span aria-hidden>·</span>
+          <span>Family</span>
+          <span style={{ color: CHARCOAL, fontWeight: 500 }}>$4.99/mo</span>
+        </motion.div>
+      </div>
+      <div className="shrink-0 space-y-3 pb-[max(20px,env(safe-area-inset-bottom))] pt-2">
+        <PrimaryButton onClick={next}>Continue with Free</PrimaryButton>
+        <div className="text-center">
+          <TextLink onClick={next}>You can upgrade anytime from Profile</TextLink>
+        </div>
+      </div>
+      {reduce ? null : null}
+    </Screen>
+  );
+}
+
 function StepDone({ next }: { next: () => void }) {
   return (
     <Screen>
@@ -988,7 +1065,7 @@ function StepDone({ next }: { next: () => void }) {
 /*  Main flow                                                          */
 /* ------------------------------------------------------------------ */
 
-const TOTAL = 7;
+const TOTAL = 8;
 
 /* Subtle haptics — silent no-op where unsupported (desktop, iOS Safari). */
 type HapticKind = "tick" | "soft" | "success";
@@ -1142,9 +1219,10 @@ export default function Onboarding({ onComplete }: { onComplete?: () => void } =
               {step === 1 && <StepFeatures next={goNext} />}
               {step === 2 && <StepImport next={goNext} />}
               {step === 3 && <StepBackup next={goNext} />}
-              {step === 4 && <StepNotifications next={goNext} />}
-              {step === 5 && <StepBiometrics next={goNext} />}
-              {step === 6 && <StepDone next={onComplete ?? restart} />}
+              {step === 4 && <StepPro next={goNext} />}
+              {step === 5 && <StepNotifications next={goNext} />}
+              {step === 6 && <StepBiometrics next={goNext} />}
+              {step === 7 && <StepDone next={onComplete ?? restart} />}
             </motion.div>
           </AnimatePresence>
         </div>
