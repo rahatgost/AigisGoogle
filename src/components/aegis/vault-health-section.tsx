@@ -564,12 +564,13 @@ export function HealthSheet({
                   />
                 ) : (
                   <>
-
+                <div className="text-[11.5px]" style={{ color: MUTED }}>
                   Tap an issuer to run an anonymous k-anonymity lookup against
                   Have I Been Pwned. Only the first 5 characters of the hashed
                   domain are sent — the issuer name and full hash stay on this
                   device.
                 </div>
+
                 <div className="space-y-1.5">
                   {uniqueIssuers(report).map((issuer) => {
                     const r = hibp[issuer];
