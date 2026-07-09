@@ -620,7 +620,10 @@ export function HealthSheet({
                     );
                   })}
                 </div>
+                  </>
+                )}
               </Category>
+
 
               <div
                 className="pt-1 text-center text-[10.5px]"
