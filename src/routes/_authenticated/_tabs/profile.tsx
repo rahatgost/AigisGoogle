@@ -411,10 +411,8 @@ function ProfilePage() {
         .from("profiles")
         .upsert({ id: user.id, avatar_url: path }, { onConflict: "id" });
       if (profErr) throw profErr;
-      // Force signed-URL refresh by re-setting the path (cache-bust via query).
-      setAvatarPath(`${path}?v=${Date.now()}`);
-      // Then normalize back to the real path so future updates work.
-      setTimeout(() => setAvatarPath(path), 50);
+      setAvatarPath(path);
+      setAvatarVersion(Date.now());
       setNotice({ kind: "info", text: "Photo updated." });
       toast.success("Photo updated");
     } catch (err) {
