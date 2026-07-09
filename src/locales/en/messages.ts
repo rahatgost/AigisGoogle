@@ -132,4 +132,21 @@ export const messages: Record<string, string> = {
   "common.save": "Save",
   "common.close": "Close",
   "common.retry": "Try again",
+
+  // Profile — plan & sharing
+  "profile.section.plan": "Plan",
+  "profile.plan": "Plan",
+  "profile.plan.free.description": "Free — 25 accounts. Upgrade for more.",
+  "profile.plan.paid.description": "500 accounts · auto backup · breach monitoring.",
+  "profile.plan.compare": "Compare plans",
+  "profile.plan.compare.description": "See what's in Free, Pro, and Family side-by-side.",
+  "profile.section.sharing": "Sharing",
+  "profile.family": "Family",
+  "profile.family.description": "Share your Aegis codes with up to 6 family members.",
+
+  // Security — auto-backup gating
+  "security.autoBackup.proOnly": "Pro — upgrade to enable",
+
+  // Vault card
+  "vault.card.share": "Share",
 };
