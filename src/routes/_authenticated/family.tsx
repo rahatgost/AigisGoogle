@@ -111,7 +111,14 @@ function FamilyPage() {
       if (okMessage) toast.success(typeof maybeMsg === "string" ? maybeMsg : okMessage);
       await refresh();
     } catch (err) {
-      const text = err instanceof Error ? err.message : "Something went wrong.";
+      const anyErr = err as { message?: string; hint?: string; details?: string } | null;
+      const text =
+        err instanceof Error
+          ? err.message
+          : (anyErr?.message ?? anyErr?.hint ?? anyErr?.details ?? "Something went wrong.");
+      // Surface the raw shape for diagnosis when it's not a plain Error.
+      // eslint-disable-next-line no-console
+      console.error("[family] action failed:", err);
       setNotice({ kind: "error", text });
       toast.error(text);
     } finally {
