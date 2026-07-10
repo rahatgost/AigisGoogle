@@ -43,9 +43,10 @@ import {
   listQueuedTagUpdates,
 } from "@/lib/vault-tag-queue";
 import { useOnlineStatus } from "@/lib/use-online";
-import { onSyncOpportunity } from "@/lib/sync-coordinator";
+import { onSyncOpportunity, onCacheMutation } from "@/lib/sync-coordinator";
 import { requestPersistentStorage, getStorageStatus, evictNonEssentialCaches } from "@/lib/storage-quota";
-import { deadLetterCount } from "@/lib/vault-outbox";
+import { deadLetterCount, resetOutboxEntry, deadLetterEntries } from "@/lib/vault-outbox";
+import { useReachable } from "@/lib/reachability";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { PRESET_TAGS, TagChip } from "@/components/vault/tags";
 import { ExportPassphraseSheet } from "@/components/vault/ExportPassphraseSheet";
@@ -169,7 +170,12 @@ function VaultPage() {
     () => (typeof window === "undefined" ? 0 : pendingOutboxCount()),
   );
   const [syncingTags, setSyncingTags] = useState(false);
-  const online = useOnlineStatus();
+  // Combine navigator.onLine with the real reachability probe so the
+  // offline banner surfaces captive-portal / stalled-network states, not
+  // just OS-level "no interfaces".
+  const navOnline = useOnlineStatus();
+  const reachable = useReachable();
+  const online = navOnline && reachable;
 
   const refreshPendingCount = useCallback(() => {
     setPendingTagCount(listQueuedTagUpdates().length);
