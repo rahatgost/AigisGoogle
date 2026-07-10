@@ -1,116 +1,79 @@
-# Free / Pro / Family — feature separation
 
-Aegis er 3ta tier ache (`free`, `pro`, `family`) but ekhono kono real gate nei — sob feature sobar jonno open. Ei plan e ekta clean matrix define kori, ekta central `usePlan()` hook banai, ar tarpor phase-wise 3-4 ta core feature gate kori.
+## Family v2 — Emergency Access (phase 2a)
 
-## 1. Feature matrix (final)
+Family tier er "emergency-access" feature currently placeholder — plan matrix e ache, kono real implementation nei. Bitwarden-style trusted contact + waiting-period recovery ke ship kori. Shared household vault (bigger crypto surface) alada phase e rakhbo.
 
-| Feature | Free | Pro | Family |
-|---|---|---|---|
-| **Accounts (TOTP entries)** | 25 max | Unlimited | Unlimited |
-| **Devices synced** | 2 | Unlimited | Unlimited |
-| **Encrypted cloud backup** | Manual export only | Auto + 30-day history | Auto + 30-day history |
-| **Vault health scan** | Basic (weak/duplicate) | + Breach monitoring (HIBP) | + Breach monitoring |
-| **Browser extension** | Manual copy code | Autofill + auto-submit | Autofill + auto-submit |
-| **Tags** | 5 custom | Unlimited | Unlimited |
-| **Push approval history** | Last 7 days | Last 90 days | Last 90 days |
-| **Family members** | — | — | Up to 6 |
-| **Shared household vault** | — | — | ✓ |
-| **Emergency access** | — | — | ✓ |
+### User story
 
-Non-gated (always free): core TOTP generation, offline unlock, biometrics, master passphrase, recovery kit, manual export, dark mode, i18n.
+1. **Grantor** (Family plan user) trusted contact ke email diye invite koren; ekta waiting period (1/3/7/14/30 din) set koren.
+2. Contact accept korle, grantor er wrapped DEK contact er X25519 pubkey er jonno seal hoy — server plaintext dekhe na (already `sealForRecipient` ache).
+3. **Grantee** emergency access request pathan.
+4. Grantor 48h er moddhe reject korte paren, na hole waiting period elapse hole grantee vault read-only unlock korte paren (recovery kit-er moto UI).
+5. Grantor jekono somoy revoke korte paren; revoke = row delete + status flip.
 
-## 2. Central plan helper
+### Data model (one migration)
 
-New file `src/lib/plan.ts`:
+```sql
+create type public.emergency_status as enum
+  ('invited','active','requested','approved','rejected','revoked');
 
-- Types: `PlanTier = "free" | "pro" | "family"`, `PlanFeature` union of all gated feature keys.
-- `PLAN_LIMITS` constant: numeric caps per tier (`maxAccounts`, `maxDevices`, `maxTags`, `pushHistoryDays`).
-- `hasFeature(tier, feature)` — boolean check.
-- `getLimit(tier, key)` — numeric limit.
-- `TIER_LABEL`, `TIER_ORDER` for UI.
+create table public.emergency_contacts (
+  id uuid primary key default gen_random_uuid(),
+  grantor_id uuid not null references auth.users(id) on delete cascade,
+  grantee_email text not null,
+  grantee_id uuid references auth.users(id) on delete set null,
+  status public.emergency_status not null default 'invited',
+  wait_days int not null default 7 check (wait_days between 1 and 30),
+  -- sealed copy of grantor's DEK for grantee (base64), set on accept
+  sealed_dek text,
+  sealed_dek_nonce text,
+  requested_at timestamptz,
+  approved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (grantor_id, grantee_email)
+);
+```
 
-New hook `src/hooks/use-plan.ts`:
++ GRANT block, RLS: grantor read/write own rows; grantee read rows where `grantee_id = auth.uid()`; `approved_at` computed only by security-definer RPC `approve_emergency_request(contact_id)` that enforces wait period.
 
-- Uses TanStack Query + `getMySubscription` server fn (already exists).
-- Returns `{ tier, isPro, isFamily, hasFeature, getLimit, loading }`.
-- Sensible default: treat as `free` while loading so gates fail closed.
+### Files
 
-## 3. Upgrade prompt component
+**New**
+- `supabase/migrations/<ts>_emergency_access.sql` — table, enum, RLS, RPC.
+- `src/lib/emergency.ts` — high-level API: `inviteContact`, `listMyContacts`, `listMyGrantors`, `acceptInvite` (seals DEK), `requestAccess`, `rejectRequest`, `revokeContact`, `unlockGrantorVault` (returns decrypted DEK for read-only session).
+- `src/lib/emergency.functions.ts` — 2 server fns: `sendEmergencyInviteEmail`, `notifyEmergencyRequest` (uses existing transactional email infra).
+- `src/routes/_authenticated/emergency.tsx` — main screen (grantor + grantee tabs).
+- `src/components/aegis/emergency-contact-row.tsx` — reusable row.
 
-`src/components/aegis/upgrade-prompt.tsx` — small reusable card/sheet with:
-- Icon + feature name
-- "This is a Pro feature" copy
-- CTA button → opens the existing plan sheet on Profile (or navigates `/profile?upgrade=pro`).
+**Edited**
+- `src/routes/_authenticated/family.tsx` — add "Emergency access" section with link to `/emergency` (Family gate reused).
+- `src/routes/_authenticated/_tabs/profile.tsx` — surface pending requests badge if any.
+- `src/lib/vault-session.ts` — support read-only session initialized from a grantor DEK.
+- 8× `src/locales/*/messages.ts` — ~30 new `emergency.*` keys with placeholders (`{name}`, `{days}`, `{date}`).
+- `src/lib/__tests__/i18n-critical-keys.test.ts` — add `routes/_authenticated/emergency.tsx` to critical list.
 
-Used inline anywhere a Free user hits a gate.
+### Gating
 
-## 4. Enforcement — phase 1 (this PR)
+- `usePlan().hasFeature("emergency-access")` — Family only. Free/Pro see `<UpgradePrompt feature="emergency-access" />`.
+- Server: RLS + `has_role`-style check in the migration's RPC that grantor's subscription tier = `family` (call `has_feature('emergency-access')` inline via subquery on `subscriptions`).
 
-Gate the 4 highest-value features:
+### Crypto invariants
 
-**a. Account cap (25 for Free)**
-- `src/routes/_authenticated/_locked/vault_.new.tsx` and `vault_.import.tsx`: before saving, check `accounts.length >= getLimit(tier, "maxAccounts")`. If exceeded, show `<UpgradePrompt feature="unlimited-accounts" />` instead of the save button.
-- Vault tab: show a subtle "24 / 25 accounts" counter for Free users approaching cap.
+- DEK never leaves grantor's device unencrypted. On accept, grantor client fetches grantee pubkey, seals current DEK, uploads ciphertext.
+- On unlock, grantee client downloads sealed DEK, opens locally, hydrates a **read-only** vault session (writes disabled via a session flag).
+- If grantor rotates passphrase → all `emergency_contacts` marked `needs_reseal`; next unlock triggers re-seal step.
 
-**b. Auto cloud backup (Pro+)**
-- `src/lib/vault-autobackup.ts` and `vault-cloud-backup.ts`: wrap the scheduled backup trigger — if `!isPro`, skip auto and only allow manual export.
-- Settings backup toggle in `src/components/aegis/settings.tsx`: show as Pro-locked with upgrade prompt for Free.
+### Out of scope (later phases)
 
-**c. Breach monitoring (Pro+)**
-- `src/components/vault/ScanTab.tsx` / `vault-health.tsx`: Free sees weak/duplicate; the HIBP breach section renders `<UpgradePrompt feature="breach-monitoring" />` for Free.
+- Shared household vault (group crypto, dedicated migration).
+- Push/email delivery of the actual invite (stubbed — logs to console this phase; wired via Resend in a follow-up).
+- Mobile push notifications for requests.
 
-**d. Family members (Family only)**
-- `src/routes/_authenticated/family.tsx`: if `!isFamily`, render an upgrade card instead of the invite UI. Already partially in place — formalize with `usePlan()`.
+### Verification
 
-## 5. Server-side enforcement
+- `bunx vitest run vault-sharing.roundtrip` still green (crypto primitives untouched).
+- New unit test `src/lib/__tests__/emergency.roundtrip.test.ts` — seal → open → same DEK bytes.
+- Manual: two accounts (grantor Family, grantee Free) via preview auth restore; run invite → accept → request → wait override → unlock.
 
-Client gates are UX; add a lightweight server check for account cap in the vault write path so a modded client can't bypass:
-
-- New server fn `checkAccountQuota` (or inline in existing vault sync fn) — reads user's tier from `subscriptions`, counts vault entries, rejects with a clear error if over cap.
-- Backup + breach are already server-observable via subscription tier if we later add server-side scheduling; for now the client gate is enough (they're read-only reveals).
-
-## 6. Profile UI polish
-
-- Current profile plan row shows "25 accounts / Family sharing" — replace copy with the real matrix.
-- Add a "See what's in Pro" link that opens a full comparison sheet showing the table above.
-- New file `src/components/aegis/plan-comparison-sheet.tsx`.
-
-## 7. Onboarding step alignment
-
-Update the just-added `StepPro` copy in `src/components/onboarding/Onboarding.tsx` to match the exact matrix (currently lists 5 features — align wording with `hasFeature` keys so nothing drifts).
-
-## 8. Not in this PR (deferred)
-
-- Actual HIBP integration (currently the "breach monitoring" section is a placeholder — gate the UI now, wire the API in a follow-up).
-- Browser extension autofill gate — lives in the extension repo, needs its own release.
-- Emergency access + shared household vault — deferred to a Family v2 phase.
-- Server-side per-request quota middleware — phase 1 uses point checks; phase 2 will centralize.
-
-## Technical notes
-
-- All limits centralized in `PLAN_LIMITS` so future tier tweaks are one-line changes.
-- `usePlan()` cached via TanStack Query (5min stale) — no per-render fetch.
-- `hasFeature()` fails closed on unknown/loading tier — never accidentally grants Pro.
-- Upgrade prompt reuses existing `planSheet` on Profile, no duplicate paywall UI.
-- No changes to `subscriptions` table schema — the tier column already drives everything.
-
-## Files touched
-
-New:
-- `src/lib/plan.ts`
-- `src/hooks/use-plan.ts`
-- `src/components/aegis/upgrade-prompt.tsx`
-- `src/components/aegis/plan-comparison-sheet.tsx`
-
-Edited:
-- `src/routes/_authenticated/_locked/vault_.new.tsx`
-- `src/routes/_authenticated/_locked/vault_.import.tsx`
-- `src/routes/_authenticated/_tabs/vault.tsx` (counter)
-- `src/routes/_authenticated/_tabs/profile.tsx` (comparison sheet link + copy)
-- `src/routes/_authenticated/family.tsx` (formal gate)
-- `src/lib/vault-autobackup.ts`
-- `src/lib/vault-cloud-backup.ts`
-- `src/components/aegis/settings.tsx` (backup toggle gate)
-- `src/components/vault/ScanTab.tsx` (breach section gate)
-- `src/components/onboarding/Onboarding.tsx` (copy align)
-- `src/lib/subscriptions.functions.ts` (add `checkAccountQuota`)
+Scope: ~1 migration + 5 new files + 12 edited + 8 locales. One PR-sized change.
