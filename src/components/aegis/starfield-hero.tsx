@@ -125,13 +125,16 @@ export function StarfieldHeroLayout({
       className="fixed inset-0 flex flex-col overflow-hidden"
       style={{ background: "#0d0d1b" }}
     >
-      {/* Hero */}
+      {/* Hero — shrinks aggressively on short viewports (landscape / on-screen keyboard) */}
       <div
         className="relative shrink-0"
-        style={{ minHeight: `clamp(220px, ${heroMinVh}vh, 340px)` }}
+        style={{
+          minHeight: `clamp(150px, ${heroMinVh}dvh, 320px)`,
+          maxHeight: "45dvh",
+        }}
       >
         <Starfield />
-        <div className="relative z-10 flex h-full flex-col px-5 pt-[max(24px,env(safe-area-inset-top))] pb-7 sm:px-6">
+        <div className="relative z-10 flex h-full flex-col px-5 pt-[max(20px,env(safe-area-inset-top))] pb-5 sm:px-6 sm:pb-6">
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,7 +143,8 @@ export function StarfieldHeroLayout({
             <BrandRow />
           </motion.div>
 
-          <div className="mt-7 flex flex-col gap-2.5">
+          <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:gap-2.5">
+
             <AnimatePresence mode="wait" initial={false}>
               <motion.h1
                 key={(heroKey ?? "") + "-title"}
