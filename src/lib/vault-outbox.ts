@@ -201,11 +201,56 @@ export interface OutboxAppliers {
  * the rest; the next reconnect will retry. Missing-row errors are
  * treated as success (the intent has already landed).
  */
+// Exponential backoff: 2s, 10s, 30s, 2m, 10m, 30m (cap). An entry that
+// keeps failing yields to fresher entries and stops hammering the server.
+const BACKOFF_SCHEDULE_MS = [2_000, 10_000, 30_000, 120_000, 600_000, 1_800_000];
+
+function backoffFor(attempts: number): number {
+  const i = Math.min(attempts, BACKOFF_SCHEDULE_MS.length - 1);
+  return BACKOFF_SCHEDULE_MS[i];
+}
+
+function isDue(entry: OutboxEntry, now: number): boolean {
+  const nextAt = (entry as { nextRetryAt?: number }).nextRetryAt;
+  return typeof nextAt !== "number" || nextAt <= now;
+}
+
+/** Count entries currently eligible for flushing (past their backoff). */
+export function readyOutboxSize(): number {
+  const now = Date.now();
+  return readQueue().filter((e) => isDue(e, now)).length;
+}
+
+/**
+ * Time (ms) until the next queued entry becomes eligible for retry, or
+ * `null` if the queue is empty. Callers can use it to schedule a wake-up
+ * timer instead of polling.
+ */
+export function nextRetryDelayMs(): number | null {
+  const q = readQueue();
+  if (q.length === 0) return null;
+  const now = Date.now();
+  let soonest = Infinity;
+  for (const e of q) {
+    const nextAt = (e as { nextRetryAt?: number }).nextRetryAt ?? 0;
+    const delta = Math.max(0, nextAt - now);
+    if (delta < soonest) soonest = delta;
+  }
+  return soonest === Infinity ? 0 : soonest;
+}
+
 export async function flushOutbox(appliers: OutboxAppliers): Promise<OutboxEntry[]> {
   const pending = readQueue();
   const remaining: OutboxEntry[] = [];
   const flushed: OutboxEntry[] = [];
+  const now = Date.now();
   for (const entry of pending) {
+    // Skip entries still cooling off — leave them in place with their
+    // existing backoff so the next flush picks them up when due.
+    if (!isDue(entry, now)) {
+      remaining.push(entry);
+      continue;
+    }
     try {
       switch (entry.kind) {
         case "create":
@@ -226,7 +271,16 @@ export async function flushOutbox(appliers: OutboxAppliers): Promise<OutboxEntry
       if (isMissingRowError(err)) {
         flushed.push(entry);
       } else {
-        remaining.push(entry);
+        // Increment attempts and schedule the next eligible time.
+        const prevAttempts =
+          (entry as { attempts?: number }).attempts ?? 0;
+        const attempts = prevAttempts + 1;
+        const nextRetryAt = Date.now() + backoffFor(attempts - 1);
+        remaining.push({
+          ...entry,
+          attempts,
+          nextRetryAt,
+        } as OutboxEntry);
       }
     }
   }
