@@ -104,6 +104,57 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_contacts: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          grantee_email: string
+          grantee_id: string
+          grantor_id: string
+          id: string
+          needs_reseal: boolean
+          requested_at: string | null
+          sealed_dek: string
+          sealed_dek_ephemeral_pub: string
+          sealed_dek_iv: string
+          status: Database["public"]["Enums"]["emergency_status"]
+          updated_at: string
+          wait_days: number
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          grantee_email: string
+          grantee_id: string
+          grantor_id: string
+          id?: string
+          needs_reseal?: boolean
+          requested_at?: string | null
+          sealed_dek: string
+          sealed_dek_ephemeral_pub: string
+          sealed_dek_iv: string
+          status?: Database["public"]["Enums"]["emergency_status"]
+          updated_at?: string
+          wait_days?: number
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          grantee_email?: string
+          grantee_id?: string
+          grantor_id?: string
+          id?: string
+          needs_reseal?: boolean
+          requested_at?: string | null
+          sealed_dek?: string
+          sealed_dek_ephemeral_pub?: string
+          sealed_dek_iv?: string
+          status?: Database["public"]["Enums"]["emergency_status"]
+          updated_at?: string
+          wait_days?: number
+        }
+        Relationships: []
+      }
       families: {
         Row: {
           admin_user_id: string
@@ -715,7 +766,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_emergency_request: {
+        Args: { _contact_id: string }
+        Returns: undefined
+      }
       current_user_email: { Args: never; Returns: string }
+      fetch_emergency_dek: {
+        Args: { _contact_id: string }
+        Returns: {
+          grantor_id: string
+          sealed_dek: string
+          sealed_dek_ephemeral_pub: string
+          sealed_dek_iv: string
+        }[]
+      }
       find_user_by_email: {
         Args: { _email: string }
         Returns: {
@@ -743,8 +807,13 @@ export type Database = {
         Args: { minutes?: number }
         Returns: number
       }
+      reject_emergency_request: {
+        Args: { _contact_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      emergency_status: "active" | "requested" | "approved" | "revoked"
       family_invite_status:
         | "pending"
         | "accepted"
@@ -889,6 +958,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      emergency_status: ["active", "requested", "approved", "revoked"],
       family_invite_status: [
         "pending",
         "accepted",

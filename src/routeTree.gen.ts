@@ -21,6 +21,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLockRouteImport } from './routes/_authenticated/lock'
 import { Route as AuthenticatedFamilyRouteImport } from './routes/_authenticated/family'
+import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedDevicesRouteImport } from './routes/_authenticated/devices'
 import { Route as AuthenticatedApproveRouteImport } from './routes/_authenticated/approve'
 import { Route as AuthenticatedTabsRouteImport } from './routes/_authenticated/_tabs'
@@ -94,6 +95,11 @@ const AuthenticatedFamilyRoute = AuthenticatedFamilyRouteImport.update({
   path: '/family',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
+  id: '/emergency',
+  path: '/emergency',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDevicesRoute = AuthenticatedDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/approve': typeof AuthenticatedApproveRoute
   '/devices': typeof AuthenticatedDevicesRoute
+  '/emergency': typeof AuthenticatedEmergencyRoute
   '/family': typeof AuthenticatedFamilyRoute
   '/lock': typeof AuthenticatedLockRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/approve': typeof AuthenticatedApproveRoute
   '/devices': typeof AuthenticatedDevicesRoute
+  '/emergency': typeof AuthenticatedEmergencyRoute
   '/family': typeof AuthenticatedFamilyRoute
   '/lock': typeof AuthenticatedLockRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/_tabs': typeof AuthenticatedTabsRouteWithChildren
   '/_authenticated/approve': typeof AuthenticatedApproveRoute
   '/_authenticated/devices': typeof AuthenticatedDevicesRoute
+  '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/family': typeof AuthenticatedFamilyRoute
   '/_authenticated/lock': typeof AuthenticatedLockRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/approve'
     | '/devices'
+    | '/emergency'
     | '/family'
     | '/lock'
     | '/onboarding'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/approve'
     | '/devices'
+    | '/emergency'
     | '/family'
     | '/lock'
     | '/onboarding'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_tabs'
     | '/_authenticated/approve'
     | '/_authenticated/devices'
+    | '/_authenticated/emergency'
     | '/_authenticated/family'
     | '/_authenticated/lock'
     | '/_authenticated/onboarding'
@@ -391,6 +403,13 @@ declare module '@tanstack/react-router' {
       path: '/family'
       fullPath: '/family'
       preLoaderRoute: typeof AuthenticatedFamilyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/emergency': {
+      id: '/_authenticated/emergency'
+      path: '/emergency'
+      fullPath: '/emergency'
+      preLoaderRoute: typeof AuthenticatedEmergencyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/devices': {
@@ -512,6 +531,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTabsRoute: typeof AuthenticatedTabsRouteWithChildren
   AuthenticatedApproveRoute: typeof AuthenticatedApproveRoute
   AuthenticatedDevicesRoute: typeof AuthenticatedDevicesRoute
+  AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFamilyRoute: typeof AuthenticatedFamilyRoute
   AuthenticatedLockRoute: typeof AuthenticatedLockRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
@@ -522,6 +542,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTabsRoute: AuthenticatedTabsRouteWithChildren,
   AuthenticatedApproveRoute: AuthenticatedApproveRoute,
   AuthenticatedDevicesRoute: AuthenticatedDevicesRoute,
+  AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFamilyRoute: AuthenticatedFamilyRoute,
   AuthenticatedLockRoute: AuthenticatedLockRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,

@@ -497,6 +497,23 @@ function FamilyPage() {
           </>
         )}
 
+        {plan.isFamily && (
+          <>
+            <SectionLabel>{t("family.emergency.section", "Emergency access")}</SectionLabel>
+            <SettingsGroup>
+              <Link to="/emergency" style={{ textDecoration: "none" }}>
+                <SettingsRow
+                  title={t("family.emergency.title", "Trusted-contact recovery")}
+                  description={t(
+                    "family.emergency.desc",
+                    "Let a trusted person recover your vault after a waiting period you control.",
+                  )}
+                />
+              </Link>
+            </SettingsGroup>
+          </>
+        )}
+
         <div className="pt-4 text-center">
           <Link to="/profile" className="text-[12.5px]" style={{ color: MUTED }}>
             {t("family.backToProfile", "Back to profile")}

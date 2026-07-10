@@ -23,6 +23,7 @@ let autoLockMs: number | null = DEFAULT_AUTO_LOCK_MS;
 let currentUserId: string | null = null;
 
 let dek: CryptoKey | null = null;
+let readOnly = false;
 let lockTimer: number | null = null;
 const listeners = new Set<() => void>();
 const settingsListeners = new Set<() => void>();
@@ -134,8 +135,9 @@ function scheduleAutoLock() {
   }, autoLockMs);
 }
 
-export function setVaultKey(key: CryptoKey) {
+export function setVaultKey(key: CryptoKey, options?: { readOnly?: boolean }) {
   dek = key;
+  readOnly = options?.readOnly === true;
   scheduleAutoLock();
   emit();
 }
@@ -149,12 +151,17 @@ export function isVaultUnlocked(): boolean {
   return dek !== null;
 }
 
+export function isVaultReadOnly(): boolean {
+  return dek !== null && readOnly;
+}
+
 export function lockVault() {
   if (lockTimer !== null && typeof window !== "undefined") {
     window.clearTimeout(lockTimer);
     lockTimer = null;
   }
   dek = null;
+  readOnly = false;
   emit();
 }
 
