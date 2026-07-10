@@ -525,8 +525,10 @@ function VaultPage() {
           );
           setReloadKey((k) => k + 1);
         }
-        // Surface stuck entries once per mount so the user knows silent
-        // retries aren't going to save them.
+        // Surface stuck entries once per mount with an actionable retry:
+        // reset the attempts counter on every dead-letter entry, then
+        // request an immediate flush. Discards the last-known error;
+        // useful when the user knows the underlying cause is fixed.
         const stuck = deadLetterCount();
         if (stuck > 0 && !warnedDeadLetter) {
           warnedDeadLetter = true;
@@ -535,9 +537,22 @@ function VaultPage() {
               stuck === 1
                 ? "vault.toast.deadLetter.one"
                 : "vault.toast.deadLetter.other",
-              `${stuck} change${stuck === 1 ? "" : "s"} can't sync — check your vault.`,
+              `${stuck} change${stuck === 1 ? "" : "s"} can't sync.`,
               { count: stuck },
             ),
+            {
+              action: {
+                label: t("vault.toast.deadLetter.retry", "Retry"),
+                onClick: () => {
+                  for (const e of deadLetterEntries()) resetOutboxEntry(e.id);
+                  void flushPendingOutbox().then(() => {
+                    setPendingOutbox(pendingOutboxCount());
+                    setReloadKey((k) => k + 1);
+                  });
+                },
+              },
+              duration: 10_000,
+            },
           );
         }
       } catch {
