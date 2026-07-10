@@ -501,6 +501,7 @@ function VaultPage() {
   // sync. The coordinator dedupes across tabs so we don't double-post
   // when two windows are open.
   useEffect(() => {
+    let warnedDeadLetter = false;
     return onSyncOpportunity(async () => {
       try {
         const n = await flushPendingOutbox();
@@ -516,6 +517,21 @@ function VaultPage() {
             ),
           );
           setReloadKey((k) => k + 1);
+        }
+        // Surface stuck entries once per mount so the user knows silent
+        // retries aren't going to save them.
+        const stuck = deadLetterCount();
+        if (stuck > 0 && !warnedDeadLetter) {
+          warnedDeadLetter = true;
+          toast.error(
+            t(
+              stuck === 1
+                ? "vault.toast.deadLetter.one"
+                : "vault.toast.deadLetter.other",
+              `${stuck} change${stuck === 1 ? "" : "s"} can't sync — check your vault.`,
+              { count: stuck },
+            ),
+          );
         }
       } catch {
         // best-effort; the coordinator will fire again on the next
