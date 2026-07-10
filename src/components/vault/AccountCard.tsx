@@ -872,7 +872,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
                     />
 
                     {/* Header: chip + eyebrow + issuer + fav + ring */}
@@ -1626,7 +1626,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
                     />
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">

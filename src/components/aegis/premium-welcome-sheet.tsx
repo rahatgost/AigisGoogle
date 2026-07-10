@@ -84,7 +84,7 @@ export function PremiumWelcomeSheet({
           >
             <div
               className="mx-auto mt-3 h-1 w-10 rounded-full"
-              style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+              style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
             />
             <div className="flex flex-col items-center px-6 pb-2 pt-5 text-center">
               <motion.div
