@@ -155,6 +155,17 @@ export function isVaultReadOnly(): boolean {
   return dek !== null && readOnly;
 }
 
+/**
+ * Throws if the current vault session is read-only (e.g. an emergency
+ * recovery unlock). Call at the top of every mutation entry point so no
+ * write path can leak through UI misses.
+ */
+export function assertWritable(): void {
+  if (readOnly) {
+    throw new Error("This vault is in read-only recovery mode. Writes are disabled.");
+  }
+}
+
 export function lockVault() {
   if (lockTimer !== null && typeof window !== "undefined") {
     window.clearTimeout(lockTimer);
@@ -181,6 +192,14 @@ export function useVaultUnlocked(): boolean {
     return subscribe(() => setUnlocked(isVaultUnlocked()));
   }, []);
   return unlocked;
+}
+
+export function useVaultReadOnly(): boolean {
+  const [ro, setRo] = useState<boolean>(() => isVaultReadOnly());
+  useEffect(() => {
+    return subscribe(() => setRo(isVaultReadOnly()));
+  }, []);
+  return ro;
 }
 
 export function useAutoLockMs(): number | null {

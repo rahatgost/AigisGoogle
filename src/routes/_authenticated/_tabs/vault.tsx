@@ -20,7 +20,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   getVaultKey,
   isVaultUnlocked,
+  isVaultReadOnly,
+  lockVault,
   useActivityKeepAlive,
+  useVaultReadOnly,
   useVaultUnlocked,
 } from "@/lib/vault-session";
 import {
@@ -132,6 +135,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/vault")({
 function VaultPage() {
   const navigate = useNavigate();
   const unlocked = useVaultUnlocked();
+  const readOnly = useVaultReadOnly();
   const { user } = Route.useRouteContext();
   const t = useT();
 
@@ -567,6 +571,35 @@ function VaultPage() {
       />
 
       <InstallPrompt />
+
+      {readOnly && (
+        <div
+          className="mb-2 mt-1 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
+          style={{
+            background: "rgb(var(--aegis-ink-rgb) / 0.06)",
+            border: `1px solid ${BORDER}`,
+            color: CHARCOAL,
+          }}
+          role="status"
+        >
+          <span className="flex-1 truncate">
+            {t(
+              "vault.readOnly.banner",
+              "Read-only recovery vault — you're viewing another user's codes. Writes are disabled.",
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => lockVault()}
+            className="shrink-0 rounded-full px-2.5 py-1 text-[11px]"
+            style={{ background: CHARCOAL, color: "white", fontWeight: 600 }}
+          >
+            {t("vault.readOnly.exit", "Exit")}
+          </button>
+        </div>
+      )}
+
+
 
       {plan.isFree && accounts && accounts.length >= 20 && (
         <div className="mb-2 mt-1">

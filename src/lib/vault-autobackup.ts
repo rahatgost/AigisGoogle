@@ -22,6 +22,7 @@ import {
 import {
   getVaultKey,
   isVaultUnlocked,
+  isVaultReadOnly,
   subscribe as subscribeVaultSession,
 } from "@/lib/vault-session";
 
@@ -253,6 +254,10 @@ export async function runAutoBackupNow(userId: string): Promise<void> {
   if (running.has(userId)) return;
   const settings = getAutoBackupSettings(userId);
   if (!settings.enabled) return;
+  if (isVaultReadOnly()) {
+    appendLog(userId, "skipped", "Read-only recovery session");
+    return;
+  }
   if (!planAllowsAutoBackup) {
     appendLog(userId, "skipped", "Auto-backup requires Pro");
     return;

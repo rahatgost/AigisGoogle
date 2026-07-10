@@ -4,6 +4,7 @@
 
 import * as OTPAuth from "otpauth";
 import { supabase } from "@/integrations/supabase/client";
+import { assertWritable } from "@/lib/vault-session";
 import {
   buildAccountAad,
   decryptSecret,
@@ -252,6 +253,7 @@ export async function addAccount(
     counter?: number;
   },
 ): Promise<{ queued: boolean }> {
+  assertWritable();
   const clean = normalizeBase32(input.secret);
   if (!isValidBase32Secret(clean)) throw new Error("Invalid secret. Must be base32.");
 
@@ -388,6 +390,7 @@ export async function advanceHotpCounter(
   currentCounter: number,
   rowCryptoVersion?: number,
 ): Promise<{ counter: number; queued: boolean }> {
+  assertWritable();
   const next = Math.max(0, Math.floor(currentCounter)) + 1;
   // v3 rows: bind ciphertext to (user_id | account_id). v2 rows: no AAD
   // until the background migrator upgrades them. Resolve user only when
@@ -464,6 +467,7 @@ function generateClientId(): string {
  * the UI reflects the intent, and the server DELETE runs on reconnect.
  */
 export async function deleteAccount(id: string): Promise<{ queued: boolean }> {
+  assertWritable();
   const attempt = async () => {
     const { error } = await supabase.from("vault_accounts").delete().eq("id", id);
     if (error) throw error;
@@ -497,6 +501,7 @@ export async function setAccountFavorite(
   id: string,
   isFavorite: boolean,
 ): Promise<{ queued: boolean }> {
+  assertWritable();
   const attempt = async () => {
     const { data, error } = await supabase
       .from("vault_accounts")
@@ -556,6 +561,7 @@ export async function updateAccountDetails(
   id: string,
   input: { issuer: string; label: string },
 ): Promise<{ issuer: string; label: string; queued: boolean }> {
+  assertWritable();
   const issuer = input.issuer.trim();
   const label = input.label.trim();
   if (!issuer) throw new Error("Service name can't be empty.");
@@ -616,6 +622,7 @@ export async function setAccountTags(
   id: string,
   tags: string[],
 ): Promise<{ tags: string[]; queued: boolean }> {
+  assertWritable();
   const normalized = normalizeTagList(tags);
   const attempt = async () => {
     const { data, error } = await supabase
@@ -981,6 +988,7 @@ export async function getLastSyncedAt(userId: string): Promise<string | null> {
  * belt-and-braces guard.
  */
 export async function reorderAccounts(orderedIds: string[]): Promise<void> {
+  assertWritable();
   if (orderedIds.length === 0) return;
   const updates = orderedIds.map((id, index) => ({ id, sort_order: index }));
   await patchCacheSortOrders(updates);
