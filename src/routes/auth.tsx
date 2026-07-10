@@ -286,7 +286,7 @@ function AuthPage() {
                 {t("auth.newToAegis", "New to Aegis?")}{" "}
                 <button
                   onClick={() => setMode("signup")}
-                  className="underline underline-offset-[3px]"
+                  className="underline decoration-[rgb(var(--aegis-ink-rgb)/0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgb(var(--aegis-ink-rgb)/0.7)]"
                   style={{ color: CHARCOAL }}
                 >
                   {t("auth.createAccountLink", "Create an account")}
@@ -299,13 +299,14 @@ function AuthPage() {
               {t("auth.haveAccount", "Already have an account?")}{" "}
               <button
                 onClick={() => setMode("signin")}
-                className="underline underline-offset-[3px]"
+                className="underline decoration-[rgb(var(--aegis-ink-rgb)/0.35)] underline-offset-[3px] transition-colors hover:decoration-[rgb(var(--aegis-ink-rgb)/0.7)]"
                 style={{ color: CHARCOAL }}
               >
                 {t("auth.signinLink", "Sign in")}
               </button>
             </div>
           )}
+
           {mode === "reset" && (
             <TextLink onClick={() => setMode("signin")}>
               {t("auth.backToSignin", "Back to sign in")}

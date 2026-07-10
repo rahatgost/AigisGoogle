@@ -272,7 +272,7 @@ function HistorySheet({
         <div
           aria-hidden
           className="mx-auto mb-3 h-[4px] w-10 shrink-0 rounded-full"
-          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+          style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
         />
 
         <div className="mb-3 flex shrink-0 items-start justify-between gap-3">

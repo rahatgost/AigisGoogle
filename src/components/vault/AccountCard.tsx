@@ -872,7 +872,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
                     />
 
                     {/* Header: chip + eyebrow + issuer + fav + ring */}
@@ -1626,7 +1626,7 @@ export function AccountCard({
                     <div
                       aria-hidden
                       className="mx-auto mb-3 h-[4px] w-10 rounded-full"
-                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.15)" }}
+                      style={{ background: "rgb(var(--aegis-ink-rgb) / 0.22)" }}
                     />
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -1815,9 +1815,13 @@ function RingTimer({
           style={{ transition: "stroke-dashoffset 0.24s linear, stroke 0.2s ease" }}
         />
       </svg>
-      <span className="absolute tabular-nums" style={{ ...typeTimer, color }}>
+      <span
+        className="absolute tabular-nums"
+        style={{ ...typeTimer, color, transition: "color 0.2s ease" }}
+      >
         {remaining}
       </span>
+
 
     </div>
   );

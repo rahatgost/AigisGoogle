@@ -293,13 +293,15 @@ export function PrimaryButton({
       disabled={disabled || loading}
       whileTap={disabled || loading ? undefined : { scale: 0.985, opacity: 0.9 }}
       transition={spring}
-      className="group relative flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] text-[15px] disabled:opacity-60"
+      className="group relative flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] text-[15px] outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60"
       style={{
         background: CHARCOAL,
         color: CREAM_SOFT,
         fontWeight: 500,
         letterSpacing: "-0.005em",
         boxShadow: INSET_SHADOW,
+        ["--tw-ring-color" as string]: `rgb(var(--aegis-ink-rgb) / 0.45)`,
+        ["--tw-ring-offset-color" as string]: CREAM,
       }}
     >
       {loading ? (
@@ -319,6 +321,7 @@ export function PrimaryButton({
   );
 }
 
+
 export function GhostButton({
   children,
   onClick,
@@ -337,14 +340,19 @@ export function GhostButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      whileHover={
+        disabled ? undefined : { borderColor: `rgb(var(--aegis-ink-rgb) / 0.22)` }
+      }
       whileTap={disabled ? undefined : { scale: 0.985, opacity: 0.9 }}
       transition={spring}
-      className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] text-[14.5px] disabled:opacity-60"
+      className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] text-[14.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60"
       style={{
         background: CREAM_SOFT,
         color: CHARCOAL,
         border: `1px solid ${BORDER}`,
         fontWeight: 500,
+        ["--tw-ring-color" as string]: `rgb(var(--aegis-ink-rgb) / 0.35)`,
+        ["--tw-ring-offset-color" as string]: CREAM,
       }}
     >
       {icon}
@@ -352,6 +360,7 @@ export function GhostButton({
     </motion.button>
   );
 }
+
 
 export function TextLink({
   children,
