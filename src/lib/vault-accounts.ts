@@ -40,6 +40,7 @@ import {
   enqueueUpdateDetails,
   flushOutbox,
   outboxSize,
+  pendingFavoriteFor,
   type CreatePayload,
 } from "@/lib/vault-outbox";
 
