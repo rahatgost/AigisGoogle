@@ -89,6 +89,7 @@ import {
   hasStoredPassphrase,
   initAutoBackup,
   runAutoBackupNow,
+  setAutoBackupPlanGate,
   subscribeAutoBackup,
   updateAutoBackupSettings,
   type AutoBackupFrequency,
