@@ -88,11 +88,25 @@ export async function readVaultCache(userId: string): Promise<VaultAccountRecord
   }
 }
 
+// Fire-and-forget cross-tab broadcast so a sibling tab's Vault view
+// re-renders when this tab writes to the offline mirror. The dynamic
+// import keeps sync-coordinator out of the vault-cache dependency
+// graph for unit tests that don't need it.
+function notifyVaultMutation(): void {
+  if (typeof window === "undefined") return;
+  void import("./sync-coordinator")
+    .then((m) => m.broadcastCacheMutation("vault"))
+    .catch(() => {
+      // best-effort
+    });
+}
+
 /** Remove a single row from the cache (used after delete). */
 export async function removeFromVaultCache(id: string): Promise<void> {
   try {
     const db = await getDb();
     await db.delete(STORE, id);
+    notifyVaultMutation();
   } catch {
     // Ignore — the next full sync will heal it.
   }
@@ -103,6 +117,7 @@ export async function upsertVaultCache(row: VaultAccountRecord): Promise<void> {
   try {
     const db = await getDb();
     await db.put(STORE, row);
+    notifyVaultMutation();
   } catch {
     // Ignore — the next full sync will heal it.
   }
