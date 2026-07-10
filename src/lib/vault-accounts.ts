@@ -501,6 +501,7 @@ export async function setAccountFavorite(
   id: string,
   isFavorite: boolean,
 ): Promise<{ queued: boolean }> {
+  assertWritable();
   const attempt = async () => {
     const { data, error } = await supabase
       .from("vault_accounts")
