@@ -561,6 +561,7 @@ export async function updateAccountDetails(
   id: string,
   input: { issuer: string; label: string },
 ): Promise<{ issuer: string; label: string; queued: boolean }> {
+  assertWritable();
   const issuer = input.issuer.trim();
   const label = input.label.trim();
   if (!issuer) throw new Error("Service name can't be empty.");
