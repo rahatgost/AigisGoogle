@@ -459,29 +459,33 @@ function VaultPage() {
     };
   }, []);
 
-  // Auto-flush the offline outbox (delete + edit) when the network comes
-  // back. Runs on mount too so pending items from a previous session get
-  // replayed as soon as the vault opens.
+  // Auto-flush the offline outbox on every real sync opportunity: server
+  // reachable, tab focused, tab visible, or another tab requested a
+  // sync. The coordinator dedupes across tabs so we don't double-post
+  // when two windows are open.
   useEffect(() => {
-    if (!online) return;
-    let cancelled = false;
-    void (async () => {
+    return onSyncOpportunity(async () => {
       try {
         const n = await flushPendingOutbox();
-        if (cancelled) return;
         setPendingOutbox(pendingOutboxCount());
         if (n > 0) {
-          toast.success(t(n === 1 ? "vault.toast.syncedChanges.one" : "vault.toast.syncedChanges.other", `Synced ${n} pending change${n === 1 ? "" : "s"}`, { count: n }));
+          toast.success(
+            t(
+              n === 1
+                ? "vault.toast.syncedChanges.one"
+                : "vault.toast.syncedChanges.other",
+              `Synced ${n} pending change${n === 1 ? "" : "s"}`,
+              { count: n },
+            ),
+          );
           setReloadKey((k) => k + 1);
         }
       } catch {
-        // best-effort; try again on next reconnect
+        // best-effort; the coordinator will fire again on the next
+        // reachable / focus / visibility event.
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [online]);
+    });
+  }, []);
 
   const retry = useCallback(() => {
     setRetrying(true);
