@@ -193,6 +193,10 @@ function ProfilePage() {
       let tries = 0;
       const iv = setInterval(() => {
         void refetchSub();
+        // Also invalidate the shared `usePlan()` cache so Security, Vault,
+        // Family, and Emergency tabs pick up the new tier immediately
+        // instead of waiting out the 5-minute staleTime.
+        void queryClient.invalidateQueries({ queryKey: ["subscription", "me"] });
         if (++tries >= 8) clearInterval(iv);
       }, 1500);
       const url = new URL(window.location.href);
