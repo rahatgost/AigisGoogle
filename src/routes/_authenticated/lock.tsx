@@ -1037,7 +1037,7 @@ function KeypadButton({
   ariaLabel?: string;
 }) {
   const base =
-    "flex aspect-square items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-offset-1 transition-colors disabled:opacity-40";
+    "flex h-[48px] items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-offset-1 transition-colors disabled:opacity-40";
   const styles: Record<typeof variant, React.CSSProperties> = {
     digit: {
       background: CREAM_SOFT,
