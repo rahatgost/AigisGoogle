@@ -184,7 +184,7 @@ export function StarfieldHeroLayout({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ ...soft, delay: 0.05 }}
-        className="relative -mt-6 flex flex-1 flex-col overflow-y-auto rounded-t-[28px] px-5 pt-6 pb-[max(24px,env(safe-area-inset-bottom))] sm:px-6"
+        className="relative -mt-6 flex flex-1 flex-col overflow-y-auto rounded-t-[28px] px-5 pt-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6"
         style={{
           background: CREAM,
           boxShadow: "0 -14px 40px -20px rgba(0,0,0,0.35)",
@@ -192,7 +192,7 @@ export function StarfieldHeroLayout({
           WebkitOverflowScrolling: "touch" as never,
         }}
       >
-        <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-5">
+        <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-4 sm:gap-5">
           {children}
         </div>
       </motion.div>
