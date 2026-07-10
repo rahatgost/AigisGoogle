@@ -44,6 +44,7 @@ import {
 } from "@/lib/vault-tag-queue";
 import { useOnlineStatus } from "@/lib/use-online";
 import { onSyncOpportunity } from "@/lib/sync-coordinator";
+import { requestPersistentStorage, getStorageStatus } from "@/lib/storage-quota";
 import { AccountCard } from "@/components/vault/AccountCard";
 import { PRESET_TAGS, TagChip } from "@/components/vault/tags";
 import { ExportPassphraseSheet } from "@/components/vault/ExportPassphraseSheet";
@@ -459,29 +460,63 @@ function VaultPage() {
     };
   }, []);
 
-  // Auto-flush the offline outbox (delete + edit) when the network comes
-  // back. Runs on mount too so pending items from a previous session get
-  // replayed as soon as the vault opens.
+  // Ask the browser to keep our IndexedDB mirror persistent (so the OS
+  // can't silently evict it under storage pressure) and warn the user
+  // once if we're already over 85% of quota. Fire-and-forget, once per
+  // mount — the API is idempotent.
   useEffect(() => {
-    if (!online) return;
     let cancelled = false;
     void (async () => {
       try {
-        const n = await flushPendingOutbox();
+        await requestPersistentStorage();
+        const status = await getStorageStatus();
         if (cancelled) return;
-        setPendingOutbox(pendingOutboxCount());
-        if (n > 0) {
-          toast.success(t(n === 1 ? "vault.toast.syncedChanges.one" : "vault.toast.syncedChanges.other", `Synced ${n} pending change${n === 1 ? "" : "s"}`, { count: n }));
-          setReloadKey((k) => k + 1);
+        if (status.nearLimit && status.ratio !== null) {
+          const pct = Math.round(status.ratio * 100);
+          toast.warning(
+            t(
+              "vault.toast.storageNearLimit",
+              `Device storage is ${pct}% full — offline vault may be evicted.`,
+              { pct },
+            ),
+          );
         }
       } catch {
-        // best-effort; try again on next reconnect
+        // best-effort — never let a storage probe surface as an error
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [online]);
+  }, []);
+
+  // Auto-flush the offline outbox on every real sync opportunity: server
+  // reachable, tab focused, tab visible, or another tab requested a
+  // sync. The coordinator dedupes across tabs so we don't double-post
+  // when two windows are open.
+  useEffect(() => {
+    return onSyncOpportunity(async () => {
+      try {
+        const n = await flushPendingOutbox();
+        setPendingOutbox(pendingOutboxCount());
+        if (n > 0) {
+          toast.success(
+            t(
+              n === 1
+                ? "vault.toast.syncedChanges.one"
+                : "vault.toast.syncedChanges.other",
+              `Synced ${n} pending change${n === 1 ? "" : "s"}`,
+              { count: n },
+            ),
+          );
+          setReloadKey((k) => k + 1);
+        }
+      } catch {
+        // best-effort; the coordinator will fire again on the next
+        // reachable / focus / visibility event.
+      }
+    });
+  }, []);
 
   const retry = useCallback(() => {
     setRetrying(true);
