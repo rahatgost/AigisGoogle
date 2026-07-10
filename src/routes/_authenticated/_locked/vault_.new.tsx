@@ -51,6 +51,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/_locked/vault_/new")({
   validateSearch: searchSchema,
+  beforeLoad: async () => {
+    const { isVaultReadOnly } = await import("@/lib/vault-session");
+    if (isVaultReadOnly()) {
+      const { redirect } = await import("@tanstack/react-router");
+      throw redirect({ to: "/vault" });
+    }
+  },
   component: NewAccountPage,
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center p-6 text-sm">{error.message}</div>
