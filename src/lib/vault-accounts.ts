@@ -915,34 +915,104 @@ export function mergeAccountRows(
 }
 
 /**
+ * Merge a delta fetch into the cached rows. Server-changed rows overwrite
+ * their cached counterparts; any cached row whose id is absent from the
+ * server's full id set is dropped (deletion). Optimistic-favorite rules
+ * still apply on top.
+ */
+export function mergeDeltaRows(
+  cachedRows: VaultAccountRecord[],
+  changedRows: VaultAccountRecord[],
+  serverIds: Set<string>,
+  recentFavToggles: Record<string, boolean>,
+): VaultAccountRecord[] {
+  const byId = new Map<string, VaultAccountRecord>();
+  for (const r of cachedRows) if (serverIds.has(r.id)) byId.set(r.id, r);
+  for (const r of changedRows) byId.set(r.id, r);
+  return mergeAccountRows(Array.from(byId.values()), recentFavToggles);
+}
+
+/**
  * Fetch every row from the server, merge with any recent optimistic
  * favorite toggles, then rewrite the cache and last-sync marker. Returns
  * the freshly-decrypted account list.
  *
+ * Uses delta sync when a `lastSync` marker exists: only rows with
+ * `updated_at > lastSync - CLOCK_SKEW` are pulled in full, plus a cheap
+ * id/updated_at scan to detect deletions. Falls back to a full fetch on
+ * first run.
+ *
  * Throws on network/RLS error — caller keeps the previous cache-first
  * paint and shows the offline banner.
  */
+const DELTA_CLOCK_SKEW_MS = 5_000;
+
 export async function syncAccountsFromServer(
   dek: CryptoKey,
   userId: string,
 ): Promise<DecryptedAccount[]> {
   await flushPendingTagUpdates().catch(() => 0);
-  const { data, error } = await supabase
-    .from("vault_accounts")
-    .select(ACCOUNT_SELECT)
-    .order("is_favorite", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-
-  const serverRows = (data ?? []) as VaultAccountRecord[];
+  const lastSync = await readLastSync(userId);
+  const cached = (await readVaultCache(userId)) ?? [];
   const recentToggles = readRecentFavoriteToggles(userId);
-  const merged = mergeAccountRows(serverRows, recentToggles);
+
+  // Full fetch on cold start (no marker, or empty cache — a delta merge
+  // would miss rows that existed before this device ever synced).
+  if (!lastSync || cached.length === 0) {
+    const { data, error } = await supabase
+      .from("vault_accounts")
+      .select(ACCOUNT_SELECT)
+      .order("is_favorite", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    const serverRows = (data ?? []) as VaultAccountRecord[];
+    const merged = mergeAccountRows(serverRows, recentToggles);
+    await writeVaultCache(userId, merged);
+    await writeLastSync(userId, computeNewSyncMarker(serverRows));
+    return decryptRows(dek, merged);
+  }
+
+  // Delta path: parallel-fetch changed rows + full id list. Overlap
+  // window guards against writer clock skew on the DB side.
+  const since = new Date(
+    new Date(lastSync).getTime() - DELTA_CLOCK_SKEW_MS,
+  ).toISOString();
+  const [changedRes, idsRes] = await Promise.all([
+    supabase
+      .from("vault_accounts")
+      .select(ACCOUNT_SELECT)
+      .gt("updated_at", since),
+    supabase.from("vault_accounts").select("id, updated_at"),
+  ]);
+  if (changedRes.error) throw changedRes.error;
+  if (idsRes.error) throw idsRes.error;
+
+  const changedRows = (changedRes.data ?? []) as VaultAccountRecord[];
+  const idRows = (idsRes.data ?? []) as Array<{ id: string; updated_at: string }>;
+  const serverIds = new Set(idRows.map((r) => r.id));
+  const merged = mergeDeltaRows(cached, changedRows, serverIds, recentToggles);
 
   await writeVaultCache(userId, merged);
-  await writeLastSync(userId, new Date().toISOString());
+  await writeLastSync(userId, computeNewSyncMarker(idRows));
   return decryptRows(dek, merged);
 }
+
+/**
+ * Pick the highest `updated_at` we've observed on the server as the next
+ * sync marker. Using max(server updated_at) — not `Date.now()` — keeps
+ * the marker anchored to the DB's clock, so we never skip a row written
+ * with a slightly-behind wall clock on the next delta.
+ */
+function computeNewSyncMarker(rows: Array<{ updated_at: string }>): string {
+  let max = 0;
+  for (const r of rows) {
+    const t = Date.parse(r.updated_at);
+    if (Number.isFinite(t) && t > max) max = t;
+  }
+  return max > 0 ? new Date(max).toISOString() : new Date().toISOString();
+}
+
 
 /**
  * Timestamp of the last successful server sync, or `null` if this device
