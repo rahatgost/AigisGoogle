@@ -26,6 +26,11 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "monthly",
             priority: "0.8",
           },
+          {
+            path: "/blog/aegis-vs-authy",
+            changefreq: "monthly",
+            priority: "0.8",
+          },
         ];
 
 

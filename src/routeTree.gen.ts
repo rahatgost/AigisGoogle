@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevTokensRouteImport } from './routes/dev.tokens'
 import { Route as BlogGoogleAuthenticatorForPcRouteImport } from './routes/blog.google-authenticator-for-pc'
 import { Route as BlogAegisVsGoogleAuthenticatorRouteImport } from './routes/blog.aegis-vs-google-authenticator'
+import { Route as BlogAegisVsAuthyRouteImport } from './routes/blog.aegis-vs-authy'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth_.reset-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -71,6 +72,11 @@ const BlogAegisVsGoogleAuthenticatorRoute =
     path: '/blog/aegis-vs-google-authenticator',
     getParentRoute: () => rootRouteImport,
   } as any)
+const BlogAegisVsAuthyRoute = BlogAegisVsAuthyRouteImport.update({
+  id: '/blog/aegis-vs-authy',
+  path: '/blog/aegis-vs-authy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/auth_/reset-password',
   path: '/auth/reset-password',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-authy': typeof BlogAegisVsAuthyRoute
   '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/blog/google-authenticator-for-pc': typeof BlogGoogleAuthenticatorForPcRoute
   '/dev/tokens': typeof DevTokensRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-authy': typeof BlogAegisVsAuthyRoute
   '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/blog/google-authenticator-for-pc': typeof BlogGoogleAuthenticatorForPcRoute
   '/dev/tokens': typeof DevTokensRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/reset-password': typeof AuthResetPasswordRoute
+  '/blog/aegis-vs-authy': typeof BlogAegisVsAuthyRoute
   '/blog/aegis-vs-google-authenticator': typeof BlogAegisVsGoogleAuthenticatorRoute
   '/blog/google-authenticator-for-pc': typeof BlogGoogleAuthenticatorForPcRoute
   '/dev/tokens': typeof DevTokensRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/blog/aegis-vs-authy'
     | '/blog/aegis-vs-google-authenticator'
     | '/blog/google-authenticator-for-pc'
     | '/dev/tokens'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/blog/aegis-vs-authy'
     | '/blog/aegis-vs-google-authenticator'
     | '/blog/google-authenticator-for-pc'
     | '/dev/tokens'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/auth_/callback'
     | '/auth_/reset-password'
+    | '/blog/aegis-vs-authy'
     | '/blog/aegis-vs-google-authenticator'
     | '/blog/google-authenticator-for-pc'
     | '/dev/tokens'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  BlogAegisVsAuthyRoute: typeof BlogAegisVsAuthyRoute
   BlogAegisVsGoogleAuthenticatorRoute: typeof BlogAegisVsGoogleAuthenticatorRoute
   BlogGoogleAuthenticatorForPcRoute: typeof BlogGoogleAuthenticatorForPcRoute
   DevTokensRoute: typeof DevTokensRoute
@@ -383,6 +396,13 @@ declare module '@tanstack/react-router' {
       path: '/blog/aegis-vs-google-authenticator'
       fullPath: '/blog/aegis-vs-google-authenticator'
       preLoaderRoute: typeof BlogAegisVsGoogleAuthenticatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/aegis-vs-authy': {
+      id: '/blog/aegis-vs-authy'
+      path: '/blog/aegis-vs-authy'
+      fullPath: '/blog/aegis-vs-authy'
+      preLoaderRoute: typeof BlogAegisVsAuthyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth_/reset-password': {
@@ -580,6 +600,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  BlogAegisVsAuthyRoute: BlogAegisVsAuthyRoute,
   BlogAegisVsGoogleAuthenticatorRoute: BlogAegisVsGoogleAuthenticatorRoute,
   BlogGoogleAuthenticatorForPcRoute: BlogGoogleAuthenticatorForPcRoute,
   DevTokensRoute: DevTokensRoute,
