@@ -111,12 +111,14 @@ export function StarfieldHeroLayout({
   heroKey,
   heroTitle,
   heroSubtitle,
+  heroAccessory,
   children,
   heroMinVh = 34,
 }: {
   heroKey?: string;
   heroTitle: ReactNode;
   heroSubtitle?: ReactNode;
+  heroAccessory?: ReactNode;
   children: ReactNode;
   heroMinVh?: number;
 }) {
