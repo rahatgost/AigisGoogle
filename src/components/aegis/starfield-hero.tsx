@@ -111,12 +111,14 @@ export function StarfieldHeroLayout({
   heroKey,
   heroTitle,
   heroSubtitle,
+  heroAccessory,
   children,
   heroMinVh = 34,
 }: {
   heroKey?: string;
   heroTitle: ReactNode;
   heroSubtitle?: ReactNode;
+  heroAccessory?: ReactNode;
   children: ReactNode;
   heroMinVh?: number;
 }) {
@@ -134,6 +136,11 @@ export function StarfieldHeroLayout({
         }}
       >
         <Starfield />
+        {heroAccessory && (
+          <div className="pointer-events-none absolute right-0 top-0 z-[5] h-full w-[48%] max-w-[240px]">
+            {heroAccessory}
+          </div>
+        )}
         <div className="relative z-10 flex h-full flex-col px-5 pt-[max(20px,env(safe-area-inset-top))] pb-5 sm:px-6 sm:pb-6">
           <motion.div
             initial={{ opacity: 0, y: -6 }}
