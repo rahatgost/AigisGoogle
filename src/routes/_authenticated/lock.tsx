@@ -646,9 +646,9 @@ function LockPage() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
             onSubmit={handleUnlock}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-3 pt-3 sm:pt-2"
           >
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <span
                 className="text-[12.5px] font-medium"
                 style={{ color: MUTED, letterSpacing: "-0.005em" }}
