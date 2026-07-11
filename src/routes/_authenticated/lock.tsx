@@ -620,6 +620,8 @@ function LockPage() {
       heroTitle="Unlock your vault"
       heroMinVh={16}
     >
+      <VaultIllustration />
+
       <SegmentedTabs
         value={tab}
         onChange={(next) => {
@@ -634,6 +636,7 @@ function LockPage() {
           }
         }}
       />
+
 
       <AnimatePresence mode="wait" initial={false}>
         {tab === "passphrase" ? (
