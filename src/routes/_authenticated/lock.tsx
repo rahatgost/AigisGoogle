@@ -39,12 +39,52 @@ import {
 import { KeyRound, Fingerprint, LogOut, Delete, Loader2 } from "lucide-react";
 import { CHARCOAL, MUTED, BORDER, CREAM_SOFT } from "@/components/aegis/chrome";
 import {
-  BlueButton,
   FieldGroup,
   InlineNotice,
   StarfieldHeroLayout,
 } from "@/components/aegis/starfield-hero";
 import { PasswordField, StrengthMeter, scoreStrength } from "@/components/aegis/password-field";
+
+/* Charcoal primary button — matches onboarding's PrimaryButton language. */
+const INK_INSET_SHADOW =
+  "rgba(255,255,255,0.2) 0 0.5px 0 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset, rgba(0,0,0,0.05) 0 1px 2px 0";
+
+function DarkButton({
+  children,
+  type = "button",
+  loading,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  type?: "button" | "submit";
+  loading?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  const isDisabled = disabled || loading;
+  return (
+    <motion.button
+      type={type}
+      onClick={onClick}
+      disabled={isDisabled}
+      whileTap={isDisabled ? undefined : { scale: 0.985, opacity: 0.9 }}
+      transition={{ type: "spring", stiffness: 260, damping: 30, mass: 0.9 }}
+      className="relative flex h-[48px] w-full items-center justify-center rounded-[10px] text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60"
+      style={{
+        background: CHARCOAL,
+        color: CREAM_SOFT,
+        fontWeight: 500,
+        letterSpacing: "-0.005em",
+        boxShadow: INK_INSET_SHADOW,
+        ["--tw-ring-color" as string]: "rgb(var(--aegis-ink-rgb) / 0.35)",
+        ["--tw-ring-offset-color" as string]: "var(--aegis-cream)",
+      }}
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
+    </motion.button>
+  );
+}
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -549,7 +589,7 @@ function LockPage() {
           {notice && <InlineNotice kind={notice.kind}>{notice.text}</InlineNotice>}
 
           <div className="pt-1">
-            <BlueButton
+            <DarkButton
               type="submit"
               loading={loading}
               disabled={
@@ -559,7 +599,7 @@ function LockPage() {
               }
             >
               Create vault
-            </BlueButton>
+            </DarkButton>
           </div>
 
           <p
@@ -629,13 +669,13 @@ function LockPage() {
 
             {notice && <InlineNotice kind={notice.kind}>{notice.text}</InlineNotice>}
 
-            <BlueButton
+            <DarkButton
               type="submit"
               loading={loading}
               disabled={!passphrase || cooldownLeft > 0}
             >
-              {cooldownLeft > 0 ? `Wait ${Math.ceil(cooldownLeft / 1000)}s` : "Log In"}
-            </BlueButton>
+              {cooldownLeft > 0 ? `Wait ${Math.ceil(cooldownLeft / 1000)}s` : "Unlock vault"}
+            </DarkButton>
 
             {(bioEnrolled && bioAvailable) || pinEnrolled ? <OrDivider /> : null}
 
@@ -1050,10 +1090,10 @@ function KeypadButton({
       color: CHARCOAL,
     },
     primary: {
-      background: "linear-gradient(180deg, #4f6bff 0%, #3548d1 100%)",
-      color: "#fff",
+      background: CHARCOAL,
+      color: CREAM_SOFT,
       boxShadow:
-        "inset 0 1px 0 rgba(255,255,255,0.28), 0 8px 18px -10px rgba(53,72,209,0.55)",
+        "rgba(255,255,255,0.2) 0 0.5px 0 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset, 0 6px 14px -8px rgba(0,0,0,0.4)",
     },
   };
   return (
