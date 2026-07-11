@@ -109,16 +109,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Aegis is a beautifully minimal authenticator that protects every account with secure one-time codes.",
       },
       { property: "og:site_name", content: "Aegis" },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/" },
+      { property: "og:url", content: "https://aegis-syed.lovable.app/" },
       {
         property: "og:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/30722301-0b4c-46e5-bf0e-7e63535d296f",
+        content: "https://aegis-syed.lovable.app/og-aegis.jpg",
       },
       {
         name: "twitter:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/30722301-0b4c-46e5-bf0e-7e63535d296f",
+        content: "https://aegis-syed.lovable.app/og-aegis.jpg",
       },
       {
         name: "google-site-verification",
