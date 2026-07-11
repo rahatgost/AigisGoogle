@@ -764,7 +764,13 @@ function LockPage() {
         )}
       </AnimatePresence>
 
-      <div className="mt-auto flex flex-col items-center gap-1.5 pt-2">
+      <div
+        className="mt-auto flex flex-col items-center gap-2 pt-5"
+        style={{
+          borderTop: `1px solid rgb(var(--aegis-ink-rgb) / 0.08)`,
+          marginTop: "auto",
+        }}
+      >
         <button
           type="button"
           onClick={async () => {
@@ -807,7 +813,7 @@ function LockPage() {
               setLoading(false);
             }
           }}
-          className="text-[12.5px] underline-offset-4 transition-opacity hover:underline"
+          className="text-[12.5px] font-medium underline-offset-4 transition-opacity hover:underline"
           style={{ color: MUTED }}
         >
           Forgot passphrase? Reset vault
@@ -818,10 +824,10 @@ function LockPage() {
             await supabase.auth.signOut();
             navigate({ to: "/auth", replace: true });
           }}
-          className="flex items-center gap-1.5 text-[12.5px] transition-opacity hover:opacity-100"
-          style={{ color: MUTED, opacity: 0.75 }}
+          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase transition-colors hover:text-[color:var(--aegis-ink)]"
+          style={{ color: MUTED, letterSpacing: "0.16em" }}
         >
-          <LogOut className="h-3.5 w-3.5" strokeWidth={1.6} />
+          <LogOut className="h-3 w-3" strokeWidth={2} />
           <span>Sign out</span>
         </button>
       </div>
@@ -846,10 +852,9 @@ function SegmentedTabs({
   ];
   return (
     <div
-      className="relative grid grid-cols-2 rounded-[12px] p-1"
+      className="relative grid grid-cols-2 rounded-full p-1"
       style={{
-        background: "rgb(var(--aegis-ink-rgb) / 0.05)",
-        border: `1px solid ${BORDER}`,
+        background: "rgb(var(--aegis-ink-rgb) / 0.06)",
       }}
     >
       {items.map((it) => {
@@ -859,21 +864,21 @@ function SegmentedTabs({
             key={it.id}
             type="button"
             onClick={() => onChange(it.id)}
-            className="relative z-10 h-9 rounded-[9px] text-[13.5px] font-medium transition-colors"
+            className="relative z-10 h-9 rounded-full text-[13.5px] transition-colors"
             style={{
               color: active ? CHARCOAL : MUTED,
+              fontWeight: active ? 600 : 500,
               letterSpacing: "-0.005em",
             }}
           >
             {active && (
               <motion.span
                 layoutId="lock-tab-active"
-                className="absolute inset-0 -z-10 rounded-[9px]"
+                className="absolute inset-0 -z-10 rounded-full"
                 style={{
                   background: "#ffffff",
                   boxShadow:
-                    "0 1px 2px rgba(0,0,0,0.06), 0 4px 10px -6px rgba(0,0,0,0.15)",
-                  border: `1px solid ${BORDER}`,
+                    "0 1px 2px rgba(0,0,0,0.06), 0 6px 14px -8px rgba(0,0,0,0.18)",
                 }}
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
@@ -888,12 +893,15 @@ function SegmentedTabs({
 
 function OrDivider() {
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
-      <span className="text-[11.5px]" style={{ color: MUTED }}>
-        Or
+    <div className="flex items-center gap-3 py-0.5">
+      <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.08)" }} />
+      <span
+        className="text-[10.5px] font-medium uppercase"
+        style={{ color: MUTED, letterSpacing: "0.14em" }}
+      >
+        or
       </span>
-      <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.1)" }} />
+      <div className="h-px flex-1" style={{ background: "rgb(var(--aegis-ink-rgb) / 0.08)" }} />
     </div>
   );
 }
@@ -915,19 +923,20 @@ function SecondaryPill({
       onClick={onClick}
       disabled={busy}
       whileTap={busy ? undefined : { scale: 0.985 }}
-      className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[12px] text-[14.5px] font-medium disabled:opacity-60"
+      className="flex h-[46px] w-full items-center justify-center gap-2.5 rounded-full text-[14px] font-medium disabled:opacity-60"
       style={{
         background: "#ffffff",
         border: `1px solid ${BORDER}`,
         color: CHARCOAL,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -12px rgba(0,0,0,0.18)",
+        letterSpacing: "-0.005em",
       }}
     >
       {busy ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <>
-          <span style={{ color: CHARCOAL }}>{icon}</span>
+          <span style={{ color: "#4f6bff" }}>{icon}</span>
           <span>{label}</span>
         </>
       )}
@@ -1085,29 +1094,29 @@ function Keypad({
 function VaultIllustration() {
   return (
     <div className="relative h-full w-full" aria-hidden>
-      {/* Ambient green glow bleeding into the starfield */}
+      {/* Brand-blue ambient glow bleeding into the starfield */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(50% 50% at 62% 58%, rgba(46,196,105,0.28), transparent 72%)",
-          filter: "blur(8px)",
+            "radial-gradient(55% 55% at 62% 55%, rgba(79,107,255,0.32), transparent 72%)",
+          filter: "blur(10px)",
         }}
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.9 }}
-        className="absolute inset-0 flex items-center justify-center pr-3 sm:pr-5"
+        initial={{ opacity: 0, scale: 0.94, y: 4 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 220, damping: 26, mass: 0.9 }}
+        className="absolute inset-0 flex items-center justify-center pr-4 sm:pr-6"
       >
         <img
           src={vaultIllustration.url}
           alt=""
           draggable={false}
-          className="pointer-events-none h-[128px] w-auto select-none sm:h-[150px]"
+          className="pointer-events-none h-[118px] w-auto select-none sm:h-[138px]"
           style={{
             filter:
-              "drop-shadow(0 16px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 26px rgba(46,196,105,0.32))",
+              "drop-shadow(0 14px 22px rgba(0,0,0,0.5)) drop-shadow(0 0 28px rgba(79,107,255,0.38))",
           }}
         />
       </motion.div>
