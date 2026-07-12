@@ -52,7 +52,9 @@ export const SUPPORTED_LOCALES: LocaleMeta[] = [
   { code: "bn", label: "Bengali", nativeLabel: "বাংলা" },
 ];
 
-const CATALOGS: Record<LocaleCode, Record<string, string>> = {
+import { compileMessage } from "@lingui/message-utils/compileMessage";
+
+const RAW_CATALOGS: Record<LocaleCode, Record<string, string>> = {
   en,
   es,
   "pt-BR": ptBR,
@@ -63,10 +65,39 @@ const CATALOGS: Record<LocaleCode, Record<string, string>> = {
   bn,
 };
 
+// Pre-compile every catalog entry into Lingui's tokenized form. This is
+// what `lingui compile` would produce on disk — doing it once at module
+// load keeps our flat `Record<string, string>` source files simple while
+// eliminating the "Uncompiled message detected" runtime warning and
+// enabling ICU interpolation / plurals for translated strings.
+function compileCatalog(raw: Record<string, string>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key in raw) {
+    const src = raw[key];
+    try {
+      out[key] = compileMessage(src);
+    } catch {
+      out[key] = src;
+    }
+  }
+  return out;
+}
+
+const CATALOGS: Record<LocaleCode, Record<string, unknown>> = {
+  en: compileCatalog(RAW_CATALOGS.en),
+  es: compileCatalog(RAW_CATALOGS.es),
+  "pt-BR": compileCatalog(RAW_CATALOGS["pt-BR"]),
+  fr: compileCatalog(RAW_CATALOGS.fr),
+  de: compileCatalog(RAW_CATALOGS.de),
+  ja: compileCatalog(RAW_CATALOGS.ja),
+  hi: compileCatalog(RAW_CATALOGS.hi),
+  bn: compileCatalog(RAW_CATALOGS.bn),
+};
+
 // Preload all catalogs into the shared `i18n` instance once, at module
 // evaluation. `activate()` just flips the pointer.
 for (const meta of SUPPORTED_LOCALES) {
-  i18n.load(meta.code, CATALOGS[meta.code]);
+  i18n.load(meta.code, CATALOGS[meta.code] as Record<string, string>);
 }
 i18n.activate(DEFAULT_LOCALE);
 
