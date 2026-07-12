@@ -74,6 +74,7 @@ function extensionManifestPlugin() {
       let rendered = source
         .replaceAll("__SUPABASE_ORIGIN__", SUPABASE_ORIGIN)
         .replaceAll("__APP_ORIGIN__", APP_ORIGIN)
+        .replaceAll("__APP_LEGACY_ORIGIN__", APP_LEGACY_ORIGIN)
         .replaceAll("__APP_PREVIEW_ORIGIN__", APP_PREVIEW_ORIGIN);
 
       // Inject store-listing homepage URL so `chrome://extensions` and AMO
