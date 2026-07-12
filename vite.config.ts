@@ -14,6 +14,22 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    define: {
+      // Browser code cannot read process.env directly after publish, so bake
+      // only the public Lovable Cloud connection values into the client build.
+      "process.env.SUPABASE_URL": JSON.stringify(
+        process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
+      ),
+      "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+        process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+      ),
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
+        process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "",
+      ),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
+      ),
+    },
     build: {
       rollupOptions: {
         output: {
@@ -85,18 +101,19 @@ export default defineConfig({
               purpose: "maskable",
             },
           ],
-          // Deep-link support: services that hand out `otpauth://` URIs
+          // Deep-link support: services that hand out one-time-code URIs
           // (e.g. share-sheet from a native app, external QR reader) route
           // straight into Add Account with the URI in the query string.
-          // Chrome's protocol-handler safelist includes `otpauth`.
+          // Custom handlers must use the web+ prefix to pass manifest validation.
           protocol_handlers: [
-            { protocol: "otpauth", url: "/vault/new?uri=%s" },
+            { protocol: "web+otpauth", url: "/vault/new?uri=%s" },
           ],
           // Share Target: iOS / Android share-sheet can send an `otpauth://`
           // URL (text or url payload) into the same Add Account flow.
           share_target: {
             action: "/vault/new",
             method: "GET",
+            enctype: "application/x-www-form-urlencoded",
             params: { title: "issuer", text: "uri", url: "uri" },
           },
         },
