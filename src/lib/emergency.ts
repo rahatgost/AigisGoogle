@@ -178,10 +178,7 @@ export async function revokeContact(id: string): Promise<void> {
 
 /** Grantee: request emergency access. Starts the waiting timer. */
 export async function requestAccess(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("emergency_contacts")
-    .update({ status: "requested", requested_at: new Date().toISOString() })
-    .eq("id", id);
+  const { error } = await supabase.rpc("request_emergency_access", { _contact_id: id });
   if (error) throw error;
 }
 
