@@ -32,7 +32,7 @@ export function PremiumWelcomeSheet({
 }) {
   const { i18n } = useLingui();
   const t = (id: string, fallback: string, values?: Record<string, unknown>) => {
-    const msg = i18n._(id, values);
+    const msg = values ? i18n._(id, values) : i18n._(id);
     return msg === id ? fallback : msg;
   };
 

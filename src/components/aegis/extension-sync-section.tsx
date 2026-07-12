@@ -54,7 +54,7 @@ type BrowserKey = "chrome" | "edge" | "firefox";
 export function ExtensionSyncSection() {
   const { i18n } = useLingui();
   const t = (id: string, fallback: string, values?: Record<string, unknown>) => {
-    const msg = i18n._(id, values);
+    const msg = values ? i18n._(id, values) : i18n._(id);
     return msg === id ? fallback : msg;
   };
 
@@ -293,7 +293,7 @@ export function ExtensionSyncSection() {
 function useRelTime() {
   const { i18n } = useLingui();
   const t = (id: string, fallback: string, values?: Record<string, unknown>) => {
-    const msg = i18n._(id, values);
+    const msg = values ? i18n._(id, values) : i18n._(id);
     return msg === id ? fallback : msg;
   };
   return (ts: number): string => {
@@ -310,7 +310,7 @@ function useRelTime() {
 function ExtensionHealthGroup({ unlocked }: { unlocked: boolean }) {
   const { i18n } = useLingui();
   const t = (id: string, fallback: string, values?: Record<string, unknown>) => {
-    const msg = i18n._(id, values);
+    const msg = values ? i18n._(id, values) : i18n._(id);
     return msg === id ? fallback : msg;
   };
   const relTime = useRelTime();

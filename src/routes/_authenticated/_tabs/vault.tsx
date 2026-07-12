@@ -100,7 +100,7 @@ import { useLingui } from "@lingui/react";
 function useT() {
   const { i18n } = useLingui();
   return (id: string, fallback: string, values?: Record<string, unknown>): string => {
-    const msg = i18n._(id, values ?? {});
+    const msg = values ? i18n._(id, values) : i18n._(id);
     return typeof msg === "string" && msg !== id ? msg : fallback;
   };
 }
