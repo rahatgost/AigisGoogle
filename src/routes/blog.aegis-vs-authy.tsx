@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, X, ShieldCheck, Cloud, Lock, Monitor } from "lucide-react";
 
-const URL_CANONICAL = "https://aegis-syed.lovable.app/blog/aegis-vs-authy";
+const URL_CANONICAL = "https://aegis-v2.flinkeo.online/blog/aegis-vs-authy";
 const TITLE = "Aegis vs Authy — The Authy Alternative After Desktop Sunset";
 const DESCRIPTION =
   "Looking for an Authy alternative after the desktop app shutdown? Compare Aegis and Authy: end-to-end encrypted multi-device 2FA sync that works on phone, laptop, and web.";
