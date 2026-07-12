@@ -22,7 +22,7 @@ export const Route = createFileRoute("/auth_/callback")({
         property: "og:description",
         content: "OAuth callback handler for Aegis sign-in.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/auth/callback" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/auth/callback" },
     ],
   }),
   component: CallbackPage,

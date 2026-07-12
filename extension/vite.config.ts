@@ -43,12 +43,14 @@ const SUPABASE_ORIGIN = SUPABASE_URL ? new URL(SUPABASE_URL).origin : "https://*
 // Set VITE_APP_URL in `.env` when you point the app at a custom domain;
 // the manifest allow-list, popup "Open vault" link, and SW origin regex
 // all pick up the new value on the next `bun run build:ext`.
-const APP_URL = readEnv("VITE_APP_URL", "https://aegis-syed.lovable.app");
+const APP_URL = readEnv("VITE_APP_URL", "https://aegis-v2.flinkeo.online");
+const APP_LEGACY_URL = readEnv("VITE_APP_LEGACY_URL", "https://aegis-syed.lovable.app");
 const APP_PREVIEW_URL = readEnv(
   "VITE_APP_PREVIEW_URL",
   "https://id-preview--04418077-cd09-40ce-bb05-4708ee844e27.lovable.app",
 );
 const APP_ORIGIN = new URL(APP_URL).origin;
+const APP_LEGACY_ORIGIN = new URL(APP_LEGACY_URL).origin;
 const APP_PREVIEW_ORIGIN = new URL(APP_PREVIEW_URL).origin;
 
 /**
@@ -72,6 +74,7 @@ function extensionManifestPlugin() {
       let rendered = source
         .replaceAll("__SUPABASE_ORIGIN__", SUPABASE_ORIGIN)
         .replaceAll("__APP_ORIGIN__", APP_ORIGIN)
+        .replaceAll("__APP_LEGACY_ORIGIN__", APP_LEGACY_ORIGIN)
         .replaceAll("__APP_PREVIEW_ORIGIN__", APP_PREVIEW_ORIGIN);
 
       // Inject store-listing homepage URL so `chrome://extensions` and AMO

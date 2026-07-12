@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
         property: "og:description",
         content: "One-time setup: passphrase, recovery, and encrypted device pairing.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/onboarding" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/onboarding" },
     ],
   }),
   component: OnboardingPage,

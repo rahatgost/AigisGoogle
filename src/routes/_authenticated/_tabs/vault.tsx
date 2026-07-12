@@ -125,7 +125,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/vault")({
         property: "og:description",
         content: "End-to-end encrypted TOTP codes, unlocked only on your device.",
       },
-      { property: "og:url", content: "https://aegis-syed.lovable.app/vault" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/vault" },
     ],
   }),
   component: VaultPage,

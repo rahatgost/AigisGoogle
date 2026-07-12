@@ -26,7 +26,7 @@ export const Route = createFileRoute("/auth_/reset-password")({
         property: "og:description",
         content: "Set a new password on your Aegis account.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/auth/reset-password" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/auth/reset-password" },
     ],
   }),
   component: ResetPasswordPage,

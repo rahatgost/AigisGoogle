@@ -76,7 +76,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/profile")({
         property: "og:description",
         content: "Account, appearance, and language settings for your Aegis authenticator.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/profile" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/profile" },
     ],
   }),
   component: ProfilePage,

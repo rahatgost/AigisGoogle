@@ -41,10 +41,10 @@ export const Route = createFileRoute("/auth")({
         content:
           "Access your zero-knowledge, end-to-end encrypted authenticator vault.",
       },
-      { property: "og:url", content: "https://hug-machine-maker.lovable.app/auth" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/auth" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://hug-machine-maker.lovable.app/auth" }],
+    links: [{ rel: "canonical", href: "https://aegis-v2.flinkeo.online/auth" }],
   }),
   component: AuthPage,
   errorComponent: ({ error }) => (

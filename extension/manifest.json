@@ -53,6 +53,7 @@
     {
       "matches": [
         "__APP_ORIGIN__/*",
+        "__APP_LEGACY_ORIGIN__/*",
         "__APP_PREVIEW_ORIGIN__/*",
         "http://localhost:8080/*"
       ],
@@ -64,6 +65,7 @@
   "externally_connectable": {
     "matches": [
       "__APP_ORIGIN__/*",
+      "__APP_LEGACY_ORIGIN__/*",
       "__APP_PREVIEW_ORIGIN__/*",
       "http://localhost:8080/*"
     ]

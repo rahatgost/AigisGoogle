@@ -12,4 +12,4 @@ Disallow: /auth/callback
 Disallow: /auth/reset-password
 Disallow: /dev/
 
-Sitemap: https://aegis-syed.lovable.app/sitemap.xml
+Sitemap: https://aegis-v2.flinkeo.online/sitemap.xml

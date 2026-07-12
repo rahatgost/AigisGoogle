@@ -109,14 +109,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Aegis is a beautifully minimal authenticator that protects every account with secure one-time codes.",
       },
       { property: "og:site_name", content: "Aegis" },
-      { property: "og:url", content: "https://aegis-syed.lovable.app/" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/" },
       {
         property: "og:image",
-        content: "https://aegis-syed.lovable.app/og-aegis.jpg",
+        content: "https://aegis-v2.flinkeo.online/og-aegis.jpg",
       },
       {
         name: "twitter:image",
-        content: "https://aegis-syed.lovable.app/og-aegis.jpg",
+        content: "https://aegis-v2.flinkeo.online/og-aegis.jpg",
       },
       {
         name: "google-site-verification",
@@ -151,7 +151,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           operatingSystem: "Web",
           description:
             "Zero-knowledge, end-to-end encrypted TOTP authenticator. Your passphrase never leaves your device.",
-          url: "https://hug-machine-maker.lovable.app/",
+          url: "https://aegis-v2.flinkeo.online/",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },

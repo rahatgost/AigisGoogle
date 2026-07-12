@@ -105,7 +105,7 @@ export const Route = createFileRoute("/_authenticated/lock")({
         property: "og:description",
         content: "Passphrase, PIN and biometric unlock for your Aegis vault.",
       },
-      { property: "og:url", content: "https://aegis-syed.lovable.app/lock" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/lock" },
     ],
   }),
   component: LockPage,

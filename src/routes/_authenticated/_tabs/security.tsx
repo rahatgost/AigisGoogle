@@ -119,7 +119,7 @@ export const Route = createFileRoute("/_authenticated/_tabs/security")({
         property: "og:description",
         content: "Passphrase, recovery, and encrypted backup for your Aegis vault.",
       },
-      { property: "og:url", content: "https://aegis-syed.lovable.app/security" },
+      { property: "og:url", content: "https://aegis-v2.flinkeo.online/security" },
     ],
   }),
   component: SecurityPage,
