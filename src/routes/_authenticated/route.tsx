@@ -62,9 +62,12 @@ function AuthenticatedShell() {
     // to call on every mount.
     void requestPersistentStorage().catch(() => {});
     // Phase 9.1: record this device session so it shows up in Security → Devices.
-    void heartbeat().catch(() => {
-      // Non-fatal; the vault still works if this fails (e.g. offline).
-    });
+    // Guest users have no server-side row, so skip the heartbeat.
+    if (!isGuestId(user.id)) {
+      void heartbeat().catch(() => {
+        // Non-fatal; the vault still works if this fails (e.g. offline).
+      });
+    }
   }, [user.id, heartbeat]);
   return <Outlet />;
 }
