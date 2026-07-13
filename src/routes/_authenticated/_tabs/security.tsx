@@ -323,6 +323,8 @@ function SecurityPage() {
     try {
       await supabase.from("vault_accounts").delete().eq("user_id", user.id);
       await supabase.from("vault_meta").delete().eq("user_id", user.id);
+      disableAutoUnlock(user.id);
+      setAutoUnlock(false);
       lockVault();
       navigate({ to: "/lock", replace: true });
     } catch (err) {
