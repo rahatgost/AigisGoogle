@@ -183,13 +183,14 @@ export async function createNewVaultKey(passphrase: string): Promise<{
     iv: iv as unknown as BufferSource,
   });
 
-  // Re-import DEK as non-extractable for runtime use.
+  // Re-import DEK for runtime use. Extractable so the optional
+  // "passphrase unlock off" feature can save the raw key on this device.
   const rawDek = await crypto.subtle.exportKey("raw", dek);
   const runtimeDek = await crypto.subtle.importKey(
     "raw",
     rawDek,
     { name: "AES-GCM", length: 256 },
-    false,
+    true,
     ["encrypt", "decrypt"],
   );
 
@@ -223,7 +224,7 @@ export async function unwrapVaultKey(
     kek,
     { name: "AES-GCM", iv: wrappedKeyIv as unknown as BufferSource },
     { name: "AES-GCM", length: 256 },
-    false,
+    true, // extractable — required to persist DEK for "passphrase unlock off"
     ["encrypt", "decrypt"],
   );
 }
