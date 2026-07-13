@@ -202,6 +202,14 @@
     font-family: var(--font-sans) !important;
   }
 
+  /* Display face reserved for hero page titles (e.g. Vault header). */
+  .font-hero,
+  .font-hero * {
+    font-family: 'Urbanist', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+
   html, body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
