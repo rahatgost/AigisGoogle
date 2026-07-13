@@ -44,10 +44,14 @@ function OnboardingPage() {
   const { user } = Route.useRouteContext();
 
   const complete = useCallback(async () => {
-    await supabase
-      .from("profiles")
-      .update({ onboarded_at: new Date().toISOString() })
-      .eq("id", user.id);
+    if (isGuestId(user.id)) {
+      markGuestOnboarded();
+    } else {
+      await supabase
+        .from("profiles")
+        .update({ onboarded_at: new Date().toISOString() })
+        .eq("id", user.id);
+    }
     navigate({ to: "/vault", replace: true });
   }, [navigate, user.id]);
 
