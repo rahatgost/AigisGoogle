@@ -664,6 +664,23 @@ function SecurityPage() {
           onConfirm={() => void applyAutoUnlockChange(true)}
         />
 
+        {setPassphraseOpen && (
+          <SetPassphraseSheet
+            userId={user.id}
+            onClose={() => setSetPassphraseOpen(false)}
+            onDone={(nextHint) => {
+              setSetPassphraseOpen(false);
+              setHasPassphrase(true);
+              setAutoUnlock(false);
+              setHint(nextHint);
+              setNotice({
+                kind: "info",
+                text: "Passphrase created. You'll need it next time this device opens the vault.",
+              });
+            }}
+          />
+        )}
+
       </AnimatePresence>
     </>
   );
