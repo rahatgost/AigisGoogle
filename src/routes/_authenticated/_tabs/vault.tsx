@@ -794,12 +794,11 @@ function VaultPage() {
 
       {accounts && accounts.length > 0 && !selectionMode && (
         <div
-          className="sticky z-20 -mx-6 px-6 py-2"
+          className="sticky z-20 -mx-6 px-6 pt-1 pb-3"
           style={{
             top: 0,
-            background: "color-mix(in oklab, var(--aegis-cream) 88%, transparent)",
-            backdropFilter: "blur(16px) saturate(1.1)",
-            WebkitBackdropFilter: "blur(16px) saturate(1.1)",
+            background:
+              "linear-gradient(to bottom, var(--aegis-cream) 72%, color-mix(in oklab, var(--aegis-cream) 0%, transparent) 100%)",
           }}
         >
           <SearchField
