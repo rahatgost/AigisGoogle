@@ -460,13 +460,13 @@ function SecurityPage() {
                 ? "Off — this device opens the vault automatically without asking."
                 : "On — passphrase, PIN or biometric is required to open the vault."
             }
-            onClick={autoUnlockBusy ? undefined : () => void toggleAutoUnlock(!autoUnlock)}
+            onClick={autoUnlockBusy ? undefined : () => requestAutoUnlockToggle(!autoUnlock)}
             disabled={autoUnlockBusy}
             trailing={
               <Switch
                 checked={!autoUnlock}
                 disabled={autoUnlockBusy}
-                onCheckedChange={(v) => void toggleAutoUnlock(!v)}
+                onCheckedChange={(v) => requestAutoUnlockToggle(!v)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Passphrase unlock"
               />
