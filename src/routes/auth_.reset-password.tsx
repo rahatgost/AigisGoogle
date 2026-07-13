@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useLingui } from "@lingui/react";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/friendly-errors";
 import { MUTED } from "@/components/aegis/chrome";
 import { PasswordField, StrengthMeter, scoreStrength } from "@/components/aegis/password-field";
 import {
