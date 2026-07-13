@@ -647,176 +647,49 @@ function VaultPage() {
     return { favoriteList: favs, otherList: rest };
   }, [filtered]);
 
+  const activeTagList = useMemo(() => [...activeTags], [activeTags]);
+  const hasSearchUI = Boolean(accounts && accounts.length > 0 && !selectionMode);
+
   return (
     <>
-      <LargeTitle
+      <VaultHeader
         title={t("vault.title", "Your codes")}
+        count={accounts?.length ?? null}
         subtitle={
           accounts && accounts.length > 0
-            ? (accounts.length === 1
-                ? t("vault.subtitle.count.one", "{count} account · tap to copy")
-                : t("vault.subtitle.count.other", "{count} accounts · tap to copy")
-              ).replace("{count}", String(accounts.length))
+            ? t("vault.subtitle.tapToCopy", "Tap a code to copy · end-to-end encrypted")
             : t("vault.subtitle.empty", "One-time codes, encrypted end-to-end.")
         }
+        online={online}
+        source={source}
+        onAdd={!readOnly ? () => navigate({ to: "/vault/new" }) : undefined}
+        search={
+          hasSearchUI ? (
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              menu={
+                <SearchMenu
+                  onSelect={() => enterSelection()}
+                  onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
+                  onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
+                  activeFilterCount={activeTags.size}
+                  tags={allTags}
+                  activeTags={activeTags}
+                  onToggleTag={toggleTagFilter}
+                />
+              }
+            />
+          ) : null
+        }
+        activeTags={hasSearchUI ? activeTagList : []}
+        onRemoveTag={toggleTagFilter}
+        onClearTags={() => setActiveTags(new Set())}
       />
 
       <InstallPrompt />
-
-      {readOnly && (
-        <div
-          className="mb-2 mt-1 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
-          style={{
-            background: "rgb(var(--aegis-ink-rgb) / 0.06)",
-            border: `1px solid ${BORDER}`,
-            color: CHARCOAL,
-          }}
-          role="status"
-        >
-          <span className="flex-1 truncate">
-            {t(
-              "vault.readOnly.banner",
-              "Read-only recovery vault — you're viewing another user's codes. Writes are disabled.",
-            )}
-          </span>
-          <button
-            type="button"
-            onClick={() => lockVault()}
-            className="shrink-0 rounded-full px-2.5 py-1 text-[11px]"
-            style={{ background: CHARCOAL, color: "white", fontWeight: 600 }}
-          >
-            {t("vault.readOnly.exit", "Exit")}
-          </button>
+...
         </div>
-      )}
-
-
-
-      {plan.isFree && accounts && accounts.length >= 20 && (
-        <div className="mb-2 mt-1">
-          <UpgradePrompt
-            title={
-              accounts.length >= 25
-                ? t("vault.freeLimit.hit", `You've hit the Free limit (${accounts.length}/25)`, { count: accounts.length })
-                : t("vault.freeLimit.progress", `${accounts.length}/25 accounts used`, { count: accounts.length })
-            }
-            body={t("vault.freeLimit.body", "Upgrade to Pro for 500 accounts, encrypted cloud backup, and breach monitoring.")}
-            tier="Pro"
-          />
-        </div>
-      )}
-
-
-      {(!online || source === "cache") && accounts && (
-        <div
-          className="mb-2 mt-1 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
-          style={{
-            background: CREAM_SOFT,
-            border: `1px solid ${BORDER}`,
-            color: MUTED,
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
-          }}
-        >
-          <WifiOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
-          <span className="flex-1 truncate">
-            {online
-              ? t("vault.offline.reconnecting", "Reconnecting — showing cached codes.")
-              : pendingOutbox > 0
-                ? t(
-                    pendingOutbox === 1 ? "vault.offline.queued.one" : "vault.offline.queued.other",
-                    `You're offline — ${pendingOutbox} change${pendingOutbox === 1 ? "" : "s"} queued for sync.`,
-                    { count: pendingOutbox },
-                  )
-                : t("vault.offline.cached", "You're offline — showing cached codes. Add is disabled.")}
-          </span>
-          <button
-            type="button"
-            onClick={retry}
-            disabled={retrying}
-            className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition-colors disabled:opacity-60"
-            style={{
-              background: "rgb(var(--aegis-ink-rgb) / 0.06)",
-              color: CHARCOAL,
-              fontWeight: 600,
-            }}
-            aria-label={t("vault.offline.retryAria", "Retry loading vault")}
-          >
-            {retrying ? (
-              <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
-            ) : (
-              <RefreshCw className="h-3 w-3" strokeWidth={2} />
-            )}
-            {t("vault.offline.retry", "Retry")}
-          </button>
-        </div>
-      )}
-
-      {pendingTagCount > 0 && (
-        <div
-          className="mb-2 mt-1 flex items-center gap-2 rounded-full px-3.5 py-2 text-[12px]"
-          style={{
-            background: CREAM_SOFT,
-            border: `1px solid ${BORDER}`,
-            color: CHARCOAL,
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
-          }}
-          role="status"
-          aria-live="polite"
-        >
-          <Tags className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
-          <span className="flex-1 truncate">
-            {online
-              ? t(
-                  pendingTagCount === 1 ? "vault.tagSync.pending.one" : "vault.tagSync.pending.other",
-                  `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} waiting to sync.`,
-                  { count: pendingTagCount },
-                )
-              : t(
-                  pendingTagCount === 1 ? "vault.tagSync.pendingOffline.one" : "vault.tagSync.pendingOffline.other",
-                  `${pendingTagCount} tag update${pendingTagCount === 1 ? "" : "s"} saved locally — will sync when online.`,
-                  { count: pendingTagCount },
-                )}
-          </span>
-          {online && (
-            <button
-              type="button"
-              onClick={syncPendingTags}
-              disabled={syncingTags}
-              className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition-colors disabled:opacity-60"
-              style={{
-                background: "rgb(var(--aegis-ink-rgb) / 0.06)",
-                color: CHARCOAL,
-                fontWeight: 600,
-              }}
-              aria-label={t("vault.tagSync.retryAria", "Retry syncing tag updates")}
-            >
-              {syncingTags ? (
-                <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
-              ) : (
-                <RefreshCw className="h-3 w-3" strokeWidth={2} />
-              )}
-              {t("vault.tagSync.syncNow", "Sync now")}
-            </button>
-          )}
-        </div>
-      )}
-
-      {accounts && accounts.length > 0 && !selectionMode && (
-        <SearchField
-          value={query}
-          onChange={setQuery}
-          menu={
-            <SearchMenu
-              onSelect={() => enterSelection()}
-              onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
-              onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
-              activeFilterCount={activeTags.size}
-              tags={allTags}
-              activeTags={activeTags}
-              onToggleTag={toggleTagFilter}
-            />
-          }
-        />
       )}
 
       <div className="pt-2">
