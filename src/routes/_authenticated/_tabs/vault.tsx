@@ -1644,29 +1644,29 @@ function SearchField({
 }) {
   const t = useT();
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2">
       <div
-        className="flex h-11 flex-1 shrink-0 items-center gap-2 rounded-full px-3.5"
+        className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full px-3.5"
         style={{
           background: CREAM_SOFT,
           border: `1px solid ${BORDER}`,
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
         }}
       >
-        <Search className="h-4 w-4" strokeWidth={1.8} style={{ color: MUTED }} />
+        <Search className="h-4 w-4 shrink-0" strokeWidth={1.8} style={{ color: MUTED }} />
         <input
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t("vault.search.placeholder", "Search accounts")}
-          className="flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[color:var(--aegis-placeholder)]"
+          className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[color:var(--aegis-placeholder)]"
           style={{ color: CHARCOAL }}
         />
         {value && (
           <button
             type="button"
             onClick={() => onChange("")}
-            className="flex h-6 w-6 items-center justify-center rounded-full"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
             style={{ color: MUTED, background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
             aria-label={t("vault.search.clearAria", "Clear search")}
           >
@@ -1674,7 +1674,7 @@ function SearchField({
           </button>
         )}
       </div>
-      {menu}
+      {menu && <div className="shrink-0">{menu}</div>}
     </div>
   );
 }
