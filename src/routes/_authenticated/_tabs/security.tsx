@@ -167,6 +167,47 @@ function SecurityPage() {
   const [bioSupported, setBioSupported] = useState(false);
   const [bioEnrolled, setBioEnrolled] = useState<boolean>(() => isBiometricEnabled(user.id));
   const [bioBusy, setBioBusy] = useState(false);
+  const [autoUnlock, setAutoUnlock] = useState<boolean>(() => isAutoUnlockEnabled(user.id));
+  const [autoUnlockBusy, setAutoUnlockBusy] = useState(false);
+
+  const toggleAutoUnlock = async (next: boolean) => {
+    if (autoUnlockBusy) return;
+    setAutoUnlockBusy(true);
+    setNotice(null);
+    try {
+      if (next) {
+        const confirmed = window.confirm(
+          "Turn off passphrase unlock?\n\nThe vault will open on this device without asking for your passphrase, PIN or biometric. Anyone with access to this browser will be able to read your codes.\n\nContinue?",
+        );
+        if (!confirmed) {
+          setAutoUnlockBusy(false);
+          return;
+        }
+        const dek = getVaultKey();
+        if (!dek) throw new Error("Unlock the vault first, then turn this on.");
+        await enableAutoUnlock(user.id, dek);
+        setAutoUnlock(true);
+        setNotice({
+          kind: "info",
+          text: "Passphrase unlock is off on this device. The vault will open automatically.",
+        });
+      } else {
+        disableAutoUnlock(user.id);
+        setAutoUnlock(false);
+        setNotice({
+          kind: "info",
+          text: "Passphrase unlock is back on. You'll be asked next time this device opens the vault.",
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not update this setting.";
+      setNotice({ kind: "error", text: msg });
+      setAutoUnlock(isAutoUnlockEnabled(user.id));
+    } finally {
+      setAutoUnlockBusy(false);
+    }
+  };
+
 
   useEffect(() => {
     let cancelled = false;
