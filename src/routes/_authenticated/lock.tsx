@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createNewVaultKey,
+  generateEphemeralDek,
   unwrapVaultKey,
   upgradeKdfToV2,
   needsKdfUpgrade,
@@ -36,7 +37,7 @@ import {
   isPinEnabled,
   unlockWithPin,
 } from "@/lib/pin";
-import { isAutoUnlockEnabled, loadAutoUnlockKey, disableAutoUnlock } from "@/lib/auto-unlock";
+import { isAutoUnlockEnabled, enableAutoUnlock, loadAutoUnlockKey, disableAutoUnlock } from "@/lib/auto-unlock";
 import { KeyRound, Fingerprint, LogOut, Delete, Loader2 } from "lucide-react";
 import { CHARCOAL, MUTED, BORDER, CREAM_SOFT } from "@/components/aegis/chrome";
 import {
@@ -217,7 +218,25 @@ function LockPage() {
         setPassphraseHint(data.passphrase_hint ?? null);
         setMode("unlock");
       } else {
-        setMode("create");
+        // Brand-new user with no vault_meta: provision a random DEK and
+        // enter the vault straight away. The passphrase is only created
+        // later if the user turns on "Passphrase unlock" from Security.
+        try {
+          const dek = await generateEphemeralDek();
+          await enableAutoUnlock(user.id, dek);
+          if (cancelled) return;
+          setVaultKey(dek);
+          await finishUnlock(user.id, dek, routeAfterUnlock);
+          return;
+        } catch (e) {
+          // Provisioning failed — fall back to the classic "create passphrase"
+          // flow so the user can still get in.
+          setNotice({
+            kind: "error",
+            text: e instanceof Error ? e.message : "Could not set up your vault.",
+          });
+          setMode("create");
+        }
       }
     })();
     return () => {

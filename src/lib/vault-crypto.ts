@@ -273,6 +273,48 @@ export async function rewrapVaultKey(
   };
 }
 
+/**
+ * Generate a brand-new random DEK for the "no passphrase" flow. The key
+ * is extractable so it can be saved to local storage (auto-unlock) and
+ * later wrapped under a passphrase if the user opts in.
+ */
+export async function generateEphemeralDek(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, [
+    "encrypt",
+    "decrypt",
+  ]);
+}
+
+/**
+ * Wrap an existing DEK under a fresh passphrase. Used the first time a
+ * user turns ON "Passphrase unlock" — the DEK stays the same, so every
+ * existing encrypted row keeps decrypting. Caller persists the returned
+ * tuple as `vault_meta`.
+ */
+export async function wrapExistingDekWithPassphrase(
+  dek: CryptoKey,
+  passphrase: string,
+): Promise<{
+  salt: Uint8Array;
+  wrappedKey: Uint8Array;
+  wrappedKeyIv: Uint8Array;
+  kdfAlgorithm: string;
+}> {
+  const salt = randomBytes(16);
+  const kek = await deriveKekForAlgorithm(passphrase, salt, KDF_ALGO_V2);
+  const iv = randomBytes(12);
+  const wrapped = await crypto.subtle.wrapKey("raw", dek, kek, {
+    name: "AES-GCM",
+    iv: iv as unknown as BufferSource,
+  });
+  return {
+    salt,
+    wrappedKey: new Uint8Array(wrapped),
+    wrappedKeyIv: iv,
+    kdfAlgorithm: KDF_ALGO_V2,
+  };
+}
+
 /* -------------------- v1 → v2 in-place upgrade -------------------- */
 
 export function needsKdfUpgrade(algorithm: string): boolean {
