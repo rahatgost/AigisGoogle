@@ -1639,6 +1639,215 @@ function AccountGroup({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  VaultHeader — polished mobile app-bar w/ integrated search + filter chips  */
+/* -------------------------------------------------------------------------- */
+
+function VaultHeader({
+  title,
+  count,
+  subtitle,
+  online,
+  source,
+  onAdd,
+  search,
+  activeTags,
+  onRemoveTag,
+  onClearTags,
+}: {
+  title: string;
+  count: number | null;
+  subtitle: string;
+  online: boolean;
+  source: "network" | "cache" | "empty" | null;
+  onAdd?: () => void;
+  search: React.ReactNode;
+  activeTags: string[];
+  onRemoveTag: (tag: string) => void;
+  onClearTags: () => void;
+}) {
+  const reduce = useReducedMotion();
+  const t = useT();
+
+  const statusLabel = !online
+    ? t("vault.header.status.offline", "Offline")
+    : source === "cache"
+      ? t("vault.header.status.syncing", "Syncing")
+      : t("vault.header.status.synced", "Synced");
+  const statusColor = !online
+    ? "var(--aegis-warning)"
+    : source === "cache"
+      ? "var(--aegis-warning)"
+      : "var(--aegis-success)";
+
+  return (
+    <motion.header
+      initial={reduce ? false : { opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={soft}
+      className="sticky top-0 z-20 -mx-6 flex flex-col px-6 pt-[max(20px,env(safe-area-inset-top))] pb-3"
+      style={{
+        background: "color-mix(in oklab, var(--aegis-cream) 92%, transparent)",
+        backdropFilter: "blur(22px) saturate(1.1)",
+        WebkitBackdropFilter: "blur(22px) saturate(1.1)",
+        borderBottom: `1px solid rgb(var(--aegis-ink-rgb) / 0.05)`,
+      }}
+    >
+      {/* Top row: brand chip + status pill + quick add */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
+            style={{
+              background: CHARCOAL,
+              color: CREAM_SOFT,
+              boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.14), 0 4px 10px -6px rgb(var(--aegis-ink-rgb) / 0.5)",
+            }}
+          >
+            <Shield className="h-3.5 w-3.5" strokeWidth={1.9} />
+          </span>
+          <span
+            className="text-[11px] uppercase"
+            style={{
+              color: MUTED,
+              letterSpacing: "0.16em",
+              fontWeight: 600,
+            }}
+          >
+            {t("vault.header.eyebrow", "Vault")}
+          </span>
+          <span
+            className="ml-1 flex items-center gap-1.5 rounded-full px-2 py-[3px] text-[10.5px]"
+            style={{
+              background: "rgb(var(--aegis-ink-rgb) / 0.04)",
+              border: `1px solid ${BORDER}`,
+              color: MUTED,
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+            }}
+            aria-live="polite"
+          >
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: statusColor, boxShadow: online && source === "network" ? `0 0 0 3px color-mix(in oklab, ${statusColor} 20%, transparent)` : undefined }}
+            />
+            {statusLabel}
+          </span>
+        </div>
+        {onAdd && (
+          <motion.button
+            type="button"
+            onClick={onAdd}
+            whileTap={{ scale: 0.94 }}
+            aria-label={t("vault.header.addAria", "Add new account")}
+            data-testid="vault-header-add"
+            className="flex h-9 items-center gap-1.5 rounded-full pl-2.5 pr-3 text-[12.5px]"
+            style={{
+              background: CHARCOAL,
+              color: CREAM_SOFT,
+              fontWeight: 600,
+              letterSpacing: "-0.005em",
+              boxShadow:
+                "inset 0 1px 0 rgb(255 255 255 / 0.12), 0 6px 14px -8px rgb(var(--aegis-ink-rgb) / 0.55)",
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.2} />
+            {t("vault.header.add", "Add")}
+          </motion.button>
+        )}
+      </div>
+
+      {/* Large title + count badge */}
+      <div className="flex items-end justify-between gap-3">
+        <h1
+          data-testid="page-large-title"
+          className="text-[30px] leading-[1.05]"
+          style={{
+            color: CHARCOAL,
+            fontWeight: 700,
+            letterSpacing: "-0.035em",
+          }}
+        >
+          {title}
+        </h1>
+        {typeof count === "number" && count > 0 && (
+          <motion.span
+            key={count}
+            initial={reduce ? false : { opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={soft}
+            className="mb-1 inline-flex items-baseline gap-1 rounded-full px-2.5 py-[3px] text-[12px] tabular-nums"
+            style={{
+              background: CREAM_SOFT,
+              border: `1px solid ${BORDER}`,
+              color: CHARCOAL,
+              fontWeight: 600,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+            }}
+            aria-label={t("vault.header.countAria", `${count} accounts`, { count })}
+          >
+            {count}
+            <span className="text-[10px] uppercase tracking-[0.1em]" style={{ color: MUTED, fontWeight: 600 }}>
+              {count === 1 ? t("vault.header.item", "item") : t("vault.header.items", "items")}
+            </span>
+          </motion.span>
+        )}
+      </div>
+
+      <p className="mt-1 text-[13px] leading-[1.4]" style={{ color: MUTED }}>
+        {subtitle}
+      </p>
+
+      {/* Integrated search */}
+      {search && <div className="mt-3">{search}</div>}
+
+      {/* Active filter chips row (horizontal scroll on overflow) */}
+      {activeTags.length > 0 && (
+        <div className="mt-2.5 -mx-1 flex items-center gap-1.5 overflow-x-auto pb-0.5 pl-1 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span
+            className="shrink-0 text-[10.5px] uppercase"
+            style={{ color: MUTED, letterSpacing: "0.12em", fontWeight: 600 }}
+          >
+            {t("vault.header.filter", "Filter")}
+          </span>
+          {activeTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onRemoveTag(tag)}
+              className="flex shrink-0 items-center gap-1 rounded-full py-1 pl-2.5 pr-1.5 text-[11.5px]"
+              style={{
+                background: CHARCOAL,
+                color: CREAM_SOFT,
+                border: `1px solid ${CHARCOAL}`,
+                fontWeight: 500,
+              }}
+            >
+              <span className="max-w-[120px] truncate">{tag}</span>
+              <X className="h-3 w-3" strokeWidth={2.2} />
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={onClearTags}
+            className="shrink-0 rounded-full px-2.5 py-1 text-[11px]"
+            style={{
+              background: "rgb(var(--aegis-ink-rgb) / 0.05)",
+              border: `1px solid ${BORDER}`,
+              color: MUTED,
+              fontWeight: 500,
+            }}
+          >
+            {t("vault.header.clear", "Clear")}
+          </button>
+        </div>
+      )}
+    </motion.header>
+  );
+}
+
 function SearchField({
   value,
   onChange,
