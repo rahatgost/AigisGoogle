@@ -50,12 +50,15 @@ export function VaultHeader({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={soft}
-      className="sticky top-0 z-10 -mx-6 flex flex-col px-6 pt-[max(14px,env(safe-area-inset-top))] pb-5"
+      className="sticky top-0 z-20 -mx-6 flex flex-col px-6 pt-[max(14px,env(safe-area-inset-top))] pb-4"
       style={{
         background:
-          "linear-gradient(to bottom, color-mix(in oklab, var(--aegis-cream) 98%, transparent) 0%, color-mix(in oklab, var(--aegis-cream) 92%, transparent) 62%, color-mix(in oklab, var(--aegis-cream) 0%, transparent) 100%)",
-        backdropFilter: "blur(24px) saturate(1.2)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+          "color-mix(in oklab, var(--aegis-cream) 88%, transparent)",
+        backdropFilter: "blur(24px) saturate(1.35)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.35)",
+        borderBottom: `1px solid ${BORDER}`,
+        boxShadow:
+          "0 8px 18px -14px rgb(var(--aegis-ink-rgb) / 0.18)",
       }}
     >
       {/* Top strip: brand chip · trailing actions */}
