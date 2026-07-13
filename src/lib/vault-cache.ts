@@ -167,16 +167,6 @@ export async function clearVaultCache(): Promise<void> {
  * to the cache instead of surfacing an error.
  */
 export function isOffline(): boolean {
-  // Guest / local-only mode is treated as offline everywhere: writes go
-  // to the outbox + IndexedDB cache and never hit Supabase (which would
-  // reject them anyway without a session).
-  if (typeof window !== "undefined") {
-    try {
-      if (window.localStorage.getItem("aegis.guest.id.v1")) return true;
-    } catch {
-      /* ignore */
-    }
-  }
   if (typeof navigator === "undefined") return false;
   return navigator.onLine === false;
 }

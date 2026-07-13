@@ -58,10 +58,8 @@ import {
   setLocalePref,
   type LocalePref,
 } from "@/lib/i18n";
-import { isGuestId } from "@/lib/guest-user";
-import { LockedSection } from "@/components/aegis/LockedSection";
 import { useLingui } from "@lingui/react";
-import { Globe, LogIn } from "lucide-react";
+import { Globe } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/_tabs/profile")({
   head: () => ({
@@ -114,12 +112,10 @@ function ProfilePage() {
   const startCheckout = useServerFn(createCheckoutSession);
   const openPortal = useServerFn(createPortalSession);
 
-  const isGuest = isGuestId(user.id);
   const { data: sub, refetch: refetchSub } = useQuery({
     queryKey: ["subscription", user.id],
     queryFn: () => fetchSub(),
     staleTime: 30_000,
-    enabled: !isGuest,
   });
   const [planBusy, setPlanBusy] = useState<null | "pro" | "family" | "portal">(null);
   const [planSheet, setPlanSheet] = useState(false);
@@ -509,20 +505,7 @@ function ProfilePage() {
     <>
       <LargeTitle title={t("profile.title", "Account")} subtitle={t("profile.subtitle", "How you show up inside Aegis.")} />
 
-      {isGuestId(user.id) && (
-        <div className="pt-2">
-          <LockedSection
-            title={t("profile.guest.title", "You're using Aegis locally")}
-            description={t(
-              "profile.guest.description",
-              "Your codes are encrypted on this device. Sign in to enable cloud backup, sync across devices, family sharing, and more.",
-            )}
-          />
-        </div>
-      )}
-
       <div className="flex flex-col gap-1 pt-1">
-
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -747,70 +730,50 @@ function ProfilePage() {
         </SettingsGroup>
 
         <SectionLabel>{t("profile.section.plan", "Plan")}</SectionLabel>
-        {isGuestId(user.id) ? (
-          <LockedSection
-            title={t("profile.plan.locked", "Plan & billing")}
-            description={t(
-              "profile.plan.locked.description",
-              "Upgrade to Pro or Family after you sign in.",
-            )}
+        <SettingsGroup>
+          <SettingsRow
+            icon={
+              activePaidTier ? (
+                <Sparkles className="h-4 w-4" strokeWidth={1.8} />
+              ) : (
+                <CreditCard className="h-4 w-4" strokeWidth={1.8} />
+              )
+            }
+            title={t("profile.plan", "Plan")}
+            value={planLabel}
+            description={
+              activePaidTier
+                ? t("profile.plan.paid.description", "500 accounts · auto backup · breach monitoring.")
+                : t("profile.plan.free.description", "Free — 25 accounts. Upgrade for more.")
+            }
+            onClick={() => setPlanSheet(true)}
+            chevron
           />
-        ) : (
-          <SettingsGroup>
-            <SettingsRow
-              icon={
-                activePaidTier ? (
-                  <Sparkles className="h-4 w-4" strokeWidth={1.8} />
-                ) : (
-                  <CreditCard className="h-4 w-4" strokeWidth={1.8} />
-                )
-              }
-              title={t("profile.plan", "Plan")}
-              value={planLabel}
-              description={
-                activePaidTier
-                  ? t("profile.plan.paid.description", "500 accounts · auto backup · breach monitoring.")
-                  : t("profile.plan.free.description", "Free — 25 accounts. Upgrade for more.")
-              }
-              onClick={() => setPlanSheet(true)}
-              chevron
-            />
-            <SettingsRow
-              icon={<Eye className="h-4 w-4" strokeWidth={1.8} />}
-              title={t("profile.plan.compare", "Compare plans")}
-              description={t(
-                "profile.plan.compare.description",
-                "See what's in Free, Pro, and Family side-by-side.",
-              )}
-              onClick={() => setCompareSheet(true)}
-              chevron
-            />
-          </SettingsGroup>
-        )}
+          <SettingsRow
+            icon={<Eye className="h-4 w-4" strokeWidth={1.8} />}
+            title={t("profile.plan.compare", "Compare plans")}
+            description={t(
+              "profile.plan.compare.description",
+              "See what's in Free, Pro, and Family side-by-side.",
+            )}
+            onClick={() => setCompareSheet(true)}
+            chevron
+          />
+        </SettingsGroup>
 
         <SectionLabel>{t("profile.section.sharing", "Sharing")}</SectionLabel>
-        {isGuestId(user.id) ? (
-          <LockedSection
-            title={t("profile.sharing.locked", "Family sharing")}
+        <SettingsGroup>
+          <SettingsRow
+            icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
+            title={t("profile.family", "Family")}
             description={t(
-              "profile.sharing.locked.description",
-              "Share codes with up to 6 family members after you sign in.",
+              "profile.family.description",
+              "Share your Aegis codes with up to 6 family members.",
             )}
+            onClick={() => navigate({ to: "/family" })}
+            chevron
           />
-        ) : (
-          <SettingsGroup>
-            <SettingsRow
-              icon={<Users className="h-4 w-4" strokeWidth={1.8} />}
-              title={t("profile.family", "Family")}
-              description={t(
-                "profile.family.description",
-                "Share your Aegis codes with up to 6 family members.",
-              )}
-              onClick={() => navigate({ to: "/family" })}
-              chevron
-            />
-          </SettingsGroup>
-        )}
+        </SettingsGroup>
 
         <SectionLabel>{t("profile.section.support", "Support")}</SectionLabel>
         <SettingsGroup>
@@ -828,28 +791,14 @@ function ProfilePage() {
 
         <SectionLabel>{t("profile.section.session", "Session")}</SectionLabel>
         <SettingsGroup>
-          {isGuestId(user.id) ? (
-            <SettingsRow
-              icon={<LogIn className="h-4 w-4" strokeWidth={1.8} />}
-              title={t("profile.signIn", "Sign in")}
-              description={t(
-                "profile.signIn.description",
-                "Enable cloud backup, sync, and family sharing.",
-              )}
-              onClick={() => navigate({ to: "/auth" })}
-              chevron
-            />
-          ) : (
-            <SettingsRow
-              icon={<LogOut className="h-4 w-4" strokeWidth={1.8} />}
-              title={t("profile.signOut", "Sign out")}
-              description={t("profile.signOut.description", "You'll need to sign in and unlock again")}
-              onClick={signOut}
-              chevron
-            />
-          )}
+          <SettingsRow
+            icon={<LogOut className="h-4 w-4" strokeWidth={1.8} />}
+            title={t("profile.signOut", "Sign out")}
+            description={t("profile.signOut.description", "You'll need to sign in and unlock again")}
+            onClick={signOut}
+            chevron
+          />
         </SettingsGroup>
-
 
         <SectionLabel>{t("profile.section.danger", "Danger zone")}</SectionLabel>
         <SettingsGroup>

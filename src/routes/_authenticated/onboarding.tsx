@@ -3,7 +3,6 @@ import { useCallback } from "react";
 import { useLingui } from "@lingui/react";
 import Onboarding from "@/components/onboarding/Onboarding";
 import { supabase } from "@/integrations/supabase/client";
-import { isGuestId, markGuestOnboarded } from "@/lib/guest-user";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -44,14 +43,10 @@ function OnboardingPage() {
   const { user } = Route.useRouteContext();
 
   const complete = useCallback(async () => {
-    if (isGuestId(user.id)) {
-      markGuestOnboarded();
-    } else {
-      await supabase
-        .from("profiles")
-        .update({ onboarded_at: new Date().toISOString() })
-        .eq("id", user.id);
-    }
+    await supabase
+      .from("profiles")
+      .update({ onboarded_at: new Date().toISOString() })
+      .eq("id", user.id);
     navigate({ to: "/vault", replace: true });
   }, [navigate, user.id]);
 

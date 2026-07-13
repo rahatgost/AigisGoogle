@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { isGuestOnboarded } from "@/lib/guest-user";
 
 const CREAM = "var(--aegis-cream)";
 const CHARCOAL = "var(--aegis-ink)";
@@ -9,14 +8,9 @@ const CHARCOAL = "var(--aegis-ink)";
 export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: async () => {
-    // Local-only guest mode: no session required. Route to onboarding
-    // for a first-time visitor, then straight to the vault.
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
-      if (!isGuestOnboarded()) {
-        throw redirect({ to: "/onboarding" });
-      }
-      throw redirect({ to: "/vault" });
+      throw redirect({ to: "/auth" });
     }
     const { data: profile } = await supabase
       .from("profiles")

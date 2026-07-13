@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLingui } from "@lingui/react";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyAuthError } from "@/lib/friendly-errors";
 import { lovable } from "@/integrations/lovable/index";
 import { Mail } from "lucide-react";
 import {
@@ -101,25 +100,14 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin + "/auth/callback" },
         });
         if (error) throw error;
-        // If email confirmation is enabled, session will be null.
-        if (!data.session) {
-          setNotice({
-            kind: "info",
-            text: t(
-              "auth.notice.confirmEmail",
-              "Check your inbox to confirm your email, then sign in.",
-            ),
-          });
-          setMode("signin");
-        } else {
-          navigate({ to: "/", replace: true });
-        }
+        setNotice({ kind: "info", text: t("auth.notice.signupSuccess", "Account created. You can sign in now.") });
+        setMode("signin");
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -129,13 +117,7 @@ function AuthPage() {
           redirectTo: window.location.origin + "/auth/reset-password",
         });
         if (error) throw error;
-        setNotice({
-          kind: "info",
-          text: t(
-            "auth.notice.resetSent",
-            "If an account exists for that email, we've sent a reset link. Check your inbox (and spam).",
-          ),
-        });
+        setNotice({ kind: "info", text: t("auth.notice.resetSent", "Check your inbox for a reset link.") });
       }
       try {
         if (remember) window.localStorage.setItem(LAST_EMAIL_KEY, email);
@@ -144,10 +126,15 @@ function AuthPage() {
         /* ignore */
       }
     } catch (err) {
-      const raw = err instanceof Error ? err.message : String(err ?? "");
-      // Log for diagnostics; keep console noise minimal.
-      if (typeof console !== "undefined") console.warn("[auth]", mode, raw);
-      setNotice({ kind: "error", text: friendlyAuthError(raw) });
+      const raw = err instanceof Error ? err.message : t("auth.error.generic", "Something went wrong.");
+      const friendly = /invalid.*credent|invalid.*login/i.test(raw)
+        ? t("auth.error.invalidCredentials", "Email or password is incorrect.")
+        : /rate limit|too many/i.test(raw)
+          ? t("auth.error.rateLimit", "Too many attempts — please wait a moment and try again.")
+          : /already.*registered/i.test(raw)
+            ? t("auth.error.alreadyRegistered", "An account with that email already exists.")
+            : raw;
+      setNotice({ kind: "error", text: friendly });
     } finally {
       setLoading(false);
     }
@@ -164,9 +151,10 @@ function AuthPage() {
       if (result.redirected) return;
       navigate({ to: "/", replace: true });
     } catch (err) {
-      const raw = err instanceof Error ? err.message : String(err ?? "");
-      if (typeof console !== "undefined") console.warn("[auth] google", raw);
-      setNotice({ kind: "error", text: friendlyAuthError(raw) });
+      setNotice({
+        kind: "error",
+        text: err instanceof Error ? err.message : t("auth.error.google", "Google sign-in failed."),
+      });
       setLoading(false);
     }
   };
