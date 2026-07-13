@@ -475,17 +475,21 @@ function SecurityPage() {
             icon={<ShieldOff className="h-4 w-4" strokeWidth={1.8} />}
             title={t("security.autoUnlock", "Passphrase unlock")}
             description={
-              autoUnlock
-                ? "Off — this device opens the vault automatically without asking."
-                : "On — passphrase, PIN or biometric is required to open the vault."
+              passphraseUnlockOn
+                ? "On — passphrase, PIN or biometric is required to open the vault."
+                : hasPassphrase
+                  ? "Off — this device opens the vault automatically without asking."
+                  : "Off — no passphrase set. Turn on to create your master passphrase."
             }
-            onClick={autoUnlockBusy ? undefined : () => requestAutoUnlockToggle(!autoUnlock)}
+            onClick={
+              autoUnlockBusy ? undefined : () => requestAutoUnlockToggle(!passphraseUnlockOn)
+            }
             disabled={autoUnlockBusy}
             trailing={
               <Switch
-                checked={!autoUnlock}
+                checked={passphraseUnlockOn}
                 disabled={autoUnlockBusy}
-                onCheckedChange={(v) => requestAutoUnlockToggle(!v)}
+                onCheckedChange={(v) => requestAutoUnlockToggle(v)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Passphrase unlock"
               />
