@@ -114,10 +114,12 @@ function ProfilePage() {
   const startCheckout = useServerFn(createCheckoutSession);
   const openPortal = useServerFn(createPortalSession);
 
+  const isGuest = isGuestId(user.id);
   const { data: sub, refetch: refetchSub } = useQuery({
     queryKey: ["subscription", user.id],
     queryFn: () => fetchSub(),
     staleTime: 30_000,
+    enabled: !isGuest,
   });
   const [planBusy, setPlanBusy] = useState<null | "pro" | "family" | "portal">(null);
   const [planSheet, setPlanSheet] = useState(false);
