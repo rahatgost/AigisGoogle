@@ -649,8 +649,17 @@ function VaultPage() {
 
   return (
     <>
-      <div className="pt-[max(22px,env(safe-area-inset-top))]" />
-
+      <LargeTitle
+        title={t("vault.title", "Your codes")}
+        subtitle={
+          accounts && accounts.length > 0
+            ? (accounts.length === 1
+                ? t("vault.subtitle.count.one", "{count} account · tap to copy")
+                : t("vault.subtitle.count.other", "{count} accounts · tap to copy")
+              ).replace("{count}", String(accounts.length))
+            : t("vault.subtitle.empty", "One-time codes, encrypted end-to-end.")
+        }
+      />
 
       <InstallPrompt />
 
@@ -793,30 +802,21 @@ function VaultPage() {
       )}
 
       {accounts && accounts.length > 0 && !selectionMode && (
-        <div
-          className="sticky z-20 -mx-4 px-4 pt-1 pb-3 sm:-mx-6 sm:px-6"
-          style={{
-            top: 0,
-            background:
-              "linear-gradient(to bottom, var(--aegis-cream) 72%, color-mix(in oklab, var(--aegis-cream) 0%, transparent) 100%)",
-          }}
-        >
-          <SearchField
-            value={query}
-            onChange={setQuery}
-            menu={
-              <SearchMenu
-                onSelect={() => enterSelection()}
-                onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
-                onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
-                activeFilterCount={activeTags.size}
-                tags={allTags}
-                activeTags={activeTags}
-                onToggleTag={toggleTagFilter}
-              />
-            }
-          />
-        </div>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          menu={
+            <SearchMenu
+              onSelect={() => enterSelection()}
+              onManageTags={allTags.length > 0 ? () => setTagManagerOpen(true) : undefined}
+              onClearFilters={activeTags.size > 0 ? () => setActiveTags(new Set()) : undefined}
+              activeFilterCount={activeTags.size}
+              tags={allTags}
+              activeTags={activeTags}
+              onToggleTag={toggleTagFilter}
+            />
+          }
+        />
       )}
 
       <div className="pt-2">
@@ -1644,29 +1644,29 @@ function SearchField({
 }) {
   const t = useT();
   return (
-    <div className="flex w-full items-center gap-2">
+    <div className="flex items-center gap-2">
       <div
-        className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full px-3.5"
+        className="flex h-11 flex-1 shrink-0 items-center gap-2 rounded-full px-3.5"
         style={{
           background: CREAM_SOFT,
           border: `1px solid ${BORDER}`,
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
         }}
       >
-        <Search className="h-4 w-4 shrink-0" strokeWidth={1.8} style={{ color: MUTED }} />
+        <Search className="h-4 w-4" strokeWidth={1.8} style={{ color: MUTED }} />
         <input
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t("vault.search.placeholder", "Search accounts")}
-          className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[color:var(--aegis-placeholder)]"
+          className="flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[color:var(--aegis-placeholder)]"
           style={{ color: CHARCOAL }}
         />
         {value && (
           <button
             type="button"
             onClick={() => onChange("")}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+            className="flex h-6 w-6 items-center justify-center rounded-full"
             style={{ color: MUTED, background: "rgb(var(--aegis-ink-rgb) / 0.06)" }}
             aria-label={t("vault.search.clearAria", "Clear search")}
           >
@@ -1674,7 +1674,7 @@ function SearchField({
           </button>
         )}
       </div>
-      {menu && <div className="shrink-0">{menu}</div>}
+      {menu}
     </div>
   );
 }
