@@ -507,7 +507,20 @@ function ProfilePage() {
     <>
       <LargeTitle title={t("profile.title", "Account")} subtitle={t("profile.subtitle", "How you show up inside Aegis.")} />
 
+      {isGuestId(user.id) && (
+        <div className="pt-2">
+          <LockedSection
+            title={t("profile.guest.title", "You're using Aegis locally")}
+            description={t(
+              "profile.guest.description",
+              "Your codes are encrypted on this device. Sign in to enable cloud backup, sync across devices, family sharing, and more.",
+            )}
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1 pt-1">
+
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
