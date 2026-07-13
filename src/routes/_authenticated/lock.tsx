@@ -203,11 +203,18 @@ function LockPage() {
         }
       }
 
-      const { data, error } = await supabase
-        .from("vault_meta")
-        .select("passphrase_hint")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Guest / local-only mode: no vault_meta row exists on the server
+      // (there is no server session). Skip the query and fall through to
+      // the "no vault_meta" branch below so we provision an ephemeral
+      // DEK, cache it via auto-unlock, and enter the vault.
+      const isGuest = user.id.startsWith("guest-");
+      const { data, error } = isGuest
+        ? { data: null, error: null as unknown as { message: string } | null }
+        : await supabase
+            .from("vault_meta")
+            .select("passphrase_hint")
+            .eq("user_id", user.id)
+            .maybeSingle();
       if (cancelled) return;
       if (error) {
         setNotice({ kind: "error", text: error.message });
