@@ -87,8 +87,7 @@ import {
   typeSheetTitleSm,
   typeSubLabel,
 } from "@/components/aegis/typography";
-import { SectionLabel } from "@/components/aegis/settings";
-import { VaultHeader } from "@/components/aegis/VaultHeader";
+import { LargeTitle, SectionLabel } from "@/components/aegis/settings";
 import { InstallPrompt } from "@/components/aegis/InstallPrompt";
 import { UpgradePrompt } from "@/components/aegis/upgrade-prompt";
 import { usePlan } from "@/hooks/use-plan";
@@ -650,20 +649,16 @@ function VaultPage() {
 
   return (
     <>
-      <VaultHeader
+      <LargeTitle
         title={t("vault.title", "Your codes")}
-        count={accounts?.length ?? 0}
-        countLabel={
+        subtitle={
           accounts && accounts.length > 0
             ? (accounts.length === 1
                 ? t("vault.subtitle.count.one", "{count} account · tap to copy")
                 : t("vault.subtitle.count.other", "{count} accounts · tap to copy")
               ).replace("{count}", String(accounts.length))
-            : undefined
+            : t("vault.subtitle.empty", "One-time codes, encrypted end-to-end.")
         }
-        emptyLabel={t("vault.subtitle.empty", "One-time codes, encrypted end-to-end.")}
-        online={online}
-        syncing={retrying || syncingTags}
       />
 
       <InstallPrompt />
